@@ -3,23 +3,23 @@ use std::process::Command;
 fn main() {
     Command::new("nasm")
         .args(&["-f", "bin", "tests/ivt.asm", "-o"])
-        .arg(&format!("ivt.fw"))
+        .arg("ivt.fw")
         .arg("-l")
-        .arg(&format!("ivt.lst"))
+        .arg("ivt.lst")
         .status()
         .unwrap();
     Command::new("nasm")
         .args(&["-f", "bin", "tests/hello_dos.asm", "-o"])
-        .arg(&format!("hello.com"))
+        .arg("hello.com")
         .arg("-l")
-        .arg(&format!("hello.lst"))
+        .arg("hello.lst")
         .status()
         .unwrap();
     Command::new("nasm")
         .args(&["-f", "bin", "tests/keyboard.asm", "-o"])
-        .arg(&format!("keyboard.com"))
+        .arg("keyboard.com")
         .arg("-l")
-        .arg(&format!("keyboard.lst"))
+        .arg("keyboard.lst")
         .status()
         .unwrap();
     println!("cargo::rerun-if-changed=tests/ivt.asm");
