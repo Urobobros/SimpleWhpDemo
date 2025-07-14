@@ -33,6 +33,7 @@ SimpleWhpDemo.exe keyboard.com
 ```
 
 Do **not** pass the `.asm` source directly to `SimpleWhpDemo.exe`. The hypervisor expects a flat binary such as `keyboard.com`.
+Remember to always run the hypervisor with the assembled `.com` file. Supplying the raw `.asm` text will simply execute garbage bytes and result in repeated "Input is not implemented" messages.
 
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
