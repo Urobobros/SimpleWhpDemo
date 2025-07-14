@@ -32,6 +32,8 @@ nasm -f bin tests\keyboard.asm -o keyboard.com -l keyboard.lst
 SimpleWhpDemo.exe keyboard.com
 ```
 
+Do **not** pass the `.asm` source directly to `SimpleWhpDemo.exe`. The hypervisor expects a flat binary such as `keyboard.com`.
+
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
 This demo project has implemented a minimal firmware with an IVT (Interrupt Vector Table) and certain interrupt handlers to output string and terminate the program. \
