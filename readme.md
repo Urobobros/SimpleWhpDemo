@@ -24,6 +24,8 @@ nasm (source assembly file name) -o (output executable file name) -l (output lis
 
 Note that the listing file could serve as the means of disassembly of the program. You will find it very helpful to debug your program.
 
+Two example programs are located in the `tests` directory. `hello_dos.asm` prints a message by invoking DOS interrupts. `keyboard.asm` reads one byte from port `0x0001` (`IO_PORT_KEYBOARD_INPUT`) and echoes it through port `0x0000` (`IO_PORT_STRING_PRINT`).
+
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
 This demo project has implemented a minimal firmware with an IVT (Interrupt Vector Table) and certain interrupt handlers to output string and terminate the program. \

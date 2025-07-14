@@ -197,15 +197,21 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
 		printf("Only size of 1 operand is allowed! Access Size is %u bytes.\n", IoAccess->AccessSize);
 		return E_NOTIMPL;
 	}
-	if (IoAccess->Direction == 0)
-	{
-		puts("Input is not implemented!");
-		return E_NOTIMPL;
-	}
-	if (IoAccess->Port == IO_PORT_STRING_PRINT)
-	{
-		putc(IoAccess->Data, stdout);
-		return S_OK;
+        if (IoAccess->Direction == 0)
+        {
+                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+                {
+                        int ch=getchar();
+                        IoAccess->Data=(UCHAR)ch;
+                        return S_OK;
+                }
+                puts("Input is not implemented!");
+                return E_NOTIMPL;
+        }
+        if (IoAccess->Port == IO_PORT_STRING_PRINT)
+        {
+                putc(IoAccess->Data, stdout);
+                return S_OK;
 	}
 	else
 	{
