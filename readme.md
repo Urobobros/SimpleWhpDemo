@@ -19,10 +19,24 @@ To build this project, you are required to install [VS2022](https://visualstudio
 To build test cases, you are required to install [NASM](https://nasm.us/). \
 Run the following command to build a test case:
 ```bat
-nasm (source assembly file name) -o (output executable file name) -l (output listing file)
+nasm -f bin (source assembly file name) -o (output executable file name) -l (output listing file)
 ```
 
 Note that the listing file could serve as the means of disassembly of the program. You will find it very helpful to debug your program.
+
+Two example programs reside in the `tests` directory. `hello_dos.asm` prints a
+string using DOS interrupts, while `keyboard.asm` reads a byte from port
+`0x0001` (`IO_PORT_KEYBOARD_INPUT`) and echoes it through port `0x0000`
+(`IO_PORT_STRING_PRINT`).
+
+Example to assemble and run the keyboard demo on Windows:
+```bat
+nasm -f bin tests\keyboard.asm -o keyboard.com -l keyboard.lst
+SimpleWhpDemo.exe keyboard.com
+```
+
+Always run the hypervisor with the assembled `.com` file rather than the source
+`*.asm` to avoid spurious "Input is not implemented" messages.
 
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \

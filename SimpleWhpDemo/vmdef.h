@@ -4,6 +4,7 @@
 #define GuestMemorySize		0x200000
 
 #define IO_PORT_STRING_PRINT	0x0000
+#define IO_PORT_KEYBOARD_INPUT	0x0001
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;

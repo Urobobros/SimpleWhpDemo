@@ -1,4 +1,5 @@
 use std::{ffi::c_void, ptr::null_mut, slice, sync::atomic::{AtomicPtr, Ordering}};
+use std::io::Read;
 
 use windows::{core::*, Win32::{Foundation::*, System::{Hypervisor::*,Memory::*},Storage::FileSystem::*}};
 use aligned::*;
@@ -12,8 +13,11 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 	WHvEmulatorMemoryCallback:Some(emu_memory_callback),
 	WHvEmulatorGetVirtualProcessorRegisters:Some(emu_get_vcpu_reg_callback),
 	WHvEmulatorSetVirtualProcessorRegisters:Some(emu_set_vcpu_reg_callback),
-	WHvEmulatorTranslateGvaPage:Some(emu_translate_gva_callback)
+        WHvEmulatorTranslateGvaPage:Some(emu_translate_gva_callback)
 };
+
+const IO_PORT_STRING_PRINT:u16=0x0000;
+const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -273,26 +277,44 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
 {
 	unsafe
 	{
-		if (*io_access).AccessSize!=1
-		{
-			println!("Only size of 1 operand is allowed! This access size is {} bytes!",(*io_access).AccessSize);
-			E_NOTIMPL
-		}
-		else if (*io_access).Direction==0
-		{
-			println!("Input is not implemented!");
-			E_NOTIMPL
-		}
-		else if (*io_access).Port!=0
-		{
-			println!("Unknown I/O Port (0x{:04X}) is accessed!",(*io_access).Port);
-			E_NOTIMPL
-		}
-		else
-		{
-			print!("{}",(*io_access).Data as u8 as char);
-			S_OK
-		}
+                if (*io_access).Direction==0
+                {
+                        if (*io_access).Port==IO_PORT_KEYBOARD_INPUT
+                        {
+                                for i in 0..(*io_access).AccessSize
+                                {
+                                        let mut buf=[0u8;1];
+                                        if std::io::stdin().read_exact(&mut buf).is_ok()
+                                        {
+                                                (*io_access).Data|=(buf[0] as u64)<< (i*8);
+                                        }
+                                        else
+                                        {
+                                                return E_FAIL;
+                                        }
+                                }
+                                S_OK
+                        }
+                        else
+                        {
+                                println!("Input is not implemented!");
+                                E_NOTIMPL
+                        }
+                }
+                else if (*io_access).Port==IO_PORT_STRING_PRINT
+                {
+                        for i in 0..(*io_access).AccessSize
+                        {
+                                let ch=(((*io_access).Data>>(i*8)) as u8) as char;
+                                print!("{}",ch);
+                        }
+                        S_OK
+                }
+                else
+                {
+                        println!("Unknown I/O Port (0x{:04X}) is accessed!",(*io_access).Port);
+                        E_NOTIMPL
+                }
 	}
 }
 

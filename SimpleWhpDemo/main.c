@@ -192,26 +192,31 @@ UINT32 SwDosStringLength(IN PSTR String, IN UINT32 MaximumLength)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
-	if (IoAccess->AccessSize != 1)
-	{
-		printf("Only size of 1 operand is allowed! Access Size is %u bytes.\n", IoAccess->AccessSize);
-		return E_NOTIMPL;
-	}
-	if (IoAccess->Direction == 0)
-	{
-		puts("Input is not implemented!");
-		return E_NOTIMPL;
-	}
-	if (IoAccess->Port == IO_PORT_STRING_PRINT)
-	{
-		putc(IoAccess->Data, stdout);
-		return S_OK;
-	}
-	else
-	{
-		printf("Unknown I/O Port: 0x%04X is accessed!\n", IoAccess->Port);
-		return E_NOTIMPL;
-	}
+        if (IoAccess->Direction == 0)
+        {
+                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+                {
+                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                        {
+                                int ch = getchar();
+                                ((PUCHAR)&IoAccess->Data)[i] = (UCHAR)ch;
+                        }
+                        return S_OK;
+                }
+                puts("Input is not implemented!");
+                return E_NOTIMPL;
+        }
+        if (IoAccess->Port == IO_PORT_STRING_PRINT)
+        {
+                for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                        putc(((PUCHAR)&IoAccess->Data)[i], stdout);
+                return S_OK;
+        }
+        else
+        {
+                printf("Unknown I/O Port: 0x%04X is accessed!\n", IoAccess->Port);
+                return E_NOTIMPL;
+        }
 }
 
 HRESULT SwEmulatorMmioCallback(IN PVOID Context, IN OUT WHV_EMULATOR_MEMORY_ACCESS_INFO* MemoryAccess)
