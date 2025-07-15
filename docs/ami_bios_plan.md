@@ -46,6 +46,10 @@ Ukázka logu:
 - Je možné implementovat jednoduchý výstup z BIOSu do logu pomocí emulace portů nebo přesměrování textového výstupu.
 - V budoucnu lze rozšířit emulátor o další periférie, které BIOS vyžaduje (např. časovač, klávesnici).
 
+### Spouštění z příkazové řádky
+- Program nyní akceptuje dva argumenty: cestu k testovacímu programu a volitelně cestu k BIOSu.
+- Pokud nejsou zadány, použijí se výchozí hodnoty `hello.com` a `ami_bios.bin`.
+
 
 ## 6. Inspirace a cíle
 - Při integraci AMI BIOSu se budeme inspirovat projektem **PCem**, zejména jeho způsobem spouštění BIOSu s podporou VGA.

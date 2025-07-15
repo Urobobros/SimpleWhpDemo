@@ -11,7 +11,7 @@ Tento dokument rozděluje kroky popsané v [ami_bios_plan.md](ami_bios_plan.md) 
 ## Fáze 2: Detailní logování a ošetření chyb
 - [x] Logovat jednotlivé fáze startu, včetně načítání BIOSu a programu
 - [x] Zachytávat případné textové výstupy BIOSu do logu
-- [ ] Ošetřit chyby a přidat jejich popis do logu
+- [x] Ošetřit chyby a přidat jejich popis do logu
 
 ## Fáze 3: Inspirace z PCem a QEMU
 - [ ] Prostudovat projekt **PCem** pro postup spouštění BIOSu a VGA

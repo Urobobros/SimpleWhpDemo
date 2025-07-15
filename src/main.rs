@@ -1,5 +1,7 @@
 use std::{ffi::c_void, ptr::null_mut, slice, sync::atomic::{AtomicPtr, Ordering}};
 use std::io::Read;
+use std::env;
+use log::{info, error};
 
 use windows::{core::*, Win32::{Foundation::*, System::{Hypervisor::*,Memory::*},Storage::FileSystem::*}};
 use aligned::*;
@@ -443,28 +445,34 @@ fn init_whpx()->HRESULT
 
 fn main()
 {
-        println!("[INFO] Inicializace WHPX");
+        env_logger::init();
+        info!("Inicializace WHPX");
         if init_whpx()==S_OK
         {
-                println!("[INFO] WHPX je přítomný a inicializovaný");
+                info!("WHPX je přítomný a inicializovaný");
                 if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
                 {
-                        println!("[INFO] Vytvořen virtuální stroj");
-                        if let Err(e)=vm.load_bios("ami_bios.bin\0",0xF0000)
+                        info!("Vytvořen virtuální stroj");
+
+                        let args:Vec<String>=env::args().collect();
+                        let program=args.get(1).cloned().unwrap_or_else(||"hello.com".to_string());
+                        let bios=args.get(2).cloned().unwrap_or_else(||"ami_bios.bin".to_string());
+
+                        if let Err(e)=vm.load_bios(&format!("{bios}\0"),0xF0000)
                         {
-                                println!("[ERROR] Nelze načíst AMI BIOS: {e}");
+                                error!("Nelze načíst AMI BIOS: {e}");
                         }
                         if let Err(e)=vm.load_program("ivt.fw\0",0)
                         {
                                 panic!("Failed to load firmware! Reason: {e}");
                         }
-                        if let Err(e)=vm.load_program("hello.com\0",0x10100)
+                        if let Err(e)=vm.load_program(&format!("{program}\0"),0x10100)
                         {
                                 panic!("Failed to load program! Reason: {e}");
                         }
-                        println!("[INFO] ======== Spuštění ========");
+                        info!("======== Spuštění ========");
                         vm.run();
-                        println!("[INFO] ========= Konec ==========");
+                        info!("========= Konec ==========");
                 }
                 let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};
         }
