@@ -46,11 +46,12 @@ Always run the hypervisor with the assembled `.com` file rather than the source
 
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
-This demo project includes a tiny BIOS image. When the VM starts it jumps to the
-firmware entry point at `F000:FFF0`. The firmware installs an Interrupt Vector
-Table and implements handlers for services such as `INT 10h` for text
-output and `INT 13h` for disk reads. Real‑mode programs rely on these
-services to print messages or cleanly terminate.
+This demo project includes a tiny BIOS image. After the image is loaded the host
+patches the CPU reset vector (`FFFF0h`) with a far jump to the firmware start
+(`F000:0000`). The firmware installs an Interrupt Vector Table and implements
+handlers for services such as `INT 10h` for text output and `INT 13h` for disk
+reads. Real‑mode programs rely on these services to print messages or cleanly
+terminate.
 To build the firmware, go to the test cases directory and execute:
 ```bat
 nasm ivt.asm -o ivt.fw -l ivt.lst

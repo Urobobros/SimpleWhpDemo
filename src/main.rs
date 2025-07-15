@@ -174,7 +174,7 @@ impl SimpleVirtualMachine
 		}
 	}
 
-	fn load_program(&self,file_name:&str,offset:usize)->Result<()>
+        fn load_program(&self,file_name:&str,offset:usize)->Result<()>
 	{
 		let path=file_name.encode_utf16();
 		let v:Vec<u16>=path.collect();
@@ -259,6 +259,16 @@ impl SimpleVirtualMachine
                 unsafe
                 {
                         WHvEmulatorTryIoEmulation(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed),(self as *const Self).cast(),vcpu_ctxt,io_ctxt)
+                }
+        }
+
+        fn patch_reset_vector(&self)
+        {
+                unsafe
+                {
+                        let mem=self.vmem as *mut u8;
+                        let jump:[u8;5]=[0xEA,0x00,0x00,0x00,0xF0];
+                        std::ptr::copy_nonoverlapping(jump.as_ptr(),mem.add(0xFFFF0),5);
                 }
         }
 }
@@ -485,6 +495,7 @@ fn main()
                         {
                                 panic!("Failed to load firmware! Reason: {e}");
                         }
+                        vm.patch_reset_vector();
                         if let Err(e)=vm.load_program("hello.com\0",0x10100)
                         {
                                 panic!("Failed to load program! Reason: {e}");

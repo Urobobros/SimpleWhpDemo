@@ -371,6 +371,17 @@ int main(int argc, char* argv[], char* envp[])
 		{
                         BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
                         BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0xF0000);
+                        if (LoadIvtFwResult)
+                        {
+                                // Place a far jump at the x86 reset vector (FFFF0h)
+                                // so the CPU jumps into the loaded firmware.
+                                PUCHAR mem = (PUCHAR)VirtualMemory;
+                                mem[0xFFFF0] = 0xEA;        // jmp far ptr
+                                mem[0xFFFF1] = 0x00;        // offset 0x0000
+                                mem[0xFFFF2] = 0x00;
+                                mem[0xFFFF3] = 0x00;        // segment 0xF000
+                                mem[0xFFFF4] = 0xF0;
+                        }
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
                         puts("Virtual Machine is initialized successfully!");
                         if (LoadProgramResult)
