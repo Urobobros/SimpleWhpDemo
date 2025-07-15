@@ -396,6 +396,10 @@ db "[Firmware] Halted due to int21h! /w ah=0",10,'$',0
 int13_print_string:
 db "[Firmware] INT13 called (stub)",10,'$',0
 
+; Firmware version string
+fw_version_string:
+db "IVT firmware v0.1.0",0
+
 strlen:
 	cld
 	xor dx,dx

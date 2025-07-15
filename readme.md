@@ -1,6 +1,8 @@
 # SimpleWhpDemo
 This project is a simple demo of running a real-mode DOS program in Windows 10 x64 by using Windows Hypervisor Platform (WHP).
 
+Current version: **1.1.1**. The bundled firmware (`ivt.fw`) is version **0.1.0**.
+
 ## Showcase
 With a minimal analog firmware, SimpleWhpDemo is running a hello world program which is also capable to be running in a real DOS system. (The screenshot demonstrates the comparison to DOSBox)
 ![Hello DOS](HelloDOS.png)

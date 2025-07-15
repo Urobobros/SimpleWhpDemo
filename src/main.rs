@@ -430,9 +430,11 @@ fn init_whpx()->HRESULT
 
 fn main()
 {
-	if init_whpx()==S_OK
-	{
-		println!("WHPX is present and initalized!");
+        println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
+        println!("IVT firmware version 0.1.0");
+        if init_whpx()==S_OK
+        {
+                println!("WHPX is present and initalized!");
 		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
 		{
 			println!("Successfully created virtual machine!");

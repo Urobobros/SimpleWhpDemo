@@ -321,7 +321,9 @@ HRESULT SwExecuteProgram()
 
 int main(int argc, char* argv[], char* envp[])
 {
-	PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
+       puts("SimpleWhpDemo version 1.1.1");
+       puts("IVT firmware version 0.1.0");
+       PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
 	SwCheckSystemHypervisor();
 	if (ExtExitFeat.X64CpuidExit && ExtExitFeat.X64MsrExit)
 	{
