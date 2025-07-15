@@ -4,9 +4,9 @@ Tento dokument rozděluje kroky popsané v [ami_bios_plan.md](ami_bios_plan.md) 
 
 ## Fáze 1: Základní integrace BIOSu
 - [ ] Získat binární soubor `ami_bios.bin` a uložit jej do projektu
-- [ ] Implementovat funkci `load_bios` v `src/main.rs`
-- [ ] Načíst BIOS na adresu `0xF0000` před spuštěním programu
-- [ ] Přidat základní logy o spuštění WHPX a vytvoření VM
+- [x] Implementovat funkci `load_bios` v `src/main.rs`
+- [x] Načíst BIOS na adresu `0xF0000` před spuštěním programu
+- [x] Přidat základní logy o spuštění WHPX a vytvoření VM
 
 ## Fáze 2: Detailní logování a ošetření chyb
 - [ ] Logovat jednotlivé fáze startu, včetně načítání BIOSu a programu

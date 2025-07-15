@@ -198,6 +198,11 @@ impl SimpleVirtualMachine
 			Err(e)=>Err(e)
 		}
 	}
+        fn load_bios(&self,file_name:&str,offset:usize)->Result<()> {
+                println!("[INFO] Loading BIOS image {file_name} at 0x{offset:05X}");
+                self.load_program(file_name,offset)
+        }
+
 
 	fn run(&self)
 	{
@@ -430,24 +435,29 @@ fn init_whpx()->HRESULT
 
 fn main()
 {
-	if init_whpx()==S_OK
-	{
-		println!("WHPX is present and initalized!");
-		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
-		{
-			println!("Successfully created virtual machine!");
-			if let Err(e)=vm.load_program("ivt.fw\0",0)
-			{
-				panic!("Failed to load firmware! Reason: {e}");
-			}
-			if let Err(e)=vm.load_program("hello.com\0",0x10100)
-			{
-				panic!("Failed to load program! Reason: {e}");
-			}
-			println!("============ Program Start ============");
-			vm.run();
-			println!("============= Program End =============");
-		}
-		let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};
-	}
+        println!("[INFO] Inicializace WHPX");
+        if init_whpx()==S_OK
+        {
+                println!("[INFO] WHPX je přítomný a inicializovaný");
+                if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
+                {
+                        println!("[INFO] Vytvořen virtuální stroj");
+                        if let Err(e)=vm.load_bios("ami_bios.bin\0",0xF0000)
+                        {
+                                println!("[ERROR] Nelze načíst AMI BIOS: {e}");
+                        }
+                        if let Err(e)=vm.load_program("ivt.fw\0",0)
+                        {
+                                panic!("Failed to load firmware! Reason: {e}");
+                        }
+                        if let Err(e)=vm.load_program("hello.com\0",0x10100)
+                        {
+                                panic!("Failed to load program! Reason: {e}");
+                        }
+                        println!("[INFO] ======== Spuštění ========");
+                        vm.run();
+                        println!("[INFO] ========= Konec ==========");
+                }
+                let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};
+        }
 }
