@@ -30,3 +30,20 @@ Planned development phases are:
 3. **Interrupt Support** – implement BIOS interrupts (`INT 0x10` and `INT 0x13`) and establish an interrupt descriptor table.
 4. **Disk I/O** – add disk image loading and implement BIOS disk services for reading sectors.
 5. **Interactive Demo** – run a real-mode program that prints “Hello from CGA” and document how to execute it in the repository README.
+
+## Implementation Status
+Progress on the roadmap items is tracked below:
+
+- [x] Initialize WHPX and create VM
+- [x] Map 1 MB real-mode memory
+- [x] Load BIOS ROM at `0xF0000`
+- [x] Setup real-mode registers (CS, IP, CR0)
+- [x] Implement HLT exit handling
+- [ ] Capture/emulate I/O ports (CGA, keyboard, disk)
+  - CGA output and keyboard input implemented; disk ports still pending
+- [x] BIOS INT 0x10 text output support
+- [ ] BIOS INT 0x13 disk access (currently a stub only)
+- [x] Simple screen output demo ("Hello from CGA")
+- [ ] Add disk image loading support
+- [ ] Add interrupt descriptor table and IRQ routing
+- [x] Document how to run the demo in README.md
