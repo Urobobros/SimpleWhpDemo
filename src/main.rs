@@ -280,8 +280,9 @@ impl Drop for SimpleVirtualMachine
 
 unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:*mut WHV_EMULATOR_IO_ACCESS_INFO)->HRESULT
 {
-	unsafe
-	{
+        unsafe
+        {
+                static mut NEW_LINE: bool = true;
                 if (*io_access).Direction==0
                 {
                         if (*io_access).Port==IO_PORT_KEYBOARD_INPUT
@@ -311,7 +312,14 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         for i in 0..(*io_access).AccessSize
                         {
                                 let ch=(((*io_access).Data>>(i*8)) as u8) as char;
+                                if NEW_LINE {
+                                        print!("[BIOS] ");
+                                        NEW_LINE=false;
+                                }
                                 print!("{}",ch);
+                                if ch=='\n' {
+                                        NEW_LINE=true;
+                                }
                         }
                         S_OK
                 }

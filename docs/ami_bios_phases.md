@@ -9,8 +9,8 @@ Tento dokument rozděluje kroky popsané v [ami_bios_plan.md](ami_bios_plan.md) 
 - [x] Přidat základní logy o spuštění WHPX a vytvoření VM
 
 ## Fáze 2: Detailní logování a ošetření chyb
-- [ ] Logovat jednotlivé fáze startu, včetně načítání BIOSu a programu
-- [ ] Zachytávat případné textové výstupy BIOSu do logu
+- [x] Logovat jednotlivé fáze startu, včetně načítání BIOSu a programu
+- [x] Zachytávat případné textové výstupy BIOSu do logu
 - [ ] Ošetřit chyby a přidat jejich popis do logu
 
 ## Fáze 3: Inspirace z PCem a QEMU
