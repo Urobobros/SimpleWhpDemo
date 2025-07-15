@@ -208,7 +208,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                puts("Input is not implemented!");
+                printf("Input from port 0x%04X is not implemented!\n", IoAccess->Port);
                 return E_NOTIMPL;
         }
         if (IoAccess->Port == IO_PORT_STRING_PRINT)

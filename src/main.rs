@@ -302,7 +302,7 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else
                         {
-                                println!("Input is not implemented!");
+                                println!("Input from port 0x{:04X} is not implemented!", (*io_access).Port);
                                 E_NOTIMPL
                         }
                 }
