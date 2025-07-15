@@ -1,7 +1,7 @@
 #pragma once
 
-// Give the guest 2MiB of memory.
-#define GuestMemorySize		0x200000
+// Give the guest 1MiB of memory.
+#define GuestMemorySize         0x100000
 
 #define IO_PORT_STRING_PRINT	0x0000
 #define IO_PORT_KEYBOARD_INPUT	0x0001
@@ -62,7 +62,7 @@ WHV_REGISTER_VALUE SwInitGprValueGroup[0x12] =
 {
 	{0},{0},{0},{0},{0xFFF0},{0},{0},{0},
 	{0},{0},{0},{0},{0},{0},{0},{0},
-	{0x100},{0x2}
+	{0xFFF0},{0x2}
 };
 
 WHV_REGISTER_NAME SwInitSrNameGroup[8] =
@@ -79,12 +79,12 @@ WHV_REGISTER_NAME SwInitSrNameGroup[8] =
 
 WHV_REGISTER_VALUE SwInitSrValueGroup[8] =
 {
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{11,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0xF0000,0xFFFF,0xF000,{11,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
 	{.Segment = {0,0xFFFF,0,{2,0,0,1,0,1,0,0,0}}},
 	{.Segment = {0,0xFFFF,0,{3,0,0,1,0,1,0,0,0}}}
 };

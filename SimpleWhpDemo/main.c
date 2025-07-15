@@ -329,7 +329,7 @@ int main(int argc, char* argv[], char* envp[])
 		if (hr == S_OK)
 		{
 			BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
-			BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0);
+			BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0xF0000);
 			puts("Virtual Machine is initialized successfully!");
 			if (LoadProgramResult)
 			{

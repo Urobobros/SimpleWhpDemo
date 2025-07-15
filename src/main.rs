@@ -83,14 +83,14 @@ const INITIAL_VCPU_REGISTER_VALUES:Aligned<A16,[WHV_REGISTER_VALUE;INITIAL_VCPU_
 		WHV_REGISTER_VALUE{Reg64:0},
 		WHV_REGISTER_VALUE{Reg64:0},
 		WHV_REGISTER_VALUE{Reg64:0},
-		WHV_REGISTER_VALUE{Reg64:0x100},
+		WHV_REGISTER_VALUE{Reg64:0xFFF0},
 		WHV_REGISTER_VALUE{Reg64:0x2},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x9B}}},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
-		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0x10000,Limit:0xFFFF,Selector:0x1000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0xF0000,Limit:0xFFFF,Selector:0xF000,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x9B}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
+		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x93}}},
 		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x82}}},
 		WHV_REGISTER_VALUE{Segment:WHV_X64_SEGMENT_REGISTER{Base:0,Limit:0xFFFF,Selector:0,Anonymous:WHV_X64_SEGMENT_REGISTER_0{Attributes:0x83}}},
 		WHV_REGISTER_VALUE{Table:WHV_X64_TABLE_REGISTER{Base:0,Pad:[0;3],Limit:0xFFFF}},
@@ -286,7 +286,7 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                         let mut buf=[0u8;1];
                                         if std::io::stdin().read_exact(&mut buf).is_ok()
                                         {
-                                                (*io_access).Data|=(buf[0] as u64)<< (i*8);
+                                                (*io_access).Data |= (buf[0] as u32) << (i * 8);
                                         }
                                         else
                                         {
@@ -436,7 +436,7 @@ fn main()
 		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
 		{
 			println!("Successfully created virtual machine!");
-			if let Err(e)=vm.load_program("ivt.fw\0",0)
+			if let Err(e)=vm.load_program("ivt.fw\0",0xF0000)
 			{
 				panic!("Failed to load firmware! Reason: {e}");
 			}

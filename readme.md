@@ -40,19 +40,39 @@ Always run the hypervisor with the assembled `.com` file rather than the source
 
 ## Firmware
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
-This demo project has implemented a minimal firmware with an IVT (Interrupt Vector Table) and certain interrupt handlers to output string and terminate the program. \
+This demo project includes a tiny BIOS image. When the VM starts it jumps to the
+firmware entry point at `F000:FFF0`. The firmware installs an Interrupt Vector
+Table and implements basic handlers for services such as `INT 10h` for text
+output and a stub `INT 13h` for disk access. Real‑mode programs rely on these
+services to print messages or cleanly terminate.
 To build the firmware, go to the test cases directory and execute:
 ```bat
 nasm ivt.asm -o ivt.fw -l ivt.lst
 ```
 Place the firmware file (`ivt.fw`) in the same directory with the hypervisor program to run.
 
+### Hello CGA demo
+To showcase the BIOS video interrupt, build the example that prints `Hello from CGA`:
+```bat
+nasm -f bin tests\hello_cga.asm -o hello.com -l hello.lst
+SimpleWhpDemo.exe hello.com
+```
+The firmware's INT 10h handler will capture the calls and output the string via
+the emulated CGA device.
+
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
 
 ## Rust
 This demo also features a Rust version. \
-Use `cargo run` command to build and run this demo.
+Use `cargo run` command to build and run this demo. If you are building on a
+non-Windows host, install a Windows target first:
+
+```sh
+rustup target add x86_64-pc-windows-gnu
+```
+
+Then pass `--target x86_64-pc-windows-gnu` to Cargo when checking or building.
 
 **Note**: This demo is written in Rust 2024. Make sure your compiler version is new enough.
 

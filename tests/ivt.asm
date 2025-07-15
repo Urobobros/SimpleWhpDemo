@@ -25,10 +25,10 @@ dw virt_stack_fault,int_default_cs
 dw virt_general_protection_fault,int_default_cs
 dw virt_page_fault,int_default_cs
 dw virt_reserved_exception,int_default_cs
-dw virt_x87_pending_fpu_fault,int_default_cs
+dw virt_int10_handler,int_default_cs
 dw virt_alignment_check_fault,int_default_cs
 dw virt_machine_check_abort,int_default_cs
-dw virt_simd_fpu_fault,int_default_cs
+dw virt_int13_handler,int_default_cs
 dw virt_virtualization_exception,int_default_cs
 dw virt_control_protection_fault,int_default_cs
 dw virt_reserved_exception,int_default_cs
@@ -281,9 +281,28 @@ dw virt_unknown_interrupt,int_default_cs
 dw virt_unknown_interrupt,int_default_cs
 dw virt_unknown_interrupt,int_default_cs
 
+virt_int10_handler:
+        cmp ah,0x0E
+        je int10_teletype
+        iret
+
+int10_teletype:
+        mov dx,str_prt_port
+        out dx,al
+        iret
+
+virt_int13_handler:
+        mov si,int13_print_string
+        call strlen
+        mov cx,dx
+        mov dx,str_prt_port
+        rep outsb
+        clc
+        iret
+
 virt_int21_handler:
-	cmp ah,9
-	je int21_print_string_stdout
+        cmp ah,9
+        je int21_print_string_stdout
 	cmp ah,0
 	je int21_termination
 	iret
@@ -373,6 +392,9 @@ interrupt_print_string:
 db "[Firmware] Unknown Interrupt!",10,'$',0
 halted_print_string:
 db "[Firmware] Halted due to int21h! /w ah=0",10,'$',0
+
+int13_print_string:
+db "[Firmware] INT13 called (stub)",10,'$',0
 
 strlen:
 	cld
