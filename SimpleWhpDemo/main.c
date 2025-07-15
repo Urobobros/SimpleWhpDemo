@@ -203,6 +203,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         }
                         return S_OK;
                 }
+                else if (IoAccess->Port == IO_PORT_STRING_PRINT)
+                {
+                        IoAccess->Data = 0;
+                        return S_OK;
+                }
                 puts("Input is not implemented!");
                 return E_NOTIMPL;
         }

@@ -295,6 +295,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 }
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_STRING_PRINT
+                        {
+                                (*io_access).Data = 0;
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input is not implemented!");
