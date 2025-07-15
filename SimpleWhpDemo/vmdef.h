@@ -6,6 +6,7 @@
 #define IO_PORT_STRING_PRINT	0x0000
 #define IO_PORT_KEYBOARD_INPUT	0x0001
 #define IO_PORT_DISK_DATA       0x00FF
+#define IO_PORT_POST            0x0080
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;

@@ -20,6 +20,7 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 const IO_PORT_DISK_DATA:u16=0x00FF;
+const IO_PORT_POST:u16=0x0080;
 
 const DISK_IMAGE_SIZE:usize=512;
 static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
@@ -306,9 +307,10 @@ impl Drop for SimpleVirtualMachine
 unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:*mut WHV_EMULATOR_IO_ACCESS_INFO)->HRESULT
 {
 	unsafe
-	{
+        {
                 if (*io_access).Direction==0
                 {
+                        println!("IN  port 0x{:04X}, size {}", (*io_access).Port, (*io_access).AccessSize);
                         if (*io_access).Port==IO_PORT_KEYBOARD_INPUT
                         {
                                 for i in 0..(*io_access).AccessSize
@@ -339,36 +341,49 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 }
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_POST
+                        {
+                                (*io_access).Data = 0;
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input from port 0x{:04X} is not implemented!", (*io_access).Port);
                                 E_NOTIMPL
                         }
                 }
-                else if (*io_access).Port==IO_PORT_STRING_PRINT
-                {
-                        for i in 0..(*io_access).AccessSize
-                        {
-                                let ch=(((*io_access).Data>>(i*8)) as u8) as char;
-                                print!("{}",ch);
-                        }
-                        S_OK
-                }
-                else if (*io_access).Port==IO_PORT_DISK_DATA
-                {
-                        for i in 0..(*io_access).AccessSize as usize
-                        {
-                                DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i*8)) as u8;
-                                DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
-                        }
-                        S_OK
-                }
                 else
                 {
-                        println!("Unknown I/O Port (0x{:04X}) is accessed!",(*io_access).Port);
-                        E_NOTIMPL
+                        println!("OUT port 0x{:04X}, size {}, value 0x{:X}", (*io_access).Port, (*io_access).AccessSize, (*io_access).Data);
+                        if (*io_access).Port==IO_PORT_STRING_PRINT
+                        {
+                                for i in 0..(*io_access).AccessSize
+                                {
+                                        let ch=(((*io_access).Data>>(i*8)) as u8) as char;
+                                        print!("{}",ch);
+                                }
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_DISK_DATA
+                        {
+                                for i in 0..(*io_access).AccessSize as usize
+                                {
+                                        DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i*8)) as u8;
+                                        DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
+                                }
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_POST
+                        {
+                                S_OK
+                        }
+                        else
+                        {
+                                println!("Unknown I/O Port (0x{:04X}) is accessed!",(*io_access).Port);
+                                E_NOTIMPL
+                        }
                 }
-	}
+        }
 }
 
 unsafe extern "system" fn emu_memory_callback(context:*const c_void,memory_access:*mut WHV_EMULATOR_MEMORY_ACCESS_INFO)->HRESULT

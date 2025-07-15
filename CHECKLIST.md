@@ -6,6 +6,7 @@
 - [x] Setup real‑mode registers (CS, IP, CR0)
 - [x] Implement HLT exit handling
 - [x] Capture/emulate I/O ports (CGA, keyboard, disk)
+- [x] Log POST port 0x0080 accesses
 - [x] BIOS INT 0x10 support (e.g. text output)
 - [x] BIOS INT 0x13 disk access
 - [x] Simple screen output demo ("Hello from CGA")

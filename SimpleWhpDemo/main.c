@@ -210,6 +210,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
 {
         if (IoAccess->Direction == 0)
         {
+                printf("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
                 if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -233,9 +234,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         }
                         return S_OK;
                 }
+                else if (IoAccess->Port == IO_PORT_POST)
+                {
+                        IoAccess->Data = 0;
+                        return S_OK;
+                }
                 printf("Input from port 0x%04X is not implemented!\n", IoAccess->Port);
                 return E_NOTIMPL;
         }
+        printf("OUT port 0x%04X, size %u, value 0x%X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -249,6 +256,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         DiskImage[DiskOffset] = ((PUCHAR)&IoAccess->Data)[i];
                         DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
                 }
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_POST)
+        {
                 return S_OK;
         }
         else

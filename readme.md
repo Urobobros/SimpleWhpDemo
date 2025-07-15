@@ -34,6 +34,8 @@ The firmware exposes a simple disk interface on port `0x00FF`
 (`IO_PORT_DISK_DATA`). When the emulator starts, it attempts to load a 512-byte
 `disk.img` file and make its contents available through this port. Reads and
 writes advance through the image sequentially.
+POST codes or delay loops that write to port `0x0080` are also captured. The
+emulator logs each I/O access so you can observe the guest's behavior.
 
 Example to assemble and run the keyboard demo on Windows:
 ```bat

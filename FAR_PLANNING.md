@@ -8,6 +8,7 @@ This project aims to emulate an 8088-class environment by leveraging Windows Hyp
 - Load a BIOS ROM at `0xF0000` and start execution in real mode.
 - Provide hypervisor exits for `HLT` instructions so the host can regain control.
 - Capture and emulate I/O ports for devices such as CGA video, keyboard and disk.
+- Log every I/O port access, including writes to the POST/IO delay port `0x0080`.
 - Offer basic BIOS services, including `INT 0x10` for text output and `INT 0x13` for disk access.
 - Display simple text using the CGA subsystem.
 
@@ -41,6 +42,7 @@ Progress on the roadmap items is tracked below:
 - [x] Implement HLT exit handling
 - [x] Capture/emulate I/O ports (CGA, keyboard, disk)
   - Disk port `0x00FF` now reads and writes from the loaded disk image
+  - POST port `0x0080` is logged for debugging
 - [x] BIOS INT 0x10 text output support
 - [x] BIOS INT 0x13 disk access
 - [x] Simple screen output demo ("Hello from CGA")
