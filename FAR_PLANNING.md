@@ -40,10 +40,10 @@ Progress on the roadmap items is tracked below:
 - [x] Setup real-mode registers (CS, IP, CR0)
 - [x] Implement HLT exit handling
 - [x] Capture/emulate I/O ports (CGA, keyboard, disk)
-  - Disk port `0x00FF` now handled as a stub for future disk support
+  - Disk port `0x00FF` now reads and writes from the loaded disk image
 - [x] BIOS INT 0x10 text output support
-- [ ] BIOS INT 0x13 disk access (currently a stub only)
+- [x] BIOS INT 0x13 disk access
 - [x] Simple screen output demo ("Hello from CGA")
-- [ ] Add disk image loading support
+- [x] Add disk image loading support
 - [ ] Add interrupt descriptor table and IRQ routing
 - [x] Document how to run the demo in README.md

@@ -7,8 +7,8 @@
 - [x] Implement HLT exit handling
 - [x] Capture/emulate I/O ports (CGA, keyboard, disk)
 - [x] BIOS INT 0x10 support (e.g. text output)
-- [ ] BIOS INT 0x13 disk access
+- [x] BIOS INT 0x13 disk access
 - [x] Simple screen output demo ("Hello from CGA")
-- [ ] Add disk image loading support
+- [x] Add disk image loading support
 - [ ] Add interrupt descriptor table and IRQ routing
 - [x] Document how to run the demo in README.md

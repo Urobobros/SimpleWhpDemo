@@ -1,4 +1,5 @@
 use std::{ffi::c_void, ptr::null_mut, slice, sync::atomic::{AtomicPtr, Ordering}};
+use std::fs::File;
 use std::io::Read;
 
 use windows::{core::*, Win32::{Foundation::*, System::{Hypervisor::*,Memory::*},Storage::FileSystem::*}};
@@ -19,6 +20,10 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 const IO_PORT_DISK_DATA:u16=0x00FF;
+
+const DISK_IMAGE_SIZE:usize=512;
+static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
+static mut DISK_OFFSET:usize=0;
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -249,13 +254,27 @@ impl SimpleVirtualMachine
 		}
 	}
 
-	fn try_emulate_io(&self,vcpu_ctxt:*const WHV_VP_EXIT_CONTEXT,io_ctxt:*const WHV_X64_IO_PORT_ACCESS_CONTEXT)->std::result::Result<WHV_EMULATOR_STATUS, Error>
-	{
-		unsafe
-		{
-			WHvEmulatorTryIoEmulation(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed),(self as *const Self).cast(),vcpu_ctxt,io_ctxt)
-		}
-	}
+        fn try_emulate_io(&self,vcpu_ctxt:*const WHV_VP_EXIT_CONTEXT,io_ctxt:*const WHV_X64_IO_PORT_ACCESS_CONTEXT)->std::result::Result<WHV_EMULATOR_STATUS, Error>
+        {
+                unsafe
+                {
+                        WHvEmulatorTryIoEmulation(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed),(self as *const Self).cast(),vcpu_ctxt,io_ctxt)
+                }
+        }
+}
+
+fn load_disk_image(path:&str) -> bool
+{
+        if let Ok(mut f)=File::open(path)
+        {
+                let mut buf=[0u8;DISK_IMAGE_SIZE];
+                if f.read_exact(&mut buf).is_ok()
+                {
+                        unsafe{DISK_IMAGE=buf;}
+                        return true;
+                }
+        }
+        false
 }
 
 impl Drop for SimpleVirtualMachine
@@ -303,7 +322,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else if (*io_access).Port==IO_PORT_DISK_DATA
                         {
-                                (*io_access).Data = 0;
+                                for i in 0..(*io_access).AccessSize as usize
+                                {
+                                        (*io_access).Data |= (DISK_IMAGE[DISK_OFFSET] as u32) << (i*8);
+                                        DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
+                                }
                                 S_OK
                         }
                         else
@@ -323,7 +346,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                 }
                 else if (*io_access).Port==IO_PORT_DISK_DATA
                 {
-                        // stub write
+                        for i in 0..(*io_access).AccessSize as usize
+                        {
+                                DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i*8)) as u8;
+                                DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
+                        }
                         S_OK
                 }
                 else
@@ -454,16 +481,20 @@ fn main()
 		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
 		{
 			println!("Successfully created virtual machine!");
-			if let Err(e)=vm.load_program("ivt.fw\0",0xF0000)
-			{
-				panic!("Failed to load firmware! Reason: {e}");
-			}
-			if let Err(e)=vm.load_program("hello.com\0",0x10100)
-			{
-				panic!("Failed to load program! Reason: {e}");
-			}
-			println!("============ Program Start ============");
-			vm.run();
+                        if let Err(e)=vm.load_program("ivt.fw\0",0xF0000)
+                        {
+                                panic!("Failed to load firmware! Reason: {e}");
+                        }
+                        if let Err(e)=vm.load_program("hello.com\0",0x10100)
+                        {
+                                panic!("Failed to load program! Reason: {e}");
+                        }
+                        if !load_disk_image("disk.img\0")
+                        {
+                                println!("Warning: disk image not loaded, disk reads will return zeros.");
+                        }
+                        println!("============ Program Start ============");
+                        vm.run();
 			println!("============= Program End =============");
 		}
 		let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};

@@ -30,8 +30,10 @@ Two example programs reside in the `tests` directory. `hello_dos.asm` prints a
 string using DOS interrupts, while `keyboard.asm` reads a byte from port
 `0x0001` (`IO_PORT_KEYBOARD_INPUT`) and echoes it through port `0x0000`
 (`IO_PORT_STRING_PRINT`).
-The firmware also exposes a stub disk interface on port `0x00FF`
-(`IO_PORT_DISK_DATA`) which currently just returns zero.
+The firmware exposes a simple disk interface on port `0x00FF`
+(`IO_PORT_DISK_DATA`). When the emulator starts, it attempts to load a 512-byte
+`disk.img` file and make its contents available through this port. Reads and
+writes advance through the image sequentially.
 
 Example to assemble and run the keyboard demo on Windows:
 ```bat
@@ -46,8 +48,8 @@ Always run the hypervisor with the assembled `.com` file rather than the source
 A legacy x86 computer system would load firmware data from its NVRAM (Non-Volatile RAM). The firmware would provide some functions to the bootloaders to invoke. \
 This demo project includes a tiny BIOS image. When the VM starts it jumps to the
 firmware entry point at `F000:FFF0`. The firmware installs an Interrupt Vector
-Table and implements basic handlers for services such as `INT 10h` for text
-output and a stub `INT 13h` for disk access. Real‑mode programs rely on these
+Table and implements handlers for services such as `INT 10h` for text
+output and `INT 13h` for disk reads. Real‑mode programs rely on these
 services to print messages or cleanly terminate.
 To build the firmware, go to the test cases directory and execute:
 ```bat

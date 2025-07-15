@@ -190,6 +190,22 @@ UINT32 SwDosStringLength(IN PSTR String, IN UINT32 MaximumLength)
 	return MaximumLength;
 }
 
+// Simple one-sector disk buffer
+#define DISK_IMAGE_SIZE 512
+static UCHAR DiskImage[DISK_IMAGE_SIZE];
+static UINT32 DiskOffset = 0;
+
+BOOL LoadDiskImage(PCSTR FileName)
+{
+        HANDLE hFile = CreateFileA(FileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile == INVALID_HANDLE_VALUE)
+                return FALSE;
+        DWORD dwRead = 0;
+        BOOL result = ReadFile(hFile, DiskImage, DISK_IMAGE_SIZE, &dwRead, NULL);
+        CloseHandle(hFile);
+        return result && dwRead == DISK_IMAGE_SIZE;
+}
+
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
         if (IoAccess->Direction == 0)
@@ -210,7 +226,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 }
                 else if (IoAccess->Port == IO_PORT_DISK_DATA)
                 {
-                        IoAccess->Data = 0; // stub read
+                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                        {
+                                ((PUCHAR)&IoAccess->Data)[i] = DiskImage[DiskOffset];
+                                DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
+                        }
                         return S_OK;
                 }
                 printf("Input from port 0x%04X is not implemented!\n", IoAccess->Port);
@@ -224,7 +244,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
         {
-                // stub write
+                for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                {
+                        DiskImage[DiskOffset] = ((PUCHAR)&IoAccess->Data)[i];
+                        DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
+                }
                 return S_OK;
         }
         else
@@ -345,15 +369,18 @@ int main(int argc, char* argv[], char* envp[])
 		HRESULT hr = SwInitializeVirtualMachine();
 		if (hr == S_OK)
 		{
-			BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
-			BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0xF0000);
-			puts("Virtual Machine is initialized successfully!");
-			if (LoadProgramResult)
-			{
-				puts("Program is loaded successfully!");
-				if (!LoadIvtFwResult)
-					puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
-				puts("============ Program Start ============");
+                        BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
+                        BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0xF0000);
+                        BOOL LoadDiskResult = LoadDiskImage("disk.img");
+                        puts("Virtual Machine is initialized successfully!");
+                        if (LoadProgramResult)
+                        {
+                                puts("Program is loaded successfully!");
+                                if (!LoadIvtFwResult)
+                                        puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
+                                if (!LoadDiskResult)
+                                        puts("Warning: disk image not loaded, disk reads will return zeros.");
+                                puts("============ Program Start ============");
 				SwExecuteProgram();
 				puts("============= Program End =============");
 			}

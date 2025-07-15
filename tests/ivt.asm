@@ -3,6 +3,7 @@ org 0x0
 
 %define int_default_cs  0
 %define str_prt_port    0
+%define disk_data_port  0xFF
 
 ; In an arbitrary real-mode environment, the IVT is usually stored
 ; at the base address of 0.
@@ -292,11 +293,26 @@ int10_teletype:
         iret
 
 virt_int13_handler:
+        cmp ah,2
+        je int13_read_sector
         mov si,int13_print_string
         call strlen
         mov cx,dx
         mov dx,str_prt_port
         rep outsb
+        stc
+        iret
+
+int13_read_sector:
+        push dx
+        mov dx,disk_data_port
+        mov cx,512
+.rdloop:
+        in al,dx
+        mov es:[bx],al
+        inc bx
+        loop .rdloop
+        pop dx
         clc
         iret
 
