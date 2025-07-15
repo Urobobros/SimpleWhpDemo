@@ -292,7 +292,7 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                         let mut buf=[0u8;1];
                                         if std::io::stdin().read_exact(&mut buf).is_ok()
                                         {
-                                                (*io_access).Data|=(buf[0] as u64)<< (i*8);
+                                                (*io_access).Data |= (buf[0] as u32) << (i * 8);
                                         }
                                         else
                                         {
