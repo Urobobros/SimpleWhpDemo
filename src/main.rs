@@ -18,6 +18,7 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
+const IO_PORT_DISK_DATA:u16=0x00FF;
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -300,6 +301,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 (*io_access).Data = 0;
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_DISK_DATA
+                        {
+                                (*io_access).Data = 0;
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input from port 0x{:04X} is not implemented!", (*io_access).Port);
@@ -313,6 +319,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 let ch=(((*io_access).Data>>(i*8)) as u8) as char;
                                 print!("{}",ch);
                         }
+                        S_OK
+                }
+                else if (*io_access).Port==IO_PORT_DISK_DATA
+                {
+                        // stub write
                         S_OK
                 }
                 else

@@ -30,6 +30,8 @@ Two example programs reside in the `tests` directory. `hello_dos.asm` prints a
 string using DOS interrupts, while `keyboard.asm` reads a byte from port
 `0x0001` (`IO_PORT_KEYBOARD_INPUT`) and echoes it through port `0x0000`
 (`IO_PORT_STRING_PRINT`).
+The firmware also exposes a stub disk interface on port `0x00FF`
+(`IO_PORT_DISK_DATA`) which currently just returns zero.
 
 Example to assemble and run the keyboard demo on Windows:
 ```bat

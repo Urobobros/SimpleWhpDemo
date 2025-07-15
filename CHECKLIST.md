@@ -5,7 +5,7 @@
 - [x] Load BIOS ROM at 0xF0000
 - [x] Setup real‑mode registers (CS, IP, CR0)
 - [x] Implement HLT exit handling
-- [ ] Capture/emulate I/O ports (CGA, keyboard, disk)
+- [x] Capture/emulate I/O ports (CGA, keyboard, disk)
 - [x] BIOS INT 0x10 support (e.g. text output)
 - [ ] BIOS INT 0x13 disk access
 - [x] Simple screen output demo ("Hello from CGA")

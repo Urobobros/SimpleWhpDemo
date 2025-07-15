@@ -208,6 +208,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
+                else if (IoAccess->Port == IO_PORT_DISK_DATA)
+                {
+                        IoAccess->Data = 0; // stub read
+                        return S_OK;
+                }
                 printf("Input from port 0x%04X is not implemented!\n", IoAccess->Port);
                 return E_NOTIMPL;
         }
@@ -215,6 +220,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         putc(((PUCHAR)&IoAccess->Data)[i], stdout);
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_DISK_DATA)
+        {
+                // stub write
                 return S_OK;
         }
         else

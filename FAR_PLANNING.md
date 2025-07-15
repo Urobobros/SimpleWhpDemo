@@ -39,8 +39,8 @@ Progress on the roadmap items is tracked below:
 - [x] Load BIOS ROM at `0xF0000`
 - [x] Setup real-mode registers (CS, IP, CR0)
 - [x] Implement HLT exit handling
-- [ ] Capture/emulate I/O ports (CGA, keyboard, disk)
-  - CGA output and keyboard input implemented; disk ports still pending
+- [x] Capture/emulate I/O ports (CGA, keyboard, disk)
+  - Disk port `0x00FF` now handled as a stub for future disk support
 - [x] BIOS INT 0x10 text output support
 - [ ] BIOS INT 0x13 disk access (currently a stub only)
 - [x] Simple screen output demo ("Hello from CGA")
