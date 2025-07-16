@@ -255,19 +255,20 @@ BOOL LoadDiskImage(PCSTR FileName)
         return result && dwRead == DISK_IMAGE_SIZE;
 }
 
+static const char* GetPortName(USHORT port)
+{
+        switch (port)
+        {
+        case IO_PORT_STRING_PRINT: return "STRING_PRINT";
+        case IO_PORT_KEYBOARD_INPUT: return "KEYBOARD_INPUT";
+        case IO_PORT_DISK_DATA:    return "DISK_DATA";
+        case IO_PORT_POST:         return "POST";
+        default:                   return "UNKNOWN";
+        }
+}
+
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
-        auto GetPortName=[&](USHORT port)->const char*
-        {
-                switch(port)
-                {
-                case IO_PORT_STRING_PRINT: return "STRING_PRINT";
-                case IO_PORT_KEYBOARD_INPUT: return "KEYBOARD_INPUT";
-                case IO_PORT_DISK_DATA: return "DISK_DATA";
-                case IO_PORT_POST: return "POST";
-                default: return "UNKNOWN";
-                }
-        };
         if (IoAccess->Direction == 0)
         {
                 printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
