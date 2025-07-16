@@ -78,6 +78,20 @@ SimpleWhpDemo.exe hello.com ami_8088_bios_31jan89.bin
 ```
 When the file is missing the emulator falls back to `ivt.fw` automatically.
 
+### Example boot log
+When the AMI BIOS is used, you can observe its POST codes and other port
+activity on the host console. A short excerpt:
+
+```
+SimpleWhpDemo version 1.1.1
+IVT firmware version 0.1.0
+OUT port 0x0080 (POST), size 1, value 0x00
+OUT port 0x0080 (POST), size 1, value 0x01
+OUT port 0x3F8 (UNKNOWN), size 1, value 0x55
+```
+
+These messages help track the BIOS start-up sequence similarly to PCem.
+
 ### Hello CGA demo
 To showcase the BIOS video interrupt, build the example that prints `Hello from CGA`:
 ```bat

@@ -14,6 +14,17 @@ Inspirací je emulátor PCem, který podporuje právě tento BIOS pro AMI XT klo
 - **Testovací aplikace** – jednoduchý loader, který vyvolá `INT 10h` a zobrazí „HELLO“.
 - **Konfigurace** – volba velikosti RAM, cesta k ROM a možnost simulovat cold start.
 
+### Přehled spouštění BIOSu
+1. Po resetu CPU provede skok z adresy `0xFFFF0` do začátku ROM (`F000:xxxx`).
+2. BIOS inicializuje segmentové registry a zásobník.
+3. Proběhne POST – test paměti a zařízení, postupné kódy se zapisují na port `0x80`.
+4. Po inicializaci se nastaví tabulka přerušení a služeb `INT 10h`, `INT 13h` atd.
+5. Nakonec BIOS zavolá `INT 19h`, čímž předá řízení zavaděči operačního systému.
+
+### Poznámka k PCem
+Emulátor PCem mapuje ROM na adresu `0xF0000` a resetovací vektor obsahuje
+instrukci `jmp far` do této oblasti. Stejný princip používá i tento projekt.
+
 ## 🛣️ Roadmap
 1. **M1** – Čtení ROM a její mapování do paměti (`ivt.fw`).
 2. **M2** – Volitelně načíst originální BIOS `ami_8088_bios_31jan89.bin`.
