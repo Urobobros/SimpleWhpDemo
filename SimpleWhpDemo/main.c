@@ -466,8 +466,10 @@ int main(int argc, char* argv[], char* envp[])
                         {
                                 puts("AMI BIOS not found, falling back to " FALLBACK_BIOS);
                                 LoadIvtFwResult = LoadVirtualMachineProgram(FALLBACK_BIOS, 0xF0000);
+                                if (LoadIvtFwResult)
+                                        BiosFileName = FALLBACK_BIOS;
                         }
-                        if (LoadIvtFwResult)
+                        if (LoadIvtFwResult && strcmp(BiosFileName, FALLBACK_BIOS) == 0)
                         {
                                 // Place a far jump at the x86 reset vector (FFFF0h)
                                 // so the CPU jumps into the loaded firmware.
