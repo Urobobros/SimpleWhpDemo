@@ -221,10 +221,14 @@ impl SimpleVirtualMachine
 				{
 					panic!("Failed to allocate virtual memory! Reason: {}",unsafe{GetLastError()}.to_hresult().message());
 				}
-				if let Err(e)=unsafe{WHvMapGpaRange(h,p,0,memory_size as u64,WHvMapGpaRangeFlagRead|WHvMapGpaRangeFlagWrite|WHvMapGpaRangeFlagExecute)}
-				{
-					panic!("Failed to map guest memory! Reason: {e}");
-				}
+                                if let Err(e)=unsafe{WHvMapGpaRange(h,p,0,memory_size as u64,WHvMapGpaRangeFlagRead|WHvMapGpaRangeFlagWrite|WHvMapGpaRangeFlagExecute)}
+                                {
+                                        panic!("Failed to map guest memory! Reason: {e}");
+                                }
+                                if let Err(e)=unsafe{WHvMapGpaRange(h,p,memory_size as u64,memory_size as u64,WHvMapGpaRangeFlagRead|WHvMapGpaRangeFlagWrite|WHvMapGpaRangeFlagExecute)}
+                                {
+                                        panic!("Failed to map high memory mirror! Reason: {e}");
+                                }
 				Ok
 				(
 					Self
@@ -465,31 +469,22 @@ unsafe extern "system" fn emu_memory_callback(context:*const c_void,memory_acces
 {
 	unsafe
 	{
-		let ctxt:&SimpleVirtualMachine=&(*context.cast());
-		let len:usize=(*memory_access).AccessSize as usize;
-		let gpa_start:u64=(*memory_access).GpaAddress;
-		let gpa_end:u64=gpa_start+len as u64-1;
-		if (0..ctxt.size as u64).contains(&gpa_start) && (0..ctxt.size as u64).contains(&gpa_end)
-		{
-			let hva:*mut u8=ctxt.vmem.byte_add((*memory_access).GpaAddress as usize).cast();
-			// println!("Memory GPA=0x{:X} has HVA {hva:p}!",(*memory_access).GpaAddress);
-			if (*memory_access).Direction!=0
-			{
-				let vmem:&mut [u8]=slice::from_raw_parts_mut(hva,len);
-				vmem.copy_from_slice(&(&(*memory_access).Data)[0..len]);
-			}
-			else
-			{
-				let vmem:&[u8]=slice::from_raw_parts(hva,len);
-				(&mut (*memory_access).Data)[0..len].copy_from_slice(vmem);
-			}
-			S_OK
-		}
-		else
-		{
-			println!("Memory-Access Overflow is detected! GPA=0x{:016X}, Access-Size={} bytes!",gpa_start,(*memory_access).AccessSize);
-			E_FAIL
-		}
+                let ctxt:&SimpleVirtualMachine=&(*context.cast());
+                let len:usize=(*memory_access).AccessSize as usize;
+                let mut gpa=(*memory_access).GpaAddress as usize % ctxt.size;
+                for i in 0..len
+                {
+                        let hva: *mut u8 = ctxt.vmem.byte_add((gpa + i) % ctxt.size).cast();
+                        if (*memory_access).Direction != 0
+                        {
+                                unsafe { *hva = (*memory_access).Data[i] };
+                        }
+                        else
+                        {
+                                unsafe { (*memory_access).Data[i] = *hva };
+                        }
+                }
+                S_OK
 	}
 }
 

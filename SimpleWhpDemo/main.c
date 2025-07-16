@@ -121,8 +121,13 @@ HRESULT SwInitializeVirtualMachine()
 	else
 		goto Cleanup;
 	RtlZeroMemory(VirtualMemory, GuestMemorySize);
-	hr = WHvMapGpaRange(hPart, VirtualMemory, 0, GuestMemorySize, WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
-	if (hr != S_OK)goto Cleanup;
+        hr = WHvMapGpaRange(hPart, VirtualMemory, 0, GuestMemorySize, WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        if (hr != S_OK) goto Cleanup;
+        /* Map the same memory a second time to mirror addresses above 1MB
+           so that real-mode wraparound (A20 line low) works correctly. */
+        hr = WHvMapGpaRange(hPart, VirtualMemory, GuestMemorySize, GuestMemorySize,
+                           WHvMapGpaRangeFlagRead | WHvMapGpaRangeFlagWrite | WHvMapGpaRangeFlagExecute);
+        if (hr != S_OK) goto Cleanup;
 	// Create Virtual Processors.
 	hr = WHvCreateVirtualProcessor(hPart, 0, 0);
 	if (hr == S_OK)
@@ -350,17 +355,16 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
 
 HRESULT SwEmulatorMmioCallback(IN PVOID Context, IN OUT WHV_EMULATOR_MEMORY_ACCESS_INFO* MemoryAccess)
 {
-	PVOID HvaAddress = (PVOID)((ULONG_PTR)VirtualMemory + MemoryAccess->GpaAddress);
-	if(MemoryAccess->GpaAddress+MemoryAccess->AccessSize>=GuestMemorySize)
-	{
-		printf("Memory-Access Overflow is detected! GPA=0x%016llX, Access-Size=%u bytes\n", MemoryAccess->GpaAddress, MemoryAccess->AccessSize);
-		return E_FAIL;
-	}
-	if (MemoryAccess->Direction)
-		RtlCopyMemory(HvaAddress, MemoryAccess->Data, MemoryAccess->AccessSize);
-	else
-		RtlCopyMemory(MemoryAccess->Data, HvaAddress, MemoryAccess->AccessSize);
-	return S_OK;
+        ULONG_PTR gpa = MemoryAccess->GpaAddress % GuestMemorySize;
+        for (UINT32 i = 0; i < MemoryAccess->AccessSize; i++)
+        {
+                PBYTE hva = (PBYTE)VirtualMemory + ((gpa + i) % GuestMemorySize);
+                if (MemoryAccess->Direction)
+                        *hva = ((PBYTE)MemoryAccess->Data)[i];
+                else
+                        ((PBYTE)MemoryAccess->Data)[i] = *hva;
+        }
+        return S_OK;
 }
 
 HRESULT SwEmulatorGetVirtualRegistersCallback(IN PVOID Context, IN CONST WHV_REGISTER_NAME* RegisterNames, IN UINT32 RegisterCount, OUT WHV_REGISTER_VALUE* RegisterValues)

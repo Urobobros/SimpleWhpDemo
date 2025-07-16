@@ -78,6 +78,10 @@ SimpleWhpDemo.exe hello.com ami_8088_bios_31jan89.bin
 ```
 When the file is missing the emulator falls back to `ivt.fw` automatically.
 
+To emulate the 8088's 20‑bit address wrap‑around, the guest's first megabyte of
+memory is mirrored at `0x100000`. This prevents crashes when the BIOS executes
+instructions just past the 1 MB boundary during the POST sequence.
+
 ### Example boot log
 When the AMI BIOS is used, you can observe its POST codes and other port
 activity on the host console. A short excerpt:
