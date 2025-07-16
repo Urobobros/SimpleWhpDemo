@@ -22,6 +22,18 @@ const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 const IO_PORT_DISK_DATA:u16=0x00FF;
 const IO_PORT_POST:u16=0x0080;
 
+fn port_name(port:u16)->&'static str
+{
+    match port
+    {
+        IO_PORT_STRING_PRINT=>"STRING_PRINT",
+        IO_PORT_KEYBOARD_INPUT=>"KEYBOARD_INPUT",
+        IO_PORT_DISK_DATA=>"DISK_DATA",
+        IO_PORT_POST=>"POST",
+        _=>"UNKNOWN"
+    }
+}
+
 const DISK_IMAGE_SIZE:usize=512;
 static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
 static mut DISK_OFFSET:usize=0;
@@ -356,7 +368,7 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
         {
                 if (*io_access).Direction==0
                 {
-                        println!("IN  port 0x{:04X}, size {}", (*io_access).Port, (*io_access).AccessSize);
+                println!("IN  port 0x{:04X} ({}) , size {}", (*io_access).Port, port_name((*io_access).Port), (*io_access).AccessSize);
                         if (*io_access).Port==IO_PORT_KEYBOARD_INPUT
                         {
                                 for i in 0..(*io_access).AccessSize
@@ -394,13 +406,13 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else
                         {
-                                println!("Input from port 0x{:04X} is not implemented!", (*io_access).Port);
+                                println!("Input from port 0x{:04X} ({}) is not implemented!", (*io_access).Port, port_name((*io_access).Port));
                                 E_NOTIMPL
                         }
                 }
                 else
                 {
-                        println!("OUT port 0x{:04X}, size {}, value 0x{:X}", (*io_access).Port, (*io_access).AccessSize, (*io_access).Data);
+                        println!("OUT port 0x{:04X} ({}) , size {}, value 0x{:X}", (*io_access).Port, port_name((*io_access).Port), (*io_access).AccessSize, (*io_access).Data);
                         if (*io_access).Port==IO_PORT_STRING_PRINT
                         {
                                 for i in 0..(*io_access).AccessSize

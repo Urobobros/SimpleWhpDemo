@@ -37,6 +37,16 @@ writes advance through the image sequentially.
 POST codes or delay loops that write to port `0x0080` are also captured. The
 emulator logs each I/O access so you can observe the guest's behavior.
 
+### I/O Ports
+
+| Port | Purpose |
+|------|---------|
+| `0x0000` | Characters written here are printed to the host console and stored in the CGA text buffer. |
+| `0x0001` | Keyboard input. The emulator reads a byte from `stdin` for each access. |
+| `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
+| `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
+| other | Any other port triggers an `Unknown I/O Port` message. |
+
 Example to assemble and run the keyboard demo on Windows:
 ```bat
 nasm -f bin tests\keyboard.asm -o keyboard.com -l keyboard.lst

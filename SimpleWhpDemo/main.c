@@ -255,9 +255,20 @@ BOOL LoadDiskImage(PCSTR FileName)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
+        auto GetPortName=[&](USHORT port)->const char*
+        {
+                switch(port)
+                {
+                case IO_PORT_STRING_PRINT: return "STRING_PRINT";
+                case IO_PORT_KEYBOARD_INPUT: return "KEYBOARD_INPUT";
+                case IO_PORT_DISK_DATA: return "DISK_DATA";
+                case IO_PORT_POST: return "POST";
+                default: return "UNKNOWN";
+                }
+        };
         if (IoAccess->Direction == 0)
         {
-                printf("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
+                printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
                 if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -286,10 +297,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                printf("Input from port 0x%04X is not implemented!\n", IoAccess->Port);
+                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                 return E_NOTIMPL;
         }
-        printf("OUT port 0x%04X, size %u, value 0x%X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+        printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
