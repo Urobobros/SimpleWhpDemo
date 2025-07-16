@@ -5,6 +5,53 @@
 #include <WinHvEmulation.h>
 #include "vmdef.h"
 
+#define CGA_COLS 80
+#define CGA_ROWS 25
+static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
+static UINT32 CgaCursor = 0;
+
+static void CgaPutChar(char ch)
+{
+        if(ch=='\r')
+        {
+                CgaCursor -= CgaCursor % CGA_COLS;
+                return;
+        }
+        if(ch=='\n')
+        {
+                CgaCursor += CGA_COLS;
+        }
+        else
+        {
+                if(CgaCursor>=CGA_COLS*CGA_ROWS)
+                {
+                        memmove(CgaBuffer, CgaBuffer + CGA_COLS,
+                                sizeof(USHORT)*(CGA_COLS*(CGA_ROWS-1)));
+                        for(UINT32 i=0;i<CGA_COLS;i++)
+                                CgaBuffer[CGA_COLS*(CGA_ROWS-1)+i]=0x0720;
+                        CgaCursor -= CGA_COLS;
+                }
+                CgaBuffer[CgaCursor++] = (0x07 << 8) | (UCHAR)ch;
+        }
+        if(CgaCursor>=CGA_COLS*CGA_ROWS)
+                CgaCursor = CGA_COLS*CGA_ROWS-1;
+}
+
+static void PrintCgaBuffer()
+{
+        puts("\n----- CGA Text Buffer -----");
+        for(UINT32 r=0;r<CGA_ROWS;r++)
+        {
+                for(UINT32 c=0;c<CGA_COLS;c++)
+                {
+                        char ch = (char)(CgaBuffer[r*CGA_COLS+c] & 0xFF);
+                        if(ch==0) ch=' ';
+                        putc(ch, stdout);
+                }
+                putc('\n', stdout);
+        }
+}
+
 HRESULT SwCheckSystemHypervisor()
 {
 	UINT32 ReturnLength;
@@ -246,7 +293,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                        putc(((PUCHAR)&IoAccess->Data)[i], stdout);
+                {
+                        char ch = ((PUCHAR)&IoAccess->Data)[i];
+                        putc(ch, stdout);
+                        CgaPutChar(ch);
+                }
                 return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -403,8 +454,9 @@ int main(int argc, char* argv[], char* envp[])
                                 if (!LoadDiskResult)
                                         puts("Warning: disk image not loaded, disk reads will return zeros.");
                                 puts("============ Program Start ============");
-				SwExecuteProgram();
-				puts("============= Program End =============");
+                               SwExecuteProgram();
+                                puts("============= Program End =============");
+                                PrintCgaBuffer();
 			}
 			else
 				puts("Failed to load the program!");

@@ -26,6 +26,52 @@ const DISK_IMAGE_SIZE:usize=512;
 static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
 static mut DISK_OFFSET:usize=0;
 
+const CGA_COLS:usize=80;
+const CGA_ROWS:usize=25;
+static mut CGA_BUFFER:[u16;CGA_COLS*CGA_ROWS]=[0x0720;CGA_COLS*CGA_ROWS];
+static mut CGA_CURSOR:usize=0;
+
+fn cga_put_char(ch:u8)
+{
+    unsafe {
+        if ch==b'\r' {
+            CGA_CURSOR -= CGA_CURSOR % CGA_COLS;
+            return;
+        }
+        if ch==b'\n' {
+            CGA_CURSOR += CGA_COLS;
+        } else {
+            if CGA_CURSOR>=CGA_COLS*CGA_ROWS {
+                CGA_BUFFER.copy_within(CGA_COLS..,0);
+                for i in 0..CGA_COLS {
+                    CGA_BUFFER[CGA_COLS*(CGA_ROWS-1)+i]=0x0720;
+                }
+                CGA_CURSOR -= CGA_COLS;
+            }
+            CGA_BUFFER[CGA_CURSOR]=0x0700|(ch as u16);
+            CGA_CURSOR+=1;
+        }
+        if CGA_CURSOR>=CGA_COLS*CGA_ROWS {
+            CGA_CURSOR=CGA_COLS*CGA_ROWS-1;
+        }
+    }
+}
+
+fn print_cga_buffer()
+{
+    unsafe {
+        println!("\n----- CGA Text Buffer -----");
+        for r in 0..CGA_ROWS {
+            for c in 0..CGA_COLS {
+                let mut ch=(CGA_BUFFER[r*CGA_COLS+c]&0xFF) as u8;
+                if ch==0 { ch=b' '; }
+                print!("{}", ch as char);
+            }
+            println!("");
+        }
+    }
+}
+
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
 [
@@ -359,8 +405,9 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         {
                                 for i in 0..(*io_access).AccessSize
                                 {
-                                        let ch=(((*io_access).Data>>(i*8)) as u8) as char;
-                                        print!("{}",ch);
+                                        let ch=(((*io_access).Data>>(i*8)) as u8);
+                                        print!("{}", ch as char);
+                                        cga_put_char(ch);
                                 }
                                 S_OK
                         }
@@ -521,8 +568,9 @@ fn main()
                         }
                         println!("============ Program Start ============");
                         vm.run();
-			println!("============= Program End =============");
-		}
-		let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};
-	}
+                        println!("============= Program End =============");
+                        print_cga_buffer();
+                }
+                let _=unsafe{WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed))};
+        }
 }

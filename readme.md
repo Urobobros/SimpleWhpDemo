@@ -69,6 +69,11 @@ SimpleWhpDemo.exe hello.com
 The firmware's INT 10h handler will capture the calls and output the string via
 the emulated CGA device.
 
+While the program runs, characters sent through INT 10h are also stored in an
+80×25 text buffer representing the CGA screen at `0xB8000`. After the guest
+halts, the emulator prints this buffer so you can see the final screen
+contents.
+
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
 
