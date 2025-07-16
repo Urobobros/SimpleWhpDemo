@@ -241,6 +241,8 @@ UINT32 SwDosStringLength(IN PSTR String, IN UINT32 MaximumLength)
 #define DISK_IMAGE_SIZE 512
 static UCHAR DiskImage[DISK_IMAGE_SIZE];
 static UINT32 DiskOffset = 0;
+static USHORT LastUnknownPort = 0;
+static UINT32 UnknownPortCount = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -326,7 +328,19 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         }
         else
         {
+                if (IoAccess->Port == LastUnknownPort)
+                        UnknownPortCount++;
+                else
+                {
+                        LastUnknownPort = IoAccess->Port;
+                        UnknownPortCount = 1;
+                }
                 printf("Unknown I/O Port: 0x%04X is accessed!\n", IoAccess->Port);
+                if (UnknownPortCount >= 2)
+                {
+                        printf("Repeated access to unknown port 0x%04X, terminating.\n", IoAccess->Port);
+                        exit(1);
+                }
                 return E_NOTIMPL;
         }
 }

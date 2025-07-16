@@ -45,7 +45,7 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x0001` | Keyboard input. The emulator reads a byte from `stdin` for each access. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
-| other | Any other port triggers an `Unknown I/O Port` message. |
+| other | Any other port triggers an `Unknown I/O Port` message. Repeated access to the same unknown port terminates the program. |
 
 Example to assemble and run the keyboard demo on Windows:
 ```bat

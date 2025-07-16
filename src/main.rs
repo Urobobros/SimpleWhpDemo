@@ -1,3 +1,4 @@
+#![allow(static_mut_refs)]
 use std::{ffi::c_void, ptr::null_mut, slice, sync::atomic::{AtomicPtr, Ordering}};
 use std::fs::File;
 use std::io::Read;
@@ -37,6 +38,8 @@ fn port_name(port:u16)->&'static str
 const DISK_IMAGE_SIZE:usize=512;
 static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
 static mut DISK_OFFSET:usize=0;
+static mut LAST_UNKNOWN_PORT:u16=0;
+static mut UNKNOWN_PORT_COUNT:u32=0;
 
 const CGA_COLS:usize=80;
 const CGA_ROWS:usize=25;
@@ -438,7 +441,17 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else
                         {
+                                if (*io_access).Port == LAST_UNKNOWN_PORT {
+                                        UNKNOWN_PORT_COUNT += 1;
+                                } else {
+                                        LAST_UNKNOWN_PORT = (*io_access).Port;
+                                        UNKNOWN_PORT_COUNT = 1;
+                                }
                                 println!("Unknown I/O Port (0x{:04X}) is accessed!",(*io_access).Port);
+                                if UNKNOWN_PORT_COUNT >= 2 {
+                                        println!("Repeated access to unknown port 0x{:04X}, terminating.", (*io_access).Port);
+                                        std::process::exit(1);
+                                }
                                 E_NOTIMPL
                         }
                 }
