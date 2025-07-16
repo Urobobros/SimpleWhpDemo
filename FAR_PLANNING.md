@@ -7,7 +7,7 @@ Emulovat IBM‑XT‑klon s procesorem Intel 8088 (cca 8 MHz) a pamětí 64–
 Inspirací je emulátor PCem, který podporuje právě tento BIOS pro AMI XT klony. Projekt může využít open‑source komponenty nebo vlastní interpret CPU.
 
 ## 🛠 Architektura
-- **Core emulátoru** – nekonečná smyčka CPU s emulací paměti (RAM/ROM) a I/O portů.
+- **Core emulátoru** – nekonečná smyčka CPU s emulací paměti (RAM/ROM) a I/O portů. Využívá rozhraní Windows Hypervisor Platform (známé také jako WHPX), takže je kompatibilní s nástroji jako QEMU.
 - **Načtení BIOSu** – ROM je načtena z `ami_8088_bios_31jan89.bin` a zmapována do adresního prostoru `0xF0000–0xFFFFF`.
 - **Reset & Boot** – po resetu se nastaví `CS:IP = F000:FFF0` a spustí se BIOS.
 - **I/O a debug** – logování instrukcí a portů s možností přepnout podrobný výstup.

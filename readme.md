@@ -14,6 +14,7 @@ Since this project relies on Microsoft Hypervisor, you will have to Install WHP 
 ![WHP in Control Panel](Capture.PNG)
 
 Please note that even if Device Guard is running, this program cannot run without WHP.
+The underlying API is the same one used by the WHPX accelerator for QEMU, so everything here works with WHPX as well.
 
 ## Build
 To build this project, you are required to install [VS2022](https://visualstudio.microsoft.com/) and [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/).
