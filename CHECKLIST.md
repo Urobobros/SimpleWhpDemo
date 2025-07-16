@@ -2,6 +2,7 @@
 
 - [x] Načíst a alokovat paměť RAM/ROM dle konfigurace
 - [x] ROM ami_8088_bios_31jan89.bin dostupná a zapsaná do ROM oblasti
+- [x] Možnost zadat cestu k BIOSu (výchozí `ami_8088_bios_31jan89.bin`, fallback `ivt.fw`)
 - [x] CPU reset → nastavit CS:IP, SP, DS, ES
 - [x] Core emulace: FETCH, DECODE, EXECUTE cyklus
 - [x] Emulace instrukcí: MOV, INT, JMP, CALL, RET, atd.

@@ -6,6 +6,9 @@ use std::io::Read;
 use windows::{core::*, Win32::{Foundation::*, System::{Hypervisor::*,Memory::*},Storage::FileSystem::*}};
 use aligned::*;
 
+const DEFAULT_BIOS:&str="ami_8088_bios_31jan89.bin\0";
+const FALLBACK_BIOS:&str="ivt.fw\0";
+
 static GLOBAL_EMULATOR_HANDLE:AtomicPtr<c_void>=AtomicPtr::new(null_mut());
 static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 {
@@ -572,18 +575,32 @@ fn main()
 {
         println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
         println!("IVT firmware version 0.1.0");
+        let args:Vec<String>=std::env::args().collect();
+        let program=args.get(1).map(String::as_str).unwrap_or("hello.com");
+        let bios=args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
         if init_whpx()==S_OK
         {
                 println!("WHPX is present and initalized!");
-		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
-		{
-			println!("Successfully created virtual machine!");
-                        if let Err(e)=vm.load_program("ivt.fw\0",0xF0000)
+                if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
+                {
+                        println!("Successfully created virtual machine!");
+                        if let Err(_)=vm.load_program(bios,0xF0000)
                         {
-                                panic!("Failed to load firmware! Reason: {e}");
+                                if bios==DEFAULT_BIOS
+                                {
+                                        println!("AMI BIOS not found, falling back to {FALLBACK_BIOS}");
+                                        if let Err(e)=vm.load_program(FALLBACK_BIOS,0xF0000)
+                                        {
+                                                panic!("Failed to load firmware! Reason: {e}");
+                                        }
+                                }
+                                else
+                                {
+                                        panic!("Failed to load firmware!");
+                                }
                         }
                         vm.patch_reset_vector();
-                        if let Err(e)=vm.load_program("hello.com\0",0x10100)
+                        if let Err(e)=vm.load_program(program,0x10100)
                         {
                                 panic!("Failed to load program! Reason: {e}");
                         }

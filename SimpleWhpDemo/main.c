@@ -7,6 +7,8 @@
 
 #define CGA_COLS 80
 #define CGA_ROWS 25
+#define DEFAULT_BIOS "ami_8088_bios_31jan89.bin"
+#define FALLBACK_BIOS "ivt.fw"
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
 
@@ -451,6 +453,7 @@ int main(int argc, char* argv[], char* envp[])
        puts("SimpleWhpDemo version 1.1.1");
        puts("IVT firmware version 0.1.0");
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
+       PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
 	SwCheckSystemHypervisor();
 	if (ExtExitFeat.X64CpuidExit && ExtExitFeat.X64MsrExit)
 	{
@@ -458,7 +461,12 @@ int main(int argc, char* argv[], char* envp[])
 		if (hr == S_OK)
 		{
                         BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
-                        BOOL LoadIvtFwResult = LoadVirtualMachineProgram("ivt.fw", 0xF0000);
+                        BOOL LoadIvtFwResult = LoadVirtualMachineProgram(BiosFileName, 0xF0000);
+                        if (!LoadIvtFwResult && strcmp(BiosFileName, DEFAULT_BIOS) == 0)
+                        {
+                                puts("AMI BIOS not found, falling back to " FALLBACK_BIOS);
+                                LoadIvtFwResult = LoadVirtualMachineProgram(FALLBACK_BIOS, 0xF0000);
+                        }
                         if (LoadIvtFwResult)
                         {
                                 // Place a far jump at the x86 reset vector (FFFF0h)
