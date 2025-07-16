@@ -1,16 +1,14 @@
-# Development Checklist
+# Kontrolní seznam
 
-- [x] Initialize WHPX and create VM
-- [x] Map 1 MB real‑mode memory
-- [x] Load BIOS ROM at 0xF0000
-- [x] Setup real‑mode registers (CS, IP, CR0)
-- [x] Implement HLT exit handling
-- [x] Capture/emulate I/O ports (CGA, keyboard, disk)
-- [x] Log POST port 0x0080 accesses
-- [x] BIOS INT 0x10 support (e.g. text output)
-- [x] BIOS INT 0x13 disk access
-- [x] Simple screen output demo ("Hello from CGA")
-- [x] Add disk image loading support
-- [ ] Add interrupt descriptor table and IRQ routing
-- [x] Document how to run the demo in README.md
-- [x] Implement full 80×25 CGA text memory (PCem-style)
+- [ ] Načíst a alokovat paměť RAM/ROM dle konfigurace
+- [ ] ROM ami_8088_bios_31jan89.bin dostupná a zapsaná do ROM oblasti
+- [ ] CPU reset → nastavit CS:IP, SP, DS, ES
+- [ ] Core emulace: FETCH, DECODE, EXECUTE cyklus
+- [ ] Emulace instrukcí: MOV, INT, JMP, CALL, RET, atd.
+- [ ] Emulace IO portů pro BIOS operace (např. video)
+- [ ] Debug log CPU cyklů + IO
+- [ ] Demo: Program volající INT 0x10, vytiskne text
+- [ ] Log konzole či grafika „HELLO“ zobrazení
+- [ ] Edge‑cases: neexistující instrukce, adresa mimo RAM
+- [ ] CI konfigurace + regresní testy
+- [ ] Dokumentace pro uživatele: jak spustit demo od A do Z
