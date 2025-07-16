@@ -31,6 +31,7 @@ Planned development phases are:
 3. **Interrupt Support** – implement BIOS interrupts (`INT 0x10` and `INT 0x13`) and establish an interrupt descriptor table.
 4. **Disk I/O** – add disk image loading and implement BIOS disk services for reading sectors.
 5. **Interactive Demo** – run a real-mode program that prints “Hello from CGA” and document how to execute it in the repository README.
+6. **Full CGA Video Memory** – after the above milestones are complete, implement a full 80×25 CGA text buffer similar to PCem for richer text output.
 
 ## Implementation Status
 Progress on the roadmap items is tracked below:
@@ -49,3 +50,4 @@ Progress on the roadmap items is tracked below:
 - [x] Add disk image loading support
 - [ ] Add interrupt descriptor table and IRQ routing
 - [x] Document how to run the demo in README.md
+- [ ] Implement full 80×25 CGA text memory (PCem-style)

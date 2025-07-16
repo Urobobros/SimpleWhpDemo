@@ -13,3 +13,4 @@
 - [x] Add disk image loading support
 - [ ] Add interrupt descriptor table and IRQ routing
 - [x] Document how to run the demo in README.md
+- [ ] Implement full 80×25 CGA text memory (PCem-style)
