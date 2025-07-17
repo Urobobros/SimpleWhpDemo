@@ -33,7 +33,9 @@ static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACK
 };
 
 const IO_PORT_STRING_PRINT: u16 = 0x0000;
-const IO_PORT_KEYBOARD_INPUT: u16 = 0x0001;
+const IO_PORT_KEYBOARD_INPUT: u16 = 0x0001; // legacy
+const IO_PORT_KBD_DATA: u16 = 0x0060;
+const IO_PORT_KBD_STATUS: u16 = 0x0064;
 const IO_PORT_DISK_DATA: u16 = 0x00FF;
 const IO_PORT_POST: u16 = 0x0080;
 const IO_PORT_PIC_MASTER_CMD: u16 = 0x0020;
@@ -57,6 +59,8 @@ fn port_name(port: u16) -> &'static str {
     match port {
         IO_PORT_STRING_PRINT => "STRING_PRINT",
         IO_PORT_KEYBOARD_INPUT => "KEYBOARD_INPUT",
+        IO_PORT_KBD_DATA => "KBD_DATA",
+        IO_PORT_KBD_STATUS => "KBD_STATUS",
         IO_PORT_DISK_DATA => "DISK_DATA",
         IO_PORT_POST => "POST",
         IO_PORT_PIC_MASTER_CMD => "PIC_MASTER_CMD",
@@ -563,7 +567,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 port_name((*io_access).Port),
                 (*io_access).AccessSize
             );
-            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT {
+            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA {
                 for i in 0..(*io_access).AccessSize {
                     let mut buf = [0u8; 1];
                     if std::io::stdin().read_exact(&mut buf).is_ok() {
@@ -572,6 +576,9 @@ unsafe extern "system" fn emu_io_port_callback(
                         return E_FAIL;
                     }
                 }
+                S_OK
+            } else if (*io_access).Port == IO_PORT_KBD_STATUS {
+                (*io_access).Data = 0;
                 S_OK
             } else if (*io_access).Port == IO_PORT_STRING_PRINT {
                 (*io_access).Data = 0;
@@ -697,6 +704,11 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
                 PIC_SLAVE_IMR = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_KBD_DATA
+                || (*io_access).Port == IO_PORT_KBD_STATUS
+                || (*io_access).Port == IO_PORT_KEYBOARD_INPUT
+            {
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
                 || (*io_access).Port == IO_PORT_VIDEO_MISC_B8

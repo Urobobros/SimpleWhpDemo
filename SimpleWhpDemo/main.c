@@ -293,6 +293,8 @@ static const char* GetPortName(USHORT port)
         {
         case IO_PORT_STRING_PRINT:    return "STRING_PRINT";
         case IO_PORT_KEYBOARD_INPUT:  return "KEYBOARD_INPUT";
+        case IO_PORT_KBD_DATA:        return "KBD_DATA";
+        case IO_PORT_KBD_STATUS:      return "KBD_STATUS";
         case IO_PORT_DISK_DATA:       return "DISK_DATA";
         case IO_PORT_POST:            return "POST";
         case IO_PORT_PIC_MASTER_CMD:  return "PIC_MASTER_CMD";
@@ -320,13 +322,18 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         if (IoAccess->Direction == 0)
         {
                 printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
-                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT || IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         {
                                 int ch = getchar();
                                 ((PUCHAR)&IoAccess->Data)[i] = (UCHAR)ch;
                         }
+                        return S_OK;
+                }
+                else if (IoAccess->Port == IO_PORT_KBD_STATUS)
+                {
+                        IoAccess->Data = 0;
                         return S_OK;
                 }
                 else if (IoAccess->Port == IO_PORT_STRING_PRINT)
@@ -496,6 +503,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
         {
                 PicSlaveImr = (UCHAR)IoAccess->Data;
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS || IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+        {
                 return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
