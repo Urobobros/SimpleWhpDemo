@@ -17,6 +17,7 @@
 #define IO_PORT_MDA_MODE        0x03B8
 #define IO_PORT_CGA_MODE        0x03D8
 #define IO_PORT_DMA_PAGE3       0x0083
+#define IO_PORT_DMA_MASK        0x000A
 #define IO_PORT_VIDEO_MISC_B8   0x00B8
 #define IO_PORT_SPECIAL_213     0x0213
 #define IO_PORT_PIT_CMD         0x0008

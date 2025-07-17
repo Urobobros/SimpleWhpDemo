@@ -276,6 +276,7 @@ static UCHAR PitCounter0 = 0;
 static UCHAR PitCounter1 = 0;
 static UCHAR DmaTemp = 0;
 static UCHAR DmaMode = 0;
+static UCHAR DmaMask = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -306,6 +307,7 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_MDA_MODE:        return "MDA_MODE";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_MODE:       return "DMA_MODE";
+        case IO_PORT_DMA_MASK:       return "DMA_MASK";
         case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
        case IO_PORT_DMA_TEMP:        return "DMA_TEMP";
        case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
@@ -365,6 +367,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
                {
                        IoAccess->Data = MdaMode;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_DMA_MASK)
+               {
+                       IoAccess->Data = DmaMask;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_MODE)
@@ -463,6 +470,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_MDA_MODE)
        {
                MdaMode = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_DMA_MASK)
+       {
+               DmaMask = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_MODE)
