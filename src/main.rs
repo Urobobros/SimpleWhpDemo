@@ -595,7 +595,7 @@ fn main()
                                         panic!("Failed to load firmware!");
                                 }
                         }
-                        else
+                        else if bios==FALLBACK_BIOS
                         {
                                 vm.patch_reset_vector();
                         }

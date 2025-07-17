@@ -473,12 +473,12 @@ int main(int argc, char* argv[], char* envp[])
                                 if (LoadIvtFwResult)
                                         BiosFileName = FALLBACK_BIOS;
                         }
-                        if (LoadIvtFwResult)
+                        if (LoadIvtFwResult && strcmp(BiosFileName, FALLBACK_BIOS) == 0)
                         {
-                                /* Patch the reset vector so execution jumps
-                                   into the loaded BIOS image regardless of
-                                   whether it's the fallback firmware or the
-                                   optional AMI ROM. */
+                                /* Patch the reset vector when using the minimal
+                                   fallback firmware so execution jumps to its
+                                   start at F000:0000. Real BIOS images already
+                                   contain their own reset vector. */
                                 PUCHAR mem = (PUCHAR)VirtualMemory;
                                 mem[0xFFFF0] = 0xEA;        // jmp far ptr
                                 mem[0xFFFF1] = 0x00;        // offset 0x0000
