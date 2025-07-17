@@ -13,6 +13,11 @@
 #define IO_PORT_PIC_SLAVE_CMD   0x00A0
 #define IO_PORT_PIC_SLAVE_DATA  0x00A1
 #define IO_PORT_CGA_MODE        0x03D8
+#define IO_PORT_DMA_PAGE3       0x0083
+#define IO_PORT_VIDEO_MISC_B8   0x00B8
+#define IO_PORT_SPECIAL_213     0x0213
+#define IO_PORT_PIT_CMD         0x0008
+#define IO_PORT_TIMER_MISC      0x0063
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;
