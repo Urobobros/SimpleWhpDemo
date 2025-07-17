@@ -48,6 +48,7 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
 | `0x0061` | System control port used for speaker and NMI masking. |
+| `0x03B8` | MDA mode control register. Reads return the last value written. |
 | `0x03D8` | CGA mode control register. Reads return the last value written. |
 | other | Any other port triggers an `Unknown I/O Port` message. Repeated access to the same unknown port terminates the program. |
 
