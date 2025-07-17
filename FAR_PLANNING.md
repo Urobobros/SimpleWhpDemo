@@ -43,7 +43,7 @@ instrukci `jmp far` do této oblasti. Stejný princip používá i tento projekt
 - [x] Podpora `INT 10h` a jednoduchý textový výstup
 - [x] Načtení diskového obrazu a `INT 13h` (jednosektorový stub)
 - [x] Ukázkový program „HELLO“
-- [ ] Skript pro disassemblování BIOSu
+- [x] Skript pro disassemblování BIOSu
 - [ ] Plná textová CGA paměť 80×25 (plánováno)
 
 ## 🧪 Integrace a testy

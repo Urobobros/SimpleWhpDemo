@@ -66,6 +66,9 @@ patches the CPU reset vector (`FFFF0h`) with a far jump to the firmware start
 handlers for services such as `INT 10h` for text output and `INT 13h` for disk
 reads. Real‑mode programs rely on these services to print messages or cleanly
 terminate.
+When the full AMI BIOS is provided instead of the minimal firmware, the
+emulator checks that the ROM's reset vector also contains a far jump and prints
+its destination.
 To build the firmware, go to the test cases directory and execute:
 ```bat
 nasm ivt.asm -o ivt.fw -l ivt.lst
@@ -97,7 +100,7 @@ OUT port 0x3F8 (UNKNOWN), size 1, value 0x55
 These messages help track the BIOS start-up sequence similarly to PCem.
 
 ### Disassembling the AMI BIOS
-If you have the AMI BIOS image available, run `python3 scripts/disasm_ami.py ami_8088_bios_31jan89.bin 40` to dump the first 40 lines of disassembly using `ndisasm`. This helps confirm the reset vector at `0xFFFF0` and inspect early I/O operations.
+If you have the AMI BIOS image available, run `python3 scripts/disasm_ami.py ami_8088_bios_31jan89.bin 40` to dump the first 40 lines of disassembly using `ndisasm`. A short commentary on the beginning of the ROM is provided in [docs/AMI_DISASM.md](docs/AMI_DISASM.md).
 
 
 ### Hello CGA demo

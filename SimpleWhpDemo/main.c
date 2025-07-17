@@ -486,6 +486,26 @@ int main(int argc, char* argv[], char* envp[])
                                 mem[0xFFFF3] = 0x00;        // segment 0xF000
                                 mem[0xFFFF4] = 0xF0;
                         }
+                        else if (LoadIvtFwResult)
+                        {
+                                /* Verify that the real BIOS contains the expected
+                                   far jump at the reset vector. */
+                                PUCHAR mem = (PUCHAR)VirtualMemory;
+                                if (mem[0xFFFF0] == 0xEA)
+                                {
+                                        printf("BIOS reset vector jumps to %02X%02X:%02X%02X\n",
+                                               mem[0xFFFF4], mem[0xFFFF3], mem[0xFFFF2], mem[0xFFFF1]);
+                                }
+                                else
+                                {
+                                        puts("Warning: BIOS reset vector is unexpected; patching.");
+                                        mem[0xFFFF0] = 0xEA;
+                                        mem[0xFFFF1] = 0x00;
+                                        mem[0xFFFF2] = 0x00;
+                                        mem[0xFFFF3] = 0x00;
+                                        mem[0xFFFF4] = 0xF0;
+                                }
+                        }
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
                         puts("Virtual Machine is initialized successfully!");
                         if (LoadProgramResult)
