@@ -1163,6 +1163,8 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
+    // Emit a short beep so sound output can be verified right away.
+    openal_beep(750, 60);
     let args: Vec<String> = std::env::args().collect();
     let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
     let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
