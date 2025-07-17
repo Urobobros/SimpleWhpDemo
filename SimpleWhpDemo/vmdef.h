@@ -44,6 +44,7 @@
 #define IO_PORT_CRTC_INDEX_CGA  0x03D4
 #define IO_PORT_CRTC_DATA_CGA   0x03D5
 #define IO_PORT_ATTR_CGA        0x03D9
+#define IO_PORT_CGA_STATUS      0x03DA
 #define IO_PORT_FDC_DOR         0x03F2
 #define IO_PORT_FDC_STATUS      0x03F4
 #define IO_PORT_FDC_DATA        0x03F5

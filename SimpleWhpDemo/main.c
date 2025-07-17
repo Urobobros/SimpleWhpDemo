@@ -42,11 +42,16 @@ static void CgaPutChar(char ch)
 static void PrintCgaBuffer()
 {
         puts("\n----- CGA Text Buffer -----");
+        USHORT* vram = NULL;
+        if (VirtualMemory)
+                vram = (USHORT*)((PUCHAR)VirtualMemory + 0xB8000);
         for(UINT32 r=0;r<CGA_ROWS;r++)
         {
                 for(UINT32 c=0;c<CGA_COLS;c++)
                 {
-                        char ch = (char)(CgaBuffer[r*CGA_COLS+c] & 0xFF);
+                        USHORT cell = CgaBuffer[r*CGA_COLS+c];
+                        if (vram) cell = vram[r*CGA_COLS+c];
+                        char ch = (char)(cell & 0xFF);
                         if(ch==0) ch=' ';
                         putc(ch, stdout);
                 }
@@ -287,12 +292,16 @@ static UCHAR Port03bcVal = 0;
 static UCHAR Port03faVal = 0;
 static UCHAR Port0201Val = 0;
 static UCHAR PitCounter2 = 0;
+static BOOL  SpeakerOn = FALSE;
 static UCHAR CrtcMdaIndex = 0;
 static UCHAR CrtcMdaData = 0;
+static UCHAR CrtcMdaRegs[32] = {0};
 static UCHAR AttrMda = 0;
 static UCHAR CrtcCgaIndex = 0;
 static UCHAR CrtcCgaData = 0;
+static UCHAR CrtcCgaRegs[32] = {0};
 static UCHAR AttrCga = 0;
+static UCHAR CgaStatus = 0;
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
@@ -355,6 +364,7 @@ static const char* GetPortName(USHORT port)
        case IO_PORT_CRTC_INDEX_CGA:  return "CGA_INDEX";
        case IO_PORT_CRTC_DATA_CGA:   return "CGA_DATA";
        case IO_PORT_ATTR_CGA:        return "CGA_ATTR";
+       case IO_PORT_CGA_STATUS:      return "CGA_STATUS";
        case IO_PORT_FDC_DOR:         return "FDC_DOR";
        case IO_PORT_FDC_STATUS:      return "FDC_STATUS";
        case IO_PORT_FDC_DATA:        return "FDC_DATA";
@@ -531,7 +541,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
                {
-                       IoAccess->Data = CrtcMdaData;
+                       IoAccess->Data = CrtcMdaRegs[CrtcMdaIndex];
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_MDA)
@@ -546,12 +556,18 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
                {
-                       IoAccess->Data = CrtcCgaData;
+                       IoAccess->Data = CrtcCgaRegs[CrtcCgaIndex];
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_CGA)
                {
                        IoAccess->Data = AttrCga;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_CGA_STATUS)
+               {
+                       CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                       IoAccess->Data = CgaStatus;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_FDC_DOR)
@@ -620,6 +636,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
        {
                SysCtrl = (UCHAR)IoAccess->Data;
+               BOOL new_state = (SysCtrl & 0x03) == 0x03;
+               if (new_state && !SpeakerOn)
+               {
+                       DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
+                       Beep(freq, 60);
+               }
+               SpeakerOn = new_state;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_MDA_MODE)
@@ -722,12 +745,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
        {
-               CrtcMdaIndex = (UCHAR)IoAccess->Data;
+               CrtcMdaIndex = (UCHAR)IoAccess->Data & 0x1F;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
        {
                CrtcMdaData = (UCHAR)IoAccess->Data;
+               CrtcMdaRegs[CrtcMdaIndex] = CrtcMdaData;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_ATTR_MDA)
@@ -737,17 +761,23 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
        {
-               CrtcCgaIndex = (UCHAR)IoAccess->Data;
+               CrtcCgaIndex = (UCHAR)IoAccess->Data & 0x1F;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
        {
                CrtcCgaData = (UCHAR)IoAccess->Data;
+               CrtcCgaRegs[CrtcCgaIndex] = CrtcCgaData;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_ATTR_CGA)
        {
                AttrCga = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CGA_STATUS)
+       {
+               CgaStatus = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_DOR)
