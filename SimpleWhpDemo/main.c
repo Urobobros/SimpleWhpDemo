@@ -266,6 +266,9 @@ static UCHAR DiskImage[DISK_IMAGE_SIZE];
 static UINT32 DiskOffset = 0;
 static USHORT LastUnknownPort = 0;
 static UINT32 UnknownPortCount = 0;
+static UCHAR PicMasterImr = 0;
+static UCHAR PicSlaveImr = 0;
+static UCHAR SysCtrl = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -282,10 +285,15 @@ static const char* GetPortName(USHORT port)
 {
         switch (port)
         {
-        case IO_PORT_STRING_PRINT: return "STRING_PRINT";
-        case IO_PORT_KEYBOARD_INPUT: return "KEYBOARD_INPUT";
-        case IO_PORT_DISK_DATA:    return "DISK_DATA";
-        case IO_PORT_POST:         return "POST";
+        case IO_PORT_STRING_PRINT:    return "STRING_PRINT";
+        case IO_PORT_KEYBOARD_INPUT:  return "KEYBOARD_INPUT";
+        case IO_PORT_DISK_DATA:       return "DISK_DATA";
+        case IO_PORT_POST:            return "POST";
+        case IO_PORT_PIC_MASTER_CMD:  return "PIC_MASTER_CMD";
+        case IO_PORT_PIC_MASTER_DATA: return "PIC_MASTER_DATA";
+        case IO_PORT_PIC_SLAVE_CMD:   return "PIC_SLAVE_CMD";
+        case IO_PORT_PIC_SLAVE_DATA:  return "PIC_SLAVE_DATA";
+        case IO_PORT_SYS_CTRL:        return "SYS_CTRL";
         default:                   return "UNKNOWN";
         }
 }
@@ -309,23 +317,43 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                else if (IoAccess->Port == IO_PORT_DISK_DATA)
-                {
-                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                        {
-                                ((PUCHAR)&IoAccess->Data)[i] = DiskImage[DiskOffset];
-                                DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
-                        }
-                        return S_OK;
-                }
-                else if (IoAccess->Port == IO_PORT_POST)
-                {
-                        IoAccess->Data = 0;
-                        return S_OK;
-                }
-                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
-                return E_NOTIMPL;
-        }
+               else if (IoAccess->Port == IO_PORT_DISK_DATA)
+               {
+                       for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                       {
+                               ((PUCHAR)&IoAccess->Data)[i] = DiskImage[DiskOffset];
+                               DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
+                       }
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_POST)
+               {
+                       IoAccess->Data = 0;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_SYS_CTRL)
+               {
+                       IoAccess->Data = SysCtrl;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
+               {
+                       IoAccess->Data = PicMasterImr;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
+               {
+                       IoAccess->Data = PicSlaveImr;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
+               {
+                       IoAccess->Data = 0;
+                       return S_OK;
+               }
+               printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
+               return E_NOTIMPL;
+       }
         printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
@@ -348,6 +376,31 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         }
         else if (IoAccess->Port == IO_PORT_POST)
         {
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
+        {
+                SysCtrl = (UCHAR)IoAccess->Data;
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
+        {
+                PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
+        {
+                PicSlaveImr = (UCHAR)IoAccess->Data;
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
+        {
+                PicMasterImr = (UCHAR)IoAccess->Data;
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
+        {
+                PicSlaveImr = (UCHAR)IoAccess->Data;
                 return S_OK;
         }
         else
@@ -524,6 +577,14 @@ int main(int argc, char* argv[], char* envp[])
                                         mem[0xFFFF3] = 0x00;
                                         mem[0xFFFF4] = 0xF0;
                                 }
+                        }
+                        if (LoadIvtFwResult)
+                        {
+                                PUCHAR mem = (PUCHAR)VirtualMemory;
+                                printf("BIOS loaded from %s (%lu bytes)\n", BiosFileName, BiosSize);
+                                printf("Reset vector bytes: %02X %02X %02X %02X %02X\n",
+                                       mem[0xFFFF0], mem[0xFFFF1], mem[0xFFFF2],
+                                       mem[0xFFFF3], mem[0xFFFF4]);
                         }
                         if (LoadIvtFwResult && BiosSize < 0x10000)
                                 MirrorBiosRegion(0xF0000, BiosSize);
