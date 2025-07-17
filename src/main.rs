@@ -74,6 +74,7 @@ const IO_PORT_ATTR_MDA: u16 = 0x03B9;
 const IO_PORT_CRTC_INDEX_CGA: u16 = 0x03D4;
 const IO_PORT_CRTC_DATA_CGA: u16 = 0x03D5;
 const IO_PORT_ATTR_CGA: u16 = 0x03D9;
+const IO_PORT_CGA_STATUS: u16 = 0x03DA;
 const IO_PORT_FDC_DOR: u16 = 0x03F2;
 const IO_PORT_FDC_STATUS: u16 = 0x03F4;
 const IO_PORT_FDC_DATA: u16 = 0x03F5;
@@ -121,6 +122,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_CRTC_INDEX_CGA => "CGA_INDEX",
         IO_PORT_CRTC_DATA_CGA => "CGA_DATA",
         IO_PORT_ATTR_CGA => "CGA_ATTR",
+        IO_PORT_CGA_STATUS => "CGA_STATUS",
         IO_PORT_FDC_DOR => "FDC_DOR",
         IO_PORT_FDC_STATUS => "FDC_STATUS",
         IO_PORT_FDC_DATA => "FDC_DATA",
@@ -156,10 +158,13 @@ static mut PORT_0201_VAL: u8 = 0;
 static mut PIT_COUNTER2: u8 = 0;
 static mut CRTC_MDA_INDEX: u8 = 0;
 static mut CRTC_MDA_DATA: u8 = 0;
+static mut CRTC_MDA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_MDA: u8 = 0;
 static mut CRTC_CGA_INDEX: u8 = 0;
 static mut CRTC_CGA_DATA: u8 = 0;
+static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_CGA: u8 = 0;
+static mut CGA_STATUS: u8 = 0;
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
@@ -197,12 +202,16 @@ fn cga_put_char(ch: u8) {
     }
 }
 
-fn print_cga_buffer() {
+fn print_cga_buffer(mem: *const u8) {
     unsafe {
         println!("\n----- CGA Text Buffer -----");
         for r in 0..CGA_ROWS {
             for c in 0..CGA_COLS {
-                let mut ch = (CGA_BUFFER[r * CGA_COLS + c] & 0xFF) as u8;
+                let mut cell = CGA_BUFFER[r * CGA_COLS + c];
+                if !mem.is_null() {
+                    cell = *(mem.add(0xB8000 + 2 * (r * CGA_COLS + c)) as *const u16);
+                }
+                let mut ch = (cell & 0xFF) as u8;
                 if ch == 0 {
                     ch = b' ';
                 }
@@ -750,7 +759,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = CRTC_MDA_INDEX as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_DATA_MDA {
-                (*io_access).Data = CRTC_MDA_DATA as u32;
+                (*io_access).Data = CRTC_MDA_REGS[CRTC_MDA_INDEX as usize] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_MDA {
                 (*io_access).Data = ATTR_MDA as u32;
@@ -759,10 +768,14 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = CRTC_CGA_INDEX as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
-                (*io_access).Data = CRTC_CGA_DATA as u32;
+                (*io_access).Data = CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_CGA {
                 (*io_access).Data = ATTR_CGA as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CGA_STATUS {
+                CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
                 (*io_access).Data = FDC_DOR as u32;
@@ -886,22 +899,27 @@ unsafe extern "system" fn emu_io_port_callback(
                 PORT_0201_VAL = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_INDEX_MDA {
-                CRTC_MDA_INDEX = (*io_access).Data as u8;
+                CRTC_MDA_INDEX = (*io_access).Data as u8 & 0x1F;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_DATA_MDA {
                 CRTC_MDA_DATA = (*io_access).Data as u8;
+                CRTC_MDA_REGS[CRTC_MDA_INDEX as usize] = CRTC_MDA_DATA;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_MDA {
                 ATTR_MDA = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA {
-                CRTC_CGA_INDEX = (*io_access).Data as u8;
+                CRTC_CGA_INDEX = (*io_access).Data as u8 & 0x1F;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
                 CRTC_CGA_DATA = (*io_access).Data as u8;
+                CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] = CRTC_CGA_DATA;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_CGA {
                 ATTR_CGA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CGA_STATUS {
+                CGA_STATUS = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
                 FDC_DOR = (*io_access).Data as u8;
@@ -1116,7 +1134,7 @@ fn main() {
             println!("============ Program Start ============");
             vm.run();
             println!("============= Program End =============");
-            print_cga_buffer();
+            print_cga_buffer(vm.vmem as *const u8);
         }
         let _ =
             unsafe { WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed)) };
