@@ -51,6 +51,8 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x0061` | System control port used for speaker and NMI masking. |
 | `0x000A` | DMA single-channel mask register. Reads return the last value written. |
 | `0x000B` | DMA mode register for the 8237 controller. Reads return the last value written. |
+| `0x03B4` | MDA CRTC index register. Reads return the last value written. |
+| `0x03B5` | MDA CRTC data register. Each indexed register retains the last value written. |
 | `0x03B8` | MDA mode control register. Reads return the last value written. |
 | `0x03D8` | CGA mode control register. Reads return the last value written. |
 | other | Any other port triggers an `Unknown I/O Port` message. Repeated access to the same unknown port terminates the program. |

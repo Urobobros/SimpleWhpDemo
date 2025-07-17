@@ -15,6 +15,8 @@
 #define IO_PORT_SYS_PORTC       0x0062
 #define IO_PORT_PIC_SLAVE_CMD   0x00A0
 #define IO_PORT_PIC_SLAVE_DATA  0x00A1
+#define IO_PORT_MDA_CRTC_IDX    0x03B4
+#define IO_PORT_MDA_CRTC_DATA   0x03B5
 #define IO_PORT_MDA_MODE        0x03B8
 #define IO_PORT_CGA_MODE        0x03D8
 #define IO_PORT_DMA_PAGE3       0x0083

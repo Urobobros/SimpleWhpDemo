@@ -271,6 +271,8 @@ static UCHAR PicSlaveImr = 0;
 static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
+static UCHAR MdaCrtcIndex = 0;
+static UCHAR MdaCrtcRegs[32] = {0};
 static UCHAR PitControl = 0;
 static UCHAR PitCounter0 = 0;
 static UCHAR PitCounter1 = 0;
@@ -306,6 +308,8 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_PIC_SLAVE_DATA:  return "PIC_SLAVE_DATA";
         case IO_PORT_SYS_CTRL:        return "SYS_CTRL";
         case IO_PORT_SYS_PORTC:       return "SYS_PORTC";
+        case IO_PORT_MDA_CRTC_IDX:    return "MDA_CRTC_IDX";
+        case IO_PORT_MDA_CRTC_DATA:   return "MDA_CRTC_DATA";
         case IO_PORT_MDA_MODE:        return "MDA_MODE";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_MODE:       return "DMA_MODE";
@@ -377,6 +381,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
                {
                        IoAccess->Data = MdaMode;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_MDA_CRTC_IDX)
+               {
+                       IoAccess->Data = MdaCrtcIndex;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_MDA_CRTC_DATA)
+               {
+                       UCHAR idx = MdaCrtcIndex & 0x1F;
+                       IoAccess->Data = MdaCrtcRegs[idx];
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_MASK)
@@ -484,6 +499,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_MDA_MODE)
        {
                MdaMode = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_MDA_CRTC_IDX)
+       {
+               MdaCrtcIndex = ((UCHAR)IoAccess->Data) & 0x1F;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_MDA_CRTC_DATA)
+       {
+               UCHAR idx = MdaCrtcIndex & 0x1F;
+               MdaCrtcRegs[idx] = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_MASK)
