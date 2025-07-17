@@ -473,10 +473,12 @@ int main(int argc, char* argv[], char* envp[])
                                 if (LoadIvtFwResult)
                                         BiosFileName = FALLBACK_BIOS;
                         }
-                        if (LoadIvtFwResult && strcmp(BiosFileName, FALLBACK_BIOS) == 0)
+                        if (LoadIvtFwResult)
                         {
-                                // Place a far jump at the x86 reset vector (FFFF0h)
-                                // so the CPU jumps into the loaded firmware.
+                                /* Patch the reset vector so execution jumps
+                                   into the loaded BIOS image regardless of
+                                   whether it's the fallback firmware or the
+                                   optional AMI ROM. */
                                 PUCHAR mem = (PUCHAR)VirtualMemory;
                                 mem[0xFFFF0] = 0xEA;        // jmp far ptr
                                 mem[0xFFFF1] = 0x00;        // offset 0x0000

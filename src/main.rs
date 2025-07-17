@@ -579,7 +579,6 @@ fn main()
                 if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
                 {
                         println!("Successfully created virtual machine!");
-                        let mut patched=false;
                         if let Err(_)=vm.load_program(bios,0xF0000)
                         {
                                 if bios==DEFAULT_BIOS
@@ -589,14 +588,14 @@ fn main()
                                         {
                                                 panic!("Failed to load firmware! Reason: {e}");
                                         }
-                                        patched=true;
+                                        vm.patch_reset_vector();
                                 }
                                 else
                                 {
                                         panic!("Failed to load firmware!");
                                 }
                         }
-                        if patched || bios==FALLBACK_BIOS
+                        else
                         {
                                 vm.patch_reset_vector();
                         }
