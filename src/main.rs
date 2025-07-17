@@ -54,10 +54,29 @@ const IO_PORT_VIDEO_MISC_B8: u16 = 0x00B8;
 const IO_PORT_SPECIAL_213: u16 = 0x0213;
 const IO_PORT_PIT_CMD: u16 = 0x0008;
 const IO_PORT_DMA_TEMP: u16 = 0x000D;
+const IO_PORT_DMA_CLEAR: u16 = 0x000C;
 const IO_PORT_PIT_COUNTER0: u16 = 0x0040;
 const IO_PORT_PIT_COUNTER1: u16 = 0x0041;
+const IO_PORT_PIT_COUNTER2: u16 = 0x0042;
 const IO_PORT_PIT_CONTROL: u16 = 0x0043;
 const IO_PORT_TIMER_MISC: u16 = 0x0063;
+const IO_PORT_DMA_PAGE1: u16 = 0x0081;
+const IO_PORT_PORT_0210: u16 = 0x0210;
+const IO_PORT_PORT_0278: u16 = 0x0278;
+const IO_PORT_PORT_02FA: u16 = 0x02FA;
+const IO_PORT_PORT_0378: u16 = 0x0378;
+const IO_PORT_PORT_03BC: u16 = 0x03BC;
+const IO_PORT_PORT_03FA: u16 = 0x03FA;
+const IO_PORT_PORT_0201: u16 = 0x0201;
+const IO_PORT_CRTC_INDEX_MDA: u16 = 0x03B4;
+const IO_PORT_CRTC_DATA_MDA: u16 = 0x03B5;
+const IO_PORT_ATTR_MDA: u16 = 0x03B9;
+const IO_PORT_CRTC_INDEX_CGA: u16 = 0x03D4;
+const IO_PORT_CRTC_DATA_CGA: u16 = 0x03D5;
+const IO_PORT_ATTR_CGA: u16 = 0x03D9;
+const IO_PORT_FDC_DOR: u16 = 0x03F2;
+const IO_PORT_FDC_STATUS: u16 = 0x03F4;
+const IO_PORT_FDC_DATA: u16 = 0x03F5;
 
 fn port_name(port: u16) -> &'static str {
     match port {
@@ -78,14 +97,33 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_DMA_PAGE3 => "DMA_PAGE3",
         IO_PORT_DMA_MASK => "DMA_MASK",
         IO_PORT_DMA_MODE => "DMA_MODE",
+        IO_PORT_DMA_CLEAR => "DMA_CLEAR",
         IO_PORT_VIDEO_MISC_B8 => "VIDEO_MISC_B8",
         IO_PORT_SPECIAL_213 => "PORT_213",
         IO_PORT_DMA_TEMP => "DMA_TEMP",
         IO_PORT_PIT_COUNTER0 => "PIT_COUNTER0",
         IO_PORT_PIT_COUNTER1 => "PIT_COUNTER1",
+        IO_PORT_PIT_COUNTER2 => "PIT_COUNTER2",
         IO_PORT_PIT_CONTROL => "PIT_CONTROL",
         IO_PORT_PIT_CMD => "PIT_CMD",
         IO_PORT_TIMER_MISC => "TIMER_MISC",
+        IO_PORT_DMA_PAGE1 => "DMA_PAGE1",
+        IO_PORT_PORT_0210 => "PORT_0210",
+        IO_PORT_PORT_0278 => "PORT_0278",
+        IO_PORT_PORT_02FA => "PORT_02FA",
+        IO_PORT_PORT_0378 => "PORT_0378",
+        IO_PORT_PORT_03BC => "PORT_03BC",
+        IO_PORT_PORT_03FA => "PORT_03FA",
+        IO_PORT_PORT_0201 => "PORT_0201",
+        IO_PORT_CRTC_INDEX_MDA => "MDA_INDEX",
+        IO_PORT_CRTC_DATA_MDA => "MDA_DATA",
+        IO_PORT_ATTR_MDA => "MDA_ATTR",
+        IO_PORT_CRTC_INDEX_CGA => "CGA_INDEX",
+        IO_PORT_CRTC_DATA_CGA => "CGA_DATA",
+        IO_PORT_ATTR_CGA => "CGA_ATTR",
+        IO_PORT_FDC_DOR => "FDC_DOR",
+        IO_PORT_FDC_STATUS => "FDC_STATUS",
+        IO_PORT_FDC_DATA => "FDC_DATA",
         _ => "UNKNOWN",
     }
 }
@@ -106,6 +144,26 @@ static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
 static mut DMA_MODE: u8 = 0;
 static mut DMA_MASK: u8 = 0;
+static mut DMA_CLEAR: u8 = 0;
+static mut DMA_PAGE1: u8 = 0;
+static mut PORT_0210_VAL: u8 = 0;
+static mut PORT_0278_VAL: u8 = 0;
+static mut PORT_02FA_VAL: u8 = 0;
+static mut PORT_0378_VAL: u8 = 0;
+static mut PORT_03BC_VAL: u8 = 0;
+static mut PORT_03FA_VAL: u8 = 0;
+static mut PORT_0201_VAL: u8 = 0;
+static mut PIT_COUNTER2: u8 = 0;
+static mut CRTC_MDA_INDEX: u8 = 0;
+static mut CRTC_MDA_DATA: u8 = 0;
+static mut ATTR_MDA: u8 = 0;
+static mut CRTC_CGA_INDEX: u8 = 0;
+static mut CRTC_CGA_DATA: u8 = 0;
+static mut ATTR_CGA: u8 = 0;
+static mut FDC_DOR: u8 = 0;
+static mut FDC_STATUS: u8 = 0;
+static mut FDC_DATA: u8 = 0;
+static mut DMA_CHAN: [u8; 6] = [0; 6];
 const MEM_SIZE_KB: usize = GUEST_MEM_SIZE / 1024;
 const MEM_NIBBLE: u8 = ((MEM_SIZE_KB - 64) / 32) as u8;
 
@@ -578,7 +636,8 @@ unsafe extern "system" fn emu_io_port_callback(
                 port_name((*io_access).Port),
                 (*io_access).AccessSize
             );
-            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA {
+            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
+            {
                 for i in 0..(*io_access).AccessSize {
                     let mut buf = [0u8; 1];
                     if std::io::stdin().read_exact(&mut buf).is_ok() {
@@ -633,6 +692,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_DMA_TEMP {
                 (*io_access).Data = DMA_TEMP as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_DMA_CLEAR {
+                (*io_access).Data = DMA_CLEAR as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
@@ -646,11 +708,70 @@ unsafe extern "system" fn emu_io_port_callback(
                 PIT_COUNTER1 = PIT_COUNTER1.wrapping_sub(1);
                 (*io_access).Data = PIT_COUNTER1 as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
+                PIT_COUNTER2 = PIT_COUNTER2.wrapping_sub(1);
+                (*io_access).Data = PIT_COUNTER2 as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
                 (*io_access).Data = PIC_SLAVE_IMR as u32;
+                S_OK
+            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - 0x0002) as usize;
+                (*io_access).Data = DMA_CHAN[idx] as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
+                (*io_access).Data = DMA_PAGE1 as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0210 {
+                (*io_access).Data = PORT_0210_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0278 {
+                (*io_access).Data = PORT_0278_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_02FA {
+                (*io_access).Data = PORT_02FA_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0378 {
+                (*io_access).Data = PORT_0378_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_03BC {
+                (*io_access).Data = PORT_03BC_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_03FA {
+                (*io_access).Data = PORT_03FA_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0201 {
+                (*io_access).Data = PORT_0201_VAL as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_MDA {
+                (*io_access).Data = CRTC_MDA_INDEX as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_DATA_MDA {
+                (*io_access).Data = CRTC_MDA_DATA as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_ATTR_MDA {
+                (*io_access).Data = ATTR_MDA as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA {
+                (*io_access).Data = CRTC_CGA_INDEX as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
+                (*io_access).Data = CRTC_CGA_DATA as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_ATTR_CGA {
+                (*io_access).Data = ATTR_CGA as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_DOR {
+                (*io_access).Data = FDC_DOR as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_STATUS {
+                (*io_access).Data = FDC_STATUS as u32;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_DATA {
+                (*io_access).Data = FDC_DATA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
                 || (*io_access).Port == IO_PORT_PIC_SLAVE_CMD
@@ -724,11 +845,72 @@ unsafe extern "system" fn emu_io_port_callback(
                 // Reload start value for channel 1
                 PIT_COUNTER1 = (*io_access).Data as u8;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
+                PIT_COUNTER2 = (*io_access).Data as u8;
+                S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
                 DMA_MODE = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_TEMP {
                 DMA_TEMP = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_DMA_CLEAR {
+                DMA_CLEAR = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - 0x0002) as usize;
+                DMA_CHAN[idx] = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
+                DMA_PAGE1 = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0210 {
+                PORT_0210_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0278 {
+                PORT_0278_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_02FA {
+                PORT_02FA_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0378 {
+                PORT_0378_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_03BC {
+                PORT_03BC_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_03FA {
+                PORT_03FA_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_PORT_0201 {
+                PORT_0201_VAL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_MDA {
+                CRTC_MDA_INDEX = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_DATA_MDA {
+                CRTC_MDA_DATA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_ATTR_MDA {
+                ATTR_MDA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA {
+                CRTC_CGA_INDEX = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
+                CRTC_CGA_DATA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_ATTR_CGA {
+                ATTR_CGA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_DOR {
+                FDC_DOR = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_STATUS {
+                FDC_STATUS = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_FDC_DATA {
+                FDC_DATA = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
