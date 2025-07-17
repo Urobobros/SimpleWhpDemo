@@ -47,6 +47,7 @@ const IO_PORT_DMA_PAGE3: u16 = 0x0083;
 const IO_PORT_VIDEO_MISC_B8: u16 = 0x00B8;
 const IO_PORT_SPECIAL_213: u16 = 0x0213;
 const IO_PORT_PIT_CMD: u16 = 0x0008;
+const IO_PORT_PIT_COUNTER0: u16 = 0x0040;
 const IO_PORT_PIT_COUNTER1: u16 = 0x0041;
 const IO_PORT_PIT_CONTROL: u16 = 0x0043;
 const IO_PORT_TIMER_MISC: u16 = 0x0063;
@@ -67,6 +68,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_DMA_PAGE3 => "DMA_PAGE3",
         IO_PORT_VIDEO_MISC_B8 => "VIDEO_MISC_B8",
         IO_PORT_SPECIAL_213 => "PORT_213",
+        IO_PORT_PIT_COUNTER0 => "PIT_COUNTER0",
         IO_PORT_PIT_COUNTER1 => "PIT_COUNTER1",
         IO_PORT_PIT_CONTROL => "PIT_CONTROL",
         IO_PORT_PIT_CMD => "PIT_CMD",
@@ -84,6 +86,7 @@ static mut PIC_MASTER_IMR: u8 = 0;
 static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
 static mut PIT_CONTROL: u8 = 0;
+static mut PIT_COUNTER0: u8 = 0;
 static mut PIT_COUNTER1: u8 = 0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
@@ -591,6 +594,11 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
+                // Simulate ticking for channel 0
+                PIT_COUNTER0 = PIT_COUNTER0.wrapping_sub(1);
+                (*io_access).Data = PIT_COUNTER0 as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 // Simulate ticking so BIOS doesn't loop forever
                 PIT_COUNTER1 = PIT_COUNTER1.wrapping_sub(1);
@@ -612,6 +620,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
                 || (*io_access).Port == IO_PORT_PIT_CONTROL
+                || (*io_access).Port == IO_PORT_PIT_COUNTER0
                 || (*io_access).Port == IO_PORT_PIT_COUNTER1
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
@@ -660,6 +669,10 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
+                // Reload start value for channel 0
+                PIT_COUNTER0 = (*io_access).Data as u8;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 // Reload start value for channel 1
                 PIT_COUNTER1 = (*io_access).Data as u8;
@@ -681,6 +694,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
                 || (*io_access).Port == IO_PORT_PIT_CONTROL
+                || (*io_access).Port == IO_PORT_PIT_COUNTER0
                 || (*io_access).Port == IO_PORT_PIT_COUNTER1
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
