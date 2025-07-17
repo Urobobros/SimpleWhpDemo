@@ -366,6 +366,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
+                       /* Simulate PIT channel 1 ticking so BIOS progress isn't stalled */
+                       PitCounter1--;
                        IoAccess->Data = PitCounter1;
                        return S_OK;
                }
@@ -444,6 +446,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
+               /* Reload channel 1 with a new counter start value */
                PitCounter1 = (UCHAR)IoAccess->Data;
                return S_OK;
        }

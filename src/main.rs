@@ -592,6 +592,8 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
+                // Simulate ticking so BIOS doesn't loop forever
+                PIT_COUNTER1 = PIT_COUNTER1.wrapping_sub(1);
                 (*io_access).Data = PIT_COUNTER1 as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
@@ -659,6 +661,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 PIT_CONTROL = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
+                // Reload start value for channel 1
                 PIT_COUNTER1 = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
