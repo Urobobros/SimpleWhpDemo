@@ -7,6 +7,11 @@
 #define IO_PORT_KEYBOARD_INPUT	0x0001
 #define IO_PORT_DISK_DATA       0x00FF
 #define IO_PORT_POST            0x0080
+#define IO_PORT_PIC_MASTER_CMD  0x0020
+#define IO_PORT_PIC_MASTER_DATA 0x0021
+#define IO_PORT_SYS_CTRL        0x0061
+#define IO_PORT_PIC_SLAVE_CMD   0x00A0
+#define IO_PORT_PIC_SLAVE_DATA  0x00A1
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;
