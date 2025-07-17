@@ -20,6 +20,7 @@
 #define IO_PORT_VIDEO_MISC_B8   0x00B8
 #define IO_PORT_SPECIAL_213     0x0213
 #define IO_PORT_PIT_CMD         0x0008
+#define IO_PORT_DMA_MODE        0x000B
 #define IO_PORT_DMA_TEMP        0x000D
 #define IO_PORT_PIT_COUNTER0    0x0040
 #define IO_PORT_PIT_COUNTER1    0x0041
