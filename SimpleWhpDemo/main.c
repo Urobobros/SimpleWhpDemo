@@ -274,6 +274,7 @@ static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
 static UCHAR PitCounter0 = 0;
 static UCHAR PitCounter1 = 0;
+static UCHAR DmaTemp = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -302,6 +303,7 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_MDA_MODE:        return "MDA_MODE";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
+       case IO_PORT_DMA_TEMP:        return "DMA_TEMP";
        case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
        case IO_PORT_SPECIAL_213:     return "PORT_213";
        case IO_PORT_PIT_COUNTER0:    return "PIT_COUNTER0";
@@ -359,6 +361,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_CGA_MODE)
                {
                        IoAccess->Data = CgaMode;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_DMA_TEMP)
+               {
+                       IoAccess->Data = DmaTemp;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
@@ -466,11 +473,16 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                PitCounter1 = (UCHAR)IoAccess->Data;
                return S_OK;
        }
+       else if (IoAccess->Port == IO_PORT_DMA_TEMP)
+       {
+               DmaTemp = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
-        {
-                PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
-                return S_OK;
-        }
+       {
+               PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
+               return S_OK;
+       }
         else if (IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
         {
                 PicSlaveImr = (UCHAR)IoAccess->Data;
