@@ -64,6 +64,14 @@ nasm -f bin tests\keyboard.asm -o keyboard.com -l keyboard.lst
 SimpleWhpDemo.exe keyboard.com
 ```
 
+### Speaker beep demo
+The `beep.asm` example writes `0x03` to port `0x61` to sound the speaker.
+Assemble and run it with:
+```bat
+nasm -f bin tests\beep.asm -o beep.com -l beep.lst
+SimpleWhpDemo.exe beep.com
+```
+
 Always run the hypervisor with the assembled `.com` file rather than the source
 `*.asm` to avoid spurious "Input is not implemented" messages.
 
