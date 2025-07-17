@@ -3,8 +3,13 @@
 #include <Windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
-#include <AL/al.h>
-#include <AL/alc.h>
+#if __has_include(<AL/al.h>) && __has_include(<AL/alc.h>)
+#   include <AL/al.h>
+#   include <AL/alc.h>
+#   define SW_HAVE_OPENAL 1
+#else
+#   define SW_HAVE_OPENAL 0
+#endif
 #include "vmdef.h"
 
 #define CGA_COLS 80
@@ -14,6 +19,7 @@
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
 
+#if SW_HAVE_OPENAL
 static void OpenalBeep(DWORD freq, DWORD dur_ms)
 {
         ALCdevice* device = alcOpenDevice(NULL);
@@ -56,6 +62,13 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
         alcDestroyContext(context);
         alcCloseDevice(device);
 }
+#else
+static void OpenalBeep(DWORD freq, DWORD dur_ms)
+{
+        UNREFERENCED_PARAMETER(freq);
+        UNREFERENCED_PARAMETER(dur_ms);
+}
+#endif
 
 static void CgaPutChar(char ch)
 {

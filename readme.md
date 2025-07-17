@@ -19,6 +19,9 @@ The underlying API is the same one used by the WHPX accelerator for QEMU, so eve
 
 ## Build
 To build this project, you are required to install [VS2022](https://visualstudio.microsoft.com/) and [Windows SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk/).
+In addition, the C version relies on the OpenAL headers and libraries. You can
+obtain them by installing [OpenAL Soft](https://openal-soft.org/) via
+[vcpkg](https://github.com/microsoft/vcpkg) or any other package manager.
 
 To build test cases, you are required to install [NASM](https://nasm.us/). \
 Run the following command to build a test case:
