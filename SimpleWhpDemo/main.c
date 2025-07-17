@@ -296,6 +296,11 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_PIC_SLAVE_DATA:  return "PIC_SLAVE_DATA";
         case IO_PORT_SYS_CTRL:        return "SYS_CTRL";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
+        case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
+        case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
+        case IO_PORT_SPECIAL_213:     return "PORT_213";
+        case IO_PORT_PIT_CMD:         return "PIT_CMD";
+        case IO_PORT_TIMER_MISC:      return "TIMER_MISC";
         default:                   return "UNKNOWN";
         }
 }
@@ -358,6 +363,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = 0;
                        return S_OK;
                }
+               else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
+                        IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
+                        IoAccess->Port == IO_PORT_SPECIAL_213 ||
+                        IoAccess->Port == IO_PORT_PIT_CMD ||
+                        IoAccess->Port == IO_PORT_TIMER_MISC)
+               {
+                       IoAccess->Data = 0;
+                       return S_OK;
+               }
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
        }
@@ -413,6 +427,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
         {
                 PicSlaveImr = (UCHAR)IoAccess->Data;
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
+                 IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
+                 IoAccess->Port == IO_PORT_SPECIAL_213 ||
+                 IoAccess->Port == IO_PORT_PIT_CMD ||
+                 IoAccess->Port == IO_PORT_TIMER_MISC)
+        {
+                /* Ports touched by the BIOS during POST but not modeled. */
                 return S_OK;
         }
         else
