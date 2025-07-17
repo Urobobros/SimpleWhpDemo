@@ -30,6 +30,7 @@ const IO_PORT_PIC_MASTER_DATA:u16=0x0021;
 const IO_PORT_PIC_SLAVE_CMD:u16=0x00A0;
 const IO_PORT_PIC_SLAVE_DATA:u16=0x00A1;
 const IO_PORT_SYS_CTRL:u16=0x0061;
+const IO_PORT_CGA_MODE:u16=0x03D8;
 
 fn port_name(port:u16)->&'static str
 {
@@ -44,6 +45,7 @@ fn port_name(port:u16)->&'static str
         IO_PORT_PIC_SLAVE_CMD=>"PIC_SLAVE_CMD",
         IO_PORT_PIC_SLAVE_DATA=>"PIC_SLAVE_DATA",
         IO_PORT_SYS_CTRL=>"SYS_CTRL",
+        IO_PORT_CGA_MODE=>"CGA_MODE",
         _=>"UNKNOWN"
     }
 }
@@ -56,6 +58,7 @@ static mut UNKNOWN_PORT_COUNT:u32=0;
 static mut PIC_MASTER_IMR:u8=0;
 static mut PIC_SLAVE_IMR:u8=0;
 static mut SYS_CTRL:u8=0;
+static mut CGA_MODE:u8=0;
 
 const CGA_COLS:usize=80;
 const CGA_ROWS:usize=25;
@@ -457,6 +460,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 (*io_access).Data = SYS_CTRL as u32;
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_CGA_MODE
+                        {
+                                (*io_access).Data = CGA_MODE as u32;
+                                S_OK
+                        }
                         else if (*io_access).Port==IO_PORT_PIC_MASTER_DATA
                         {
                                 (*io_access).Data = PIC_MASTER_IMR as u32;
@@ -507,6 +515,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         else if (*io_access).Port==IO_PORT_SYS_CTRL
                         {
                                 SYS_CTRL = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_CGA_MODE
+                        {
+                                CGA_MODE = (*io_access).Data as u8;
                                 S_OK
                         }
                         else if (*io_access).Port==IO_PORT_PIC_MASTER_CMD
