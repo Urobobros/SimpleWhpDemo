@@ -203,10 +203,21 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         }
                         return S_OK;
                 }
+                else if (IoAccess->Port == IO_PORT_DMA_PAGE_CH3)
+                {
+                        ((PUCHAR)&IoAccess->Data)[0] = DmaPageCh3;
+                        return S_OK;
+                }
                 puts("Input is not implemented!");
                 return E_NOTIMPL;
         }
-        if (IoAccess->Port == IO_PORT_STRING_PRINT)
+        if (IoAccess->Port == IO_PORT_DMA_PAGE_CH3)
+        {
+                if (IoAccess->AccessSize > 0)
+                        DmaPageCh3 = ((PUCHAR)&IoAccess->Data)[0];
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         putc(((PUCHAR)&IoAccess->Data)[i], stdout);
