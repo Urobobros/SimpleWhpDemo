@@ -48,7 +48,7 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x0001` | (legacy) Same as `0x0060` for compatibility. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
-| `0x0061` | System control port used for speaker and NMI masking. |
+| `0x0061` | System control port used for speaker and NMI masking. Setting bits 0 and 1 plays a short beep. |
 | `0x000A` | DMA single-channel mask register. Reads return the last value written. |
 | `0x000B` | DMA mode register for the 8237 controller. Reads return the last value written. |
 | `0x03B8` | MDA mode control register. Reads return the last value written. |

@@ -292,6 +292,7 @@ static UCHAR Port03bcVal = 0;
 static UCHAR Port03faVal = 0;
 static UCHAR Port0201Val = 0;
 static UCHAR PitCounter2 = 0;
+static BOOL  SpeakerOn = FALSE;
 static UCHAR CrtcMdaIndex = 0;
 static UCHAR CrtcMdaData = 0;
 static UCHAR CrtcMdaRegs[32] = {0};
@@ -635,6 +636,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
        {
                SysCtrl = (UCHAR)IoAccess->Data;
+               BOOL new_state = (SysCtrl & 0x03) == 0x03;
+               if (new_state && !SpeakerOn)
+               {
+                       DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
+                       Beep(freq, 60);
+               }
+               SpeakerOn = new_state;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_MDA_MODE)

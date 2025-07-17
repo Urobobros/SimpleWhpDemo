@@ -34,7 +34,7 @@ The first executed routine toggles bits on port `0x61` (timer/speaker):
 002E  C3                RET
 ```
 The emulator now tracks this port so these accesses no longer trigger
-the unknown‑port handler.
+the unknown‑port handler. When bits 0 and 1 are set the host emits a short beep.
 
 After some setup the BIOS calls video services via `INT 10h`, loads data pointers, and continues with POST checks. Throughout POST it writes codes to port `0x80`.
 

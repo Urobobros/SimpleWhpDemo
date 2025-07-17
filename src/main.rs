@@ -18,6 +18,11 @@ use windows::{
     core::*,
 };
 
+#[link(name = "Kernel32")]
+unsafe extern "system" {
+    fn Beep(freq: u32, dur: u32) -> BOOL;
+}
+
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
 const GUEST_MEM_SIZE: usize = 0x100000;
@@ -156,6 +161,7 @@ static mut PORT_03BC_VAL: u8 = 0;
 static mut PORT_03FA_VAL: u8 = 0;
 static mut PORT_0201_VAL: u8 = 0;
 static mut PIT_COUNTER2: u8 = 0;
+static mut SPEAKER_ON: bool = false;
 static mut CRTC_MDA_INDEX: u8 = 0;
 static mut CRTC_MDA_DATA: u8 = 0;
 static mut CRTC_MDA_REGS: [u8; 32] = [0; 32];
@@ -835,6 +841,16 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_SYS_CTRL {
                 SYS_CTRL = (*io_access).Data as u8;
+                let new_state = SYS_CTRL & 0x03 == 0x03;
+                if new_state && !SPEAKER_ON {
+                    let freq = if PIT_COUNTER2 != 0 {
+                        1_193_182 / PIT_COUNTER2 as u32
+                    } else {
+                        750
+                    };
+                    let _ = Beep(freq, 60);
+                }
+                SPEAKER_ON = new_state;
                 S_OK
             } else if (*io_access).Port == IO_PORT_SYS_PORTC {
                 S_OK
