@@ -272,6 +272,7 @@ static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
+static UCHAR PitCounter0 = 0;
 static UCHAR PitCounter1 = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
@@ -301,8 +302,9 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_MDA_MODE:        return "MDA_MODE";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
-        case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
+       case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
        case IO_PORT_SPECIAL_213:     return "PORT_213";
+       case IO_PORT_PIT_COUNTER0:    return "PIT_COUNTER0";
        case IO_PORT_PIT_COUNTER1:    return "PIT_COUNTER1";
        case IO_PORT_PIT_CONTROL:     return "PIT_CONTROL";
         case IO_PORT_PIT_CMD:         return "PIT_CMD";
@@ -364,6 +366,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = PitControl;
                        return S_OK;
                }
+               else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
+               {
+                       /* Simulate PIT channel 0 ticking */
+                       PitCounter0--;
+                       IoAccess->Data = PitCounter0;
+                       return S_OK;
+               }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
                        /* Simulate PIT channel 1 ticking so BIOS progress isn't stalled */
@@ -390,9 +399,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
                         IoAccess->Port == IO_PORT_SPECIAL_213 ||
                         IoAccess->Port == IO_PORT_PIT_CMD ||
-                        IoAccess->Port == IO_PORT_PIT_CONTROL ||
-                        IoAccess->Port == IO_PORT_PIT_COUNTER1 ||
-                        IoAccess->Port == IO_PORT_TIMER_MISC)
+                       IoAccess->Port == IO_PORT_PIT_CONTROL ||
+                       IoAccess->Port == IO_PORT_PIT_COUNTER0 ||
+                       IoAccess->Port == IO_PORT_PIT_COUNTER1 ||
+                       IoAccess->Port == IO_PORT_TIMER_MISC)
                {
                        IoAccess->Data = 0;
                        return S_OK;
@@ -444,6 +454,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                PitControl = (UCHAR)IoAccess->Data;
                return S_OK;
        }
+       else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
+       {
+               /* Reload channel 0 with a new counter start value */
+               PitCounter0 = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
                /* Reload channel 1 with a new counter start value */
@@ -475,6 +491,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                  IoAccess->Port == IO_PORT_SPECIAL_213 ||
                  IoAccess->Port == IO_PORT_PIT_CMD ||
                  IoAccess->Port == IO_PORT_PIT_CONTROL ||
+                 IoAccess->Port == IO_PORT_PIT_COUNTER0 ||
                  IoAccess->Port == IO_PORT_PIT_COUNTER1 ||
                  IoAccess->Port == IO_PORT_TIMER_MISC)
         {
