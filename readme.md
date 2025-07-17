@@ -48,11 +48,14 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x0001` | (legacy) Same as `0x0060` for compatibility. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
-| `0x0061` | System control port used for speaker and NMI masking. |
+| `0x0061` | System control port used for speaker and NMI masking. When bits 0 and 1 remain set the host continuously beeps using the programmed PIT frequency. |
 | `0x000A` | DMA single-channel mask register. Reads return the last value written. |
 | `0x000B` | DMA mode register for the 8237 controller. Reads return the last value written. |
 | `0x03B8` | MDA mode control register. Reads return the last value written. |
 | `0x03D8` | CGA mode control register. Reads return the last value written. |
+| `0x03D9` | CGA palette register. Reads return the last value written. |
+| `0x03D4`/`0x03D5` | CGA CRTC index/data pair storing 18 registers. |
+| `0x03DA` | CGA status register. Bit 3 toggles on each read. |
 | other | Any other port triggers an `Unknown I/O Port` message. Repeated access to the same unknown port terminates the program. |
 
 Example to assemble and run the keyboard demo on Windows:
@@ -124,9 +127,10 @@ The firmware's INT 10h handler will capture the calls and output the string via
 the emulated CGA device.
 
 While the program runs, characters sent through INT 10h are also stored in an
-80×25 text buffer representing the CGA screen at `0xB8000`. After the guest
-halts, the emulator prints this buffer so you can see the final screen
-contents.
+80×25 text buffer. At shutdown the contents of guest video memory at
+`0xB8000` are read back so writes performed directly by the guest are
+displayed as well. The combined buffer is printed on the host console so you
+can see the final screen contents.
 
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
