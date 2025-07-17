@@ -7,7 +7,12 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 bios_path = Path(sys.argv[1])
-lines = int(sys.argv[2]) if len(sys.argv) > 2 else 64
+
+try:
+    lines = int(sys.argv[2]) if len(sys.argv) > 2 else None
+except ValueError:
+    print("Second argument must be an integer (number of lines).")
+    sys.exit(1)
 
 if not bios_path.exists():
     print(f"File {bios_path} not found")
@@ -20,6 +25,6 @@ if proc.returncode != 0:
     sys.exit(proc.returncode)
 
 for i, line in enumerate(proc.stdout.splitlines()):
-    if i >= lines:
+    if lines is not None and i >= lines:
         break
     print(line)
