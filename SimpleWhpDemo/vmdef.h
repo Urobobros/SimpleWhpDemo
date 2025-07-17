@@ -26,8 +26,27 @@
 #define IO_PORT_DMA_TEMP        0x000D
 #define IO_PORT_PIT_COUNTER0    0x0040
 #define IO_PORT_PIT_COUNTER1    0x0041
+#define IO_PORT_PIT_COUNTER2    0x0042
 #define IO_PORT_PIT_CONTROL     0x0043
 #define IO_PORT_TIMER_MISC      0x0063
+#define IO_PORT_DMA_CLEAR       0x000C
+#define IO_PORT_DMA_PAGE1       0x0081
+#define IO_PORT_PORT_0210       0x0210
+#define IO_PORT_PORT_0278       0x0278
+#define IO_PORT_PORT_02FA       0x02FA
+#define IO_PORT_PORT_0378       0x0378
+#define IO_PORT_PORT_03BC       0x03BC
+#define IO_PORT_PORT_03FA       0x03FA
+#define IO_PORT_PORT_0201       0x0201
+#define IO_PORT_CRTC_INDEX_MDA  0x03B4
+#define IO_PORT_CRTC_DATA_MDA   0x03B5
+#define IO_PORT_ATTR_MDA        0x03B9
+#define IO_PORT_CRTC_INDEX_CGA  0x03D4
+#define IO_PORT_CRTC_DATA_CGA   0x03D5
+#define IO_PORT_ATTR_CGA        0x03D9
+#define IO_PORT_FDC_DOR         0x03F2
+#define IO_PORT_FDC_STATUS      0x03F4
+#define IO_PORT_FDC_DATA        0x03F5
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;

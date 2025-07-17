@@ -277,6 +277,26 @@ static UCHAR PitCounter1 = 0;
 static UCHAR DmaTemp = 0;
 static UCHAR DmaMode = 0;
 static UCHAR DmaMask = 0;
+static UCHAR DmaClear = 0;
+static UCHAR DmaPage1 = 0;
+static UCHAR Port0210Val = 0;
+static UCHAR Port0278Val = 0;
+static UCHAR Port02faVal = 0;
+static UCHAR Port0378Val = 0;
+static UCHAR Port03bcVal = 0;
+static UCHAR Port03faVal = 0;
+static UCHAR Port0201Val = 0;
+static UCHAR PitCounter2 = 0;
+static UCHAR CrtcMdaIndex = 0;
+static UCHAR CrtcMdaData = 0;
+static UCHAR AttrMda = 0;
+static UCHAR CrtcCgaIndex = 0;
+static UCHAR CrtcCgaData = 0;
+static UCHAR AttrCga = 0;
+static UCHAR FdcDor = 0;
+static UCHAR FdcStatus = 0;
+static UCHAR FdcData = 0;
+static UCHAR DmaChan[6] = {0};
 static const UCHAR Port62MemNibble = ((GuestMemorySize / 1024 - 64) / 32);
 
 BOOL LoadDiskImage(PCSTR FileName)
@@ -310,17 +330,36 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_MODE:       return "DMA_MODE";
         case IO_PORT_DMA_MASK:       return "DMA_MASK";
-        case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
+       case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
        case IO_PORT_DMA_TEMP:        return "DMA_TEMP";
        case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
        case IO_PORT_SPECIAL_213:     return "PORT_213";
        case IO_PORT_PIT_COUNTER0:    return "PIT_COUNTER0";
        case IO_PORT_PIT_COUNTER1:    return "PIT_COUNTER1";
+       case IO_PORT_PIT_COUNTER2:    return "PIT_COUNTER2";
        case IO_PORT_PIT_CONTROL:     return "PIT_CONTROL";
-        case IO_PORT_PIT_CMD:         return "PIT_CMD";
-        case IO_PORT_TIMER_MISC:      return "TIMER_MISC";
-        default:                   return "UNKNOWN";
-        }
+       case IO_PORT_PIT_CMD:         return "PIT_CMD";
+       case IO_PORT_TIMER_MISC:      return "TIMER_MISC";
+       case IO_PORT_DMA_CLEAR:       return "DMA_CLEAR";
+       case IO_PORT_DMA_PAGE1:       return "DMA_PAGE1";
+       case IO_PORT_PORT_0210:       return "PORT_0210";
+       case IO_PORT_PORT_0278:       return "PORT_0278";
+       case IO_PORT_PORT_02FA:       return "PORT_02FA";
+       case IO_PORT_PORT_0378:       return "PORT_0378";
+       case IO_PORT_PORT_03BC:       return "PORT_03BC";
+       case IO_PORT_PORT_03FA:       return "PORT_03FA";
+       case IO_PORT_PORT_0201:       return "PORT_0201";
+       case IO_PORT_CRTC_INDEX_MDA:  return "MDA_INDEX";
+       case IO_PORT_CRTC_DATA_MDA:   return "MDA_DATA";
+       case IO_PORT_ATTR_MDA:        return "MDA_ATTR";
+       case IO_PORT_CRTC_INDEX_CGA:  return "CGA_INDEX";
+       case IO_PORT_CRTC_DATA_CGA:   return "CGA_DATA";
+       case IO_PORT_ATTR_CGA:        return "CGA_ATTR";
+       case IO_PORT_FDC_DOR:         return "FDC_DOR";
+       case IO_PORT_FDC_STATUS:      return "FDC_STATUS";
+       case IO_PORT_FDC_DATA:        return "FDC_DATA";
+       default:                   return "UNKNOWN";
+       }
 }
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
@@ -399,6 +438,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = DmaTemp;
                        return S_OK;
                }
+               else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
+               {
+                       IoAccess->Data = DmaClear;
+                       return S_OK;
+               }
                else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
                {
                        IoAccess->Data = PitControl;
@@ -418,6 +462,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = PitCounter1;
                        return S_OK;
                }
+               else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
+               {
+                       PitCounter2--;
+                       IoAccess->Data = PitCounter2;
+                       return S_OK;
+               }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
                {
                        IoAccess->Data = PicMasterImr;
@@ -426,6 +476,97 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
                {
                        IoAccess->Data = PicSlaveImr;
+                       return S_OK;
+               }
+               else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+               {
+                       UINT32 idx = IoAccess->Port - 0x0002;
+                       IoAccess->Data = DmaChan[idx];
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
+               {
+                       IoAccess->Data = DmaPage1;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_0210)
+               {
+                       IoAccess->Data = Port0210Val;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_0278)
+               {
+                       IoAccess->Data = Port0278Val;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_02FA)
+               {
+                       IoAccess->Data = Port02faVal;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_0378)
+               {
+                       IoAccess->Data = Port0378Val;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_03BC)
+               {
+                       IoAccess->Data = Port03bcVal;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_03FA)
+               {
+                       IoAccess->Data = Port03faVal;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_PORT_0201)
+               {
+                       IoAccess->Data = Port0201Val;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
+               {
+                       IoAccess->Data = CrtcMdaIndex;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
+               {
+                       IoAccess->Data = CrtcMdaData;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_ATTR_MDA)
+               {
+                       IoAccess->Data = AttrMda;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
+               {
+                       IoAccess->Data = CrtcCgaIndex;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
+               {
+                       IoAccess->Data = CrtcCgaData;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_ATTR_CGA)
+               {
+                       IoAccess->Data = AttrCga;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_FDC_DOR)
+               {
+                       IoAccess->Data = FdcDor;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_FDC_STATUS)
+               {
+                       IoAccess->Data = FdcStatus;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_FDC_DATA)
+               {
+                       IoAccess->Data = FdcData;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
@@ -521,6 +662,107 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
        {
                DmaTemp = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
+       {
+               DmaClear = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+       {
+               UINT32 idx = IoAccess->Port - 0x0002;
+               DmaChan[idx] = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
+       {
+               DmaPage1 = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_0210)
+       {
+               Port0210Val = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_0278)
+       {
+               Port0278Val = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_02FA)
+       {
+               Port02faVal = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_0378)
+       {
+               Port0378Val = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_03BC)
+       {
+               Port03bcVal = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_03FA)
+       {
+               Port03faVal = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PORT_0201)
+       {
+               Port0201Val = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
+       {
+               PitCounter2 = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
+       {
+               CrtcMdaIndex = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
+       {
+               CrtcMdaData = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_ATTR_MDA)
+       {
+               AttrMda = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
+       {
+               CrtcCgaIndex = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
+       {
+               CrtcCgaData = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_ATTR_CGA)
+       {
+               AttrCga = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_FDC_DOR)
+       {
+               FdcDor = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_FDC_STATUS)
+       {
+               FdcStatus = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_FDC_DATA)
+       {
+               FdcData = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
