@@ -18,6 +18,7 @@
 #define IO_PORT_VIDEO_MISC_B8   0x00B8
 #define IO_PORT_SPECIAL_213     0x0213
 #define IO_PORT_PIT_CMD         0x0008
+#define IO_PORT_PIT_CONTROL     0x0043
 #define IO_PORT_TIMER_MISC      0x0063
 
 // Hypervisor Capability.

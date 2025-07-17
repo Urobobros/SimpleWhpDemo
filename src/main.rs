@@ -47,6 +47,7 @@ const IO_PORT_DMA_PAGE3: u16 = 0x0083;
 const IO_PORT_VIDEO_MISC_B8: u16 = 0x00B8;
 const IO_PORT_SPECIAL_213: u16 = 0x0213;
 const IO_PORT_PIT_CMD: u16 = 0x0008;
+const IO_PORT_PIT_CONTROL: u16 = 0x0043;
 const IO_PORT_TIMER_MISC: u16 = 0x0063;
 
 fn port_name(port: u16) -> &'static str {
@@ -65,6 +66,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_DMA_PAGE3 => "DMA_PAGE3",
         IO_PORT_VIDEO_MISC_B8 => "VIDEO_MISC_B8",
         IO_PORT_SPECIAL_213 => "PORT_213",
+        IO_PORT_PIT_CONTROL => "PIT_CONTROL",
         IO_PORT_PIT_CMD => "PIT_CMD",
         IO_PORT_TIMER_MISC => "TIMER_MISC",
         _ => "UNKNOWN",
@@ -79,6 +81,7 @@ static mut UNKNOWN_PORT_COUNT: u32 = 0;
 static mut PIC_MASTER_IMR: u8 = 0;
 static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
+static mut PIT_CONTROL: u8 = 0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 
@@ -581,6 +584,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 (*io_access).Data = MDA_MODE as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
+                (*io_access).Data = PIT_CONTROL as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;
                 S_OK
@@ -596,6 +602,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_VIDEO_MISC_B8
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
+                || (*io_access).Port == IO_PORT_PIT_CONTROL
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
                 (*io_access).Data = 0;
@@ -640,6 +647,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 MDA_MODE = (*io_access).Data as u8;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
+                PIT_CONTROL = (*io_access).Data as u8;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
                 S_OK
@@ -656,6 +666,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_VIDEO_MISC_B8
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
+                || (*io_access).Port == IO_PORT_PIT_CONTROL
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
                 // These ports are touched by the BIOS during POST but
