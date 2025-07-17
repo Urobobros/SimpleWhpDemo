@@ -4,7 +4,9 @@
 #define GuestMemorySize         0x100000
 
 #define IO_PORT_STRING_PRINT	0x0000
-#define IO_PORT_KEYBOARD_INPUT	0x0001
+#define IO_PORT_KEYBOARD_INPUT  0x0001 /* legacy */
+#define IO_PORT_KBD_DATA        0x0060
+#define IO_PORT_KBD_STATUS      0x0064
 #define IO_PORT_DISK_DATA       0x00FF
 #define IO_PORT_POST            0x0080
 #define IO_PORT_PIC_MASTER_CMD  0x0020
