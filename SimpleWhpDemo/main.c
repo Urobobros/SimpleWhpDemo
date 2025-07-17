@@ -525,6 +525,14 @@ int main(int argc, char* argv[], char* envp[])
                                         mem[0xFFFF4] = 0xF0;
                                 }
                         }
+                        if (LoadIvtFwResult)
+                        {
+                                PUCHAR mem = (PUCHAR)VirtualMemory;
+                                printf("BIOS loaded from %s (%lu bytes)\n", BiosFileName, BiosSize);
+                                printf("Reset vector bytes: %02X %02X %02X %02X %02X\n",
+                                       mem[0xFFFF0], mem[0xFFFF1], mem[0xFFFF2],
+                                       mem[0xFFFF3], mem[0xFFFF4]);
+                        }
                         if (LoadIvtFwResult && BiosSize < 0x10000)
                                 MirrorBiosRegion(0xF0000, BiosSize);
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
