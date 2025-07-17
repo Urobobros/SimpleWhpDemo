@@ -7,6 +7,11 @@ use std::{
     slice,
     sync::atomic::{AtomicPtr, Ordering},
 };
+use std::f32::consts::PI;
+use std::thread::sleep;
+use std::time::Duration;
+
+use openal_sys as al;
 
 use aligned::*;
 use windows::{
@@ -15,7 +20,7 @@ use windows::{
         Storage::FileSystem::*,
         System::{Hypervisor::*, Memory::*},
     },
-    core::*,
+    core::{HRESULT, Result, Error, PCWSTR},
 };
 
 #[link(name = "Kernel32")]
@@ -26,6 +31,50 @@ unsafe extern "system" {
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
 const GUEST_MEM_SIZE: usize = 0x100000;
+
+fn openal_beep(freq: u32, dur_ms: u32) {
+    unsafe {
+        let device = al::alcOpenDevice(std::ptr::null());
+        if device.is_null() {
+            return;
+        }
+        let context = al::alcCreateContext(device, std::ptr::null());
+        if context.is_null() {
+            al::alcCloseDevice(device);
+            return;
+        }
+        al::alcMakeContextCurrent(context);
+
+        let mut buffer = 0;
+        al::alGenBuffers(1, &mut buffer);
+        let sample_rate = 44_100u32;
+        let samples_len = (dur_ms as usize * sample_rate as usize) / 1000;
+        let mut samples: Vec<i16> = Vec::with_capacity(samples_len);
+        for n in 0..samples_len {
+            let t = n as f32 / sample_rate as f32;
+            let val = if (t * freq as f32).fract() < 0.5 { 0.8 } else { -0.8 };
+            samples.push((val * i16::MAX as f32) as i16);
+        }
+        al::alBufferData(
+            buffer,
+            al::AL_FORMAT_MONO16,
+            samples.as_ptr().cast(),
+            (samples.len() * std::mem::size_of::<i16>()) as i32,
+            sample_rate as i32,
+        );
+
+        let mut source = 0;
+        al::alGenSources(1, &mut source);
+        al::alSourcei(source, al::AL_BUFFER, buffer as i32);
+        al::alSourcePlay(source);
+        sleep(Duration::from_millis(dur_ms as u64));
+        al::alDeleteSources(1, &source);
+        al::alDeleteBuffers(1, &buffer);
+        al::alcMakeContextCurrent(std::ptr::null_mut());
+        al::alcDestroyContext(context);
+        al::alcCloseDevice(device);
+    }
+}
 
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
 static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACKS {
@@ -849,6 +898,7 @@ unsafe extern "system" fn emu_io_port_callback(
                         750
                     };
                     let _ = Beep(freq, 60);
+                    openal_beep(freq, 60);
                 }
                 SPEAKER_ON = new_state;
                 S_OK
