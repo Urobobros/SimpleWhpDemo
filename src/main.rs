@@ -243,8 +243,8 @@ impl SimpleVirtualMachine
 		}
 	}
 
-        fn load_program(&self,file_name:&str,offset:usize)->Result<()>
-	{
+        fn load_program(&self,file_name:&str,offset:usize)->Result<usize>
+        {
 		let path=file_name.encode_utf16();
 		let v:Vec<u16>=path.collect();
 		match unsafe{CreateFileW(PCWSTR(v.as_ptr()),GENERIC_READ.0,FILE_SHARE_READ,None,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,None)}
@@ -252,27 +252,27 @@ impl SimpleVirtualMachine
 			Ok(h)=>
 			{
 				let mut file_size=0;
-				let r=match unsafe{GetFileSizeEx(h,&raw mut file_size)}
-				{
-					Ok(_)=>
-					{
-						if offset+file_size as usize>self.size
-						{
-							panic!("Overflow happens while loading {file_name}!");
-						}
-						let mut size=0;
-						let addr:*mut u8=unsafe{self.vmem.byte_add(offset).cast()};
-						let buffer:&mut [u8]=unsafe{slice::from_raw_parts_mut(addr,file_size as usize)};
-						unsafe{ReadFile(h,Some(buffer),Some(&raw mut size),None)}
-					}
-					Err(e)=>Err(e)
-				};
-				let _=unsafe{CloseHandle(h)};
-				r
-			}
-			Err(e)=>Err(e)
-		}
-	}
+                                let r=match unsafe{GetFileSizeEx(h,&raw mut file_size)}
+                                {
+                                        Ok(_)=>
+                                        {
+                                                if offset+file_size as usize>self.size
+                                                {
+                                                        panic!("Overflow happens while loading {file_name}!");
+                                                }
+                                                let mut size=0;
+                                                let addr:*mut u8=unsafe{self.vmem.byte_add(offset).cast()};
+                                                let buffer:&mut [u8]=unsafe{slice::from_raw_parts_mut(addr,file_size as usize)};
+                                                unsafe{ReadFile(h,Some(buffer),Some(&raw mut size),None)}.map(|_|size as usize)
+                                        }
+                                        Err(e)=>Err(e)
+                                };
+                                let _=unsafe{CloseHandle(h)};
+                                r
+                        }
+                        Err(e)=>Err(e)
+                }
+        }
 
 	fn run(&self)
 	{
@@ -347,6 +347,22 @@ impl SimpleVirtualMachine
                         let mem=self.vmem as *mut u8;
                         let jump:[u8;5]=[0xEA,0x00,0x00,0x00,0xF0];
                         std::ptr::copy_nonoverlapping(jump.as_ptr(),mem.add(0xFFFF0),5);
+                }
+        }
+
+        fn mirror_region(&self,offset:usize,size:usize,total:usize)
+        {
+                if size==0 || size>=total { return; }
+                unsafe
+                {
+                        let mem=self.vmem as *mut u8;
+                        let src=mem.add(offset);
+                        let mut pos=size;
+                        while pos<total
+                        {
+                                std::ptr::copy_nonoverlapping(src,mem.add(offset+pos),size);
+                                pos+=size;
+                        }
                 }
         }
 }
@@ -588,25 +604,31 @@ fn main()
                 if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
                 {
                         println!("Successfully created virtual machine!");
-                        if let Err(_)=vm.load_program(bios,0xF0000)
+                        let bios_size = match vm.load_program(bios,0xF0000)
                         {
-                                if bios==DEFAULT_BIOS
+                                Ok(size)=>size,
+                                Err(_)=>
                                 {
-                                        println!("AMI BIOS not found, falling back to {FALLBACK_BIOS}");
-                                        if let Err(e)=vm.load_program(FALLBACK_BIOS,0xF0000)
+                                        if bios==DEFAULT_BIOS
                                         {
-                                                panic!("Failed to load firmware! Reason: {e}");
+                                                println!("AMI BIOS not found, falling back to {FALLBACK_BIOS}");
+                                                let size=vm.load_program(FALLBACK_BIOS,0xF0000).expect("Failed to load firmware!");
+                                                vm.patch_reset_vector();
+                                                size
                                         }
-                                        vm.patch_reset_vector();
+                                        else
+                                        {
+                                                panic!("Failed to load firmware!");
+                                        }
                                 }
-                                else
-                                {
-                                        panic!("Failed to load firmware!");
-                                }
-                        }
-                        else if bios==FALLBACK_BIOS
+                        };
+                        if bios==FALLBACK_BIOS
                         {
                                 vm.patch_reset_vector();
+                        }
+                        if bios_size < 0x10000
+                        {
+                                vm.mirror_region(0xF0000,bios_size,0x10000);
                         }
                         if let Err(e)=vm.load_program(program,0x10100)
                         {
