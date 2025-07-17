@@ -1014,6 +1014,10 @@ int main(int argc, char* argv[], char* envp[])
 {
        puts("SimpleWhpDemo version 1.1.1");
        puts("IVT firmware version 0.1.0");
+#if SW_HAVE_OPENAL
+       /* Emit a short beep so sound output can be verified right away. */
+       OpenalBeep(750, 60);
+#endif
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
        PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
 	SwCheckSystemHypervisor();
