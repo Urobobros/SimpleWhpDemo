@@ -10,6 +10,7 @@
 - [x] Debug log CPU cyklů + IO
 - [x] Demo: Program volající INT 0x10, vytiskne text
 - [x] Log konzole či grafika „HELLO“ zobrazení
+- [ ] Skript pro disassemblování BIOSu
 - [ ] Edge‑cases: neexistující instrukce, adresa mimo RAM
 - [ ] CI konfigurace + regresní testy
 - [x] Dokumentace pro uživatele: jak spustit demo od A do Z

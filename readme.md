@@ -96,6 +96,10 @@ OUT port 0x3F8 (UNKNOWN), size 1, value 0x55
 
 These messages help track the BIOS start-up sequence similarly to PCem.
 
+### Disassembling the AMI BIOS
+If you have the AMI BIOS image available, run `python3 scripts/disasm_ami.py ami_8088_bios_31jan89.bin 40` to dump the first 40 lines of disassembly using `ndisasm`. This helps confirm the reset vector at `0xFFFF0` and inspect early I/O operations.
+
+
 ### Hello CGA demo
 To showcase the BIOS video interrupt, build the example that prints `Hello from CGA`:
 ```bat
