@@ -218,22 +218,38 @@ HRESULT SwDumpVirtualProcessorSegmentState()
 	return hr;
 }
 
+static BOOL LoadVirtualMachineProgramEx(IN PSTR FileName, IN ULONG Offset, OUT DWORD* BytesRead)
+{
+        BOOL Result = FALSE;
+        HANDLE hFile = CreateFileA(FileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile != INVALID_HANDLE_VALUE)
+        {
+                DWORD FileSize = GetFileSize(hFile, NULL);
+                if (FileSize != INVALID_FILE_SIZE)
+                {
+                        DWORD dwSize = 0;
+                        PVOID Address = (PVOID)((ULONG_PTR)VirtualMemory + Offset);
+                        Result = ReadFile(hFile, Address, FileSize, &dwSize, NULL);
+                        if (Result && BytesRead)
+                                *BytesRead = dwSize;
+                }
+                CloseHandle(hFile);
+        }
+        return Result;
+}
+
 BOOL LoadVirtualMachineProgram(IN PSTR FileName, IN ULONG Offset)
 {
-	BOOL Result = FALSE;
-	HANDLE hFile = CreateFileA(FileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile != INVALID_HANDLE_VALUE)
-	{
-		DWORD FileSize = GetFileSize(hFile, NULL);
-		if (FileSize != INVALID_FILE_SIZE)
-		{
-			DWORD dwSize = 0;
-			PVOID ProgramAddress = (PVOID)((ULONG_PTR)VirtualMemory + Offset);
-			Result = ReadFile(hFile, ProgramAddress, FileSize, &dwSize, NULL);
-		}
-		CloseHandle(hFile);
-	}
-	return Result;
+        return LoadVirtualMachineProgramEx(FileName, Offset, NULL);
+}
+
+static void MirrorBiosRegion(ULONG Offset, DWORD Size)
+{
+        if (Size == 0)
+                return;
+        PUCHAR base = (PUCHAR)VirtualMemory + Offset;
+        for (DWORD pos = Size; pos < 0x10000; pos += Size)
+                memcpy(base + pos, base, Size);
 }
 
 UINT32 SwDosStringLength(IN PSTR String, IN UINT32 MaximumLength)
@@ -467,11 +483,12 @@ int main(int argc, char* argv[], char* envp[])
 		if (hr == S_OK)
 		{
                         BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
-                        BOOL LoadIvtFwResult = LoadVirtualMachineProgram(BiosFileName, 0xF0000);
+                        DWORD BiosSize = 0;
+                        BOOL LoadIvtFwResult = LoadVirtualMachineProgramEx(BiosFileName, 0xF0000, &BiosSize);
                         if (!LoadIvtFwResult && strcmp(BiosFileName, DEFAULT_BIOS) == 0)
                         {
                                 puts("AMI BIOS not found, falling back to " FALLBACK_BIOS);
-                                LoadIvtFwResult = LoadVirtualMachineProgram(FALLBACK_BIOS, 0xF0000);
+                                LoadIvtFwResult = LoadVirtualMachineProgramEx(FALLBACK_BIOS, 0xF0000, &BiosSize);
                                 if (LoadIvtFwResult)
                                         BiosFileName = FALLBACK_BIOS;
                         }
@@ -508,6 +525,8 @@ int main(int argc, char* argv[], char* envp[])
                                         mem[0xFFFF4] = 0xF0;
                                 }
                         }
+                        if (LoadIvtFwResult && BiosSize < 0x10000)
+                                MirrorBiosRegion(0xF0000, BiosSize);
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
                         puts("Virtual Machine is initialized successfully!");
                         if (LoadProgramResult)

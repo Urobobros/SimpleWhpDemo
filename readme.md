@@ -47,6 +47,7 @@ emulator logs each I/O access so you can observe the guest's behavior.
 | `0x0001` | Keyboard input. The emulator reads a byte from `stdin` for each access. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
+| `0x0061` | System control port used for speaker and NMI masking. |
 | other | Any other port triggers an `Unknown I/O Port` message. Repeated access to the same unknown port terminates the program. |
 
 Example to assemble and run the keyboard demo on Windows:
@@ -84,6 +85,11 @@ When the file is missing the emulator falls back to `ivt.fw` automatically.
 To emulate the 8088's 20‑bit address wrap‑around, the guest's first megabyte of
 memory is mirrored at `0x100000`. This prevents crashes when the BIOS executes
 instructions just past the 1 MB boundary during the POST sequence.
+
+If a BIOS image smaller than 64 KiB is loaded, the emulator also mirrors its
+contents across the entire `F0000–FFFFF` ROM region. This ensures that the
+reset vector at physical address `FFFF0` always lies within valid ROM data even
+when only an 8 KiB ROM is supplied.
 
 ### Example boot log
 When the AMI BIOS is used, you can observe its POST codes and other port

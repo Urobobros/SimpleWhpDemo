@@ -25,6 +25,11 @@ const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 const IO_PORT_DISK_DATA:u16=0x00FF;
 const IO_PORT_POST:u16=0x0080;
+const IO_PORT_PIC_MASTER_CMD:u16=0x0020;
+const IO_PORT_PIC_MASTER_DATA:u16=0x0021;
+const IO_PORT_PIC_SLAVE_CMD:u16=0x00A0;
+const IO_PORT_PIC_SLAVE_DATA:u16=0x00A1;
+const IO_PORT_SYS_CTRL:u16=0x0061;
 
 fn port_name(port:u16)->&'static str
 {
@@ -34,6 +39,11 @@ fn port_name(port:u16)->&'static str
         IO_PORT_KEYBOARD_INPUT=>"KEYBOARD_INPUT",
         IO_PORT_DISK_DATA=>"DISK_DATA",
         IO_PORT_POST=>"POST",
+        IO_PORT_PIC_MASTER_CMD=>"PIC_MASTER_CMD",
+        IO_PORT_PIC_MASTER_DATA=>"PIC_MASTER_DATA",
+        IO_PORT_PIC_SLAVE_CMD=>"PIC_SLAVE_CMD",
+        IO_PORT_PIC_SLAVE_DATA=>"PIC_SLAVE_DATA",
+        IO_PORT_SYS_CTRL=>"SYS_CTRL",
         _=>"UNKNOWN"
     }
 }
@@ -43,6 +53,9 @@ static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
 static mut DISK_OFFSET:usize=0;
 static mut LAST_UNKNOWN_PORT:u16=0;
 static mut UNKNOWN_PORT_COUNT:u32=0;
+static mut PIC_MASTER_IMR:u8=0;
+static mut PIC_SLAVE_IMR:u8=0;
+static mut SYS_CTRL:u8=0;
 
 const CGA_COLS:usize=80;
 const CGA_ROWS:usize=25;
@@ -243,8 +256,8 @@ impl SimpleVirtualMachine
 		}
 	}
 
-        fn load_program(&self,file_name:&str,offset:usize)->Result<()>
-	{
+        fn load_program(&self,file_name:&str,offset:usize)->Result<usize>
+        {
 		let path=file_name.encode_utf16();
 		let v:Vec<u16>=path.collect();
 		match unsafe{CreateFileW(PCWSTR(v.as_ptr()),GENERIC_READ.0,FILE_SHARE_READ,None,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,None)}
@@ -252,27 +265,27 @@ impl SimpleVirtualMachine
 			Ok(h)=>
 			{
 				let mut file_size=0;
-				let r=match unsafe{GetFileSizeEx(h,&raw mut file_size)}
-				{
-					Ok(_)=>
-					{
-						if offset+file_size as usize>self.size
-						{
-							panic!("Overflow happens while loading {file_name}!");
-						}
-						let mut size=0;
-						let addr:*mut u8=unsafe{self.vmem.byte_add(offset).cast()};
-						let buffer:&mut [u8]=unsafe{slice::from_raw_parts_mut(addr,file_size as usize)};
-						unsafe{ReadFile(h,Some(buffer),Some(&raw mut size),None)}
-					}
-					Err(e)=>Err(e)
-				};
-				let _=unsafe{CloseHandle(h)};
-				r
-			}
-			Err(e)=>Err(e)
-		}
-	}
+                                let r=match unsafe{GetFileSizeEx(h,&raw mut file_size)}
+                                {
+                                        Ok(_)=>
+                                        {
+                                                if offset+file_size as usize>self.size
+                                                {
+                                                        panic!("Overflow happens while loading {file_name}!");
+                                                }
+                                                let mut size=0;
+                                                let addr:*mut u8=unsafe{self.vmem.byte_add(offset).cast()};
+                                                let buffer:&mut [u8]=unsafe{slice::from_raw_parts_mut(addr,file_size as usize)};
+                                                unsafe{ReadFile(h,Some(buffer),Some(&raw mut size),None)}.map(|_|size as usize)
+                                        }
+                                        Err(e)=>Err(e)
+                                };
+                                let _=unsafe{CloseHandle(h)};
+                                r
+                        }
+                        Err(e)=>Err(e)
+                }
+        }
 
 	fn run(&self)
 	{
@@ -349,6 +362,22 @@ impl SimpleVirtualMachine
                         std::ptr::copy_nonoverlapping(jump.as_ptr(),mem.add(0xFFFF0),5);
                 }
         }
+
+        fn mirror_region(&self,offset:usize,size:usize,total:usize)
+        {
+                if size==0 || size>=total { return; }
+                unsafe
+                {
+                        let mem=self.vmem as *mut u8;
+                        let src=mem.add(offset);
+                        let mut pos=size;
+                        while pos<total
+                        {
+                                std::ptr::copy_nonoverlapping(src,mem.add(offset+pos),size);
+                                pos+=size;
+                        }
+                }
+        }
 }
 
 fn load_disk_image(path:&str) -> bool
@@ -423,6 +452,26 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 (*io_access).Data = 0;
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_SYS_CTRL
+                        {
+                                (*io_access).Data = SYS_CTRL as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_DATA
+                        {
+                                (*io_access).Data = PIC_MASTER_IMR as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_DATA
+                        {
+                                (*io_access).Data = PIC_SLAVE_IMR as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_CMD || (*io_access).Port==IO_PORT_PIC_SLAVE_CMD
+                        {
+                                (*io_access).Data = 0;
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input from port 0x{:04X} ({}) is not implemented!", (*io_access).Port, port_name((*io_access).Port));
@@ -453,6 +502,31 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else if (*io_access).Port==IO_PORT_POST
                         {
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_SYS_CTRL
+                        {
+                                SYS_CTRL = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_CMD
+                        {
+                                PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_CMD
+                        {
+                                PIC_SLAVE_IMR = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_DATA
+                        {
+                                PIC_MASTER_IMR = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_DATA
+                        {
+                                PIC_SLAVE_IMR = (*io_access).Data as u8;
                                 S_OK
                         }
                         else
@@ -588,25 +662,31 @@ fn main()
                 if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
                 {
                         println!("Successfully created virtual machine!");
-                        if let Err(_)=vm.load_program(bios,0xF0000)
+                        let bios_size = match vm.load_program(bios,0xF0000)
                         {
-                                if bios==DEFAULT_BIOS
+                                Ok(size)=>size,
+                                Err(_)=>
                                 {
-                                        println!("AMI BIOS not found, falling back to {FALLBACK_BIOS}");
-                                        if let Err(e)=vm.load_program(FALLBACK_BIOS,0xF0000)
+                                        if bios==DEFAULT_BIOS
                                         {
-                                                panic!("Failed to load firmware! Reason: {e}");
+                                                println!("AMI BIOS not found, falling back to {FALLBACK_BIOS}");
+                                                let size=vm.load_program(FALLBACK_BIOS,0xF0000).expect("Failed to load firmware!");
+                                                vm.patch_reset_vector();
+                                                size
                                         }
-                                        vm.patch_reset_vector();
+                                        else
+                                        {
+                                                panic!("Failed to load firmware!");
+                                        }
                                 }
-                                else
-                                {
-                                        panic!("Failed to load firmware!");
-                                }
-                        }
-                        else if bios==FALLBACK_BIOS
+                        };
+                        if bios==FALLBACK_BIOS
                         {
                                 vm.patch_reset_vector();
+                        }
+                        if bios_size < 0x10000
+                        {
+                                vm.mirror_region(0xF0000,bios_size,0x10000);
                         }
                         if let Err(e)=vm.load_program(program,0x10100)
                         {
