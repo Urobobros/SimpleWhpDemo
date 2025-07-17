@@ -270,6 +270,7 @@ static UCHAR PicMasterImr = 0;
 static UCHAR PicSlaveImr = 0;
 static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
+static UCHAR MdaMode = 0;
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -295,6 +296,7 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_PIC_SLAVE_CMD:   return "PIC_SLAVE_CMD";
         case IO_PORT_PIC_SLAVE_DATA:  return "PIC_SLAVE_DATA";
         case IO_PORT_SYS_CTRL:        return "SYS_CTRL";
+        case IO_PORT_MDA_MODE:        return "MDA_MODE";
         case IO_PORT_CGA_MODE:        return "CGA_MODE";
         case IO_PORT_DMA_PAGE3:       return "DMA_PAGE3";
         case IO_PORT_VIDEO_MISC_B8:   return "VIDEO_MISC_B8";
@@ -341,6 +343,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_SYS_CTRL)
                {
                        IoAccess->Data = SysCtrl;
+                       return S_OK;
+               }
+               else if (IoAccess->Port == IO_PORT_MDA_MODE)
+               {
+                       IoAccess->Data = MdaMode;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_CGA_MODE)
@@ -399,16 +406,21 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         {
                 return S_OK;
         }
-        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
-        {
-                SysCtrl = (UCHAR)IoAccess->Data;
-                return S_OK;
-        }
-        else if (IoAccess->Port == IO_PORT_CGA_MODE)
-        {
-                CgaMode = (UCHAR)IoAccess->Data;
-                return S_OK;
-        }
+       else if (IoAccess->Port == IO_PORT_SYS_CTRL)
+       {
+               SysCtrl = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_MDA_MODE)
+       {
+               MdaMode = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_CGA_MODE)
+       {
+               CgaMode = (UCHAR)IoAccess->Data;
+               return S_OK;
+       }
         else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
         {
                 PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
