@@ -71,6 +71,8 @@ Assemble and run it with:
 nasm -f bin tests\beep.asm -o beep.com -l beep.lst
 SimpleWhpDemo.exe beep.com
 ```
+Both the Rust and C versions now play the tone using OpenAL, matching how
+PCem outputs speaker audio.
 
 Always run the hypervisor with the assembled `.com` file rather than the source
 `*.asm` to avoid spurious "Input is not implemented" messages.

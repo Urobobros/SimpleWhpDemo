@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 #include "vmdef.h"
 
 #define CGA_COLS 80
@@ -11,6 +13,49 @@
 #define FALLBACK_BIOS "ivt.fw"
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
+
+static void OpenalBeep(DWORD freq, DWORD dur_ms)
+{
+        ALCdevice* device = alcOpenDevice(NULL);
+        if (!device) return;
+        ALCcontext* context = alcCreateContext(device, NULL);
+        if (!context) {
+                alcCloseDevice(device);
+                return;
+        }
+        alcMakeContextCurrent(context);
+
+        ALuint buffer;
+        alGenBuffers(1, &buffer);
+        const ALsizei sample_rate = 44100;
+        size_t samples_len = (dur_ms * sample_rate) / 1000;
+        short* samples = (short*)malloc(samples_len * sizeof(short));
+        if (!samples) {
+                alDeleteBuffers(1, &buffer);
+                alcMakeContextCurrent(NULL);
+                alcDestroyContext(context);
+                alcCloseDevice(device);
+                return;
+        }
+        for (size_t i = 0; i < samples_len; ++i) {
+                float t = (float)i / (float)sample_rate;
+                float val = fmodf(t * freq, 1.0f) < 0.5f ? 0.8f : -0.8f;
+                samples[i] = (short)(val * 32767.0f);
+        }
+        alBufferData(buffer, AL_FORMAT_MONO16, samples, (ALsizei)(samples_len * sizeof(short)), sample_rate);
+        free(samples);
+
+        ALuint source;
+        alGenSources(1, &source);
+        alSourcei(source, AL_BUFFER, buffer);
+        alSourcePlay(source);
+        Sleep(dur_ms);
+        alDeleteSources(1, &source);
+        alDeleteBuffers(1, &buffer);
+        alcMakeContextCurrent(NULL);
+        alcDestroyContext(context);
+        alcCloseDevice(device);
+}
 
 static void CgaPutChar(char ch)
 {
@@ -641,6 +686,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
                        Beep(freq, 60);
+                       OpenalBeep(freq, 60);
                }
                SpeakerOn = new_state;
                return S_OK;
