@@ -18,6 +18,7 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
+const IO_PORT_PIT_CONTROL:u16=0x0043;
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -308,6 +309,11 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 let ch=(((*io_access).Data>>(i*8)) as u8) as char;
                                 print!("{}",ch);
                         }
+                        S_OK
+                }
+                else if (*io_access).Port==IO_PORT_PIT_CONTROL
+                {
+                        // Ignore PIT control register writes.
                         S_OK
                 }
                 else

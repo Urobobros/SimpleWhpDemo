@@ -5,6 +5,7 @@
 
 #define IO_PORT_STRING_PRINT	0x0000
 #define IO_PORT_KEYBOARD_INPUT	0x0001
+#define IO_PORT_PIT_CONTROL     0x0043
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;
