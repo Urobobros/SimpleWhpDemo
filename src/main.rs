@@ -20,6 +20,7 @@ use windows::{
 
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
+const GUEST_MEM_SIZE: usize = 0x100000;
 
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
 static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACKS {
@@ -43,6 +44,7 @@ const IO_PORT_PIC_MASTER_DATA: u16 = 0x0021;
 const IO_PORT_PIC_SLAVE_CMD: u16 = 0x00A0;
 const IO_PORT_PIC_SLAVE_DATA: u16 = 0x00A1;
 const IO_PORT_SYS_CTRL: u16 = 0x0061;
+const IO_PORT_SYS_PORTC: u16 = 0x0062;
 const IO_PORT_MDA_MODE: u16 = 0x03B8;
 const IO_PORT_CGA_MODE: u16 = 0x03D8;
 const IO_PORT_DMA_PAGE3: u16 = 0x0083;
@@ -70,6 +72,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_PIC_SLAVE_CMD => "PIC_SLAVE_CMD",
         IO_PORT_PIC_SLAVE_DATA => "PIC_SLAVE_DATA",
         IO_PORT_SYS_CTRL => "SYS_CTRL",
+        IO_PORT_SYS_PORTC => "SYS_PORTC",
         IO_PORT_MDA_MODE => "MDA_MODE",
         IO_PORT_CGA_MODE => "CGA_MODE",
         IO_PORT_DMA_PAGE3 => "DMA_PAGE3",
@@ -103,6 +106,8 @@ static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
 static mut DMA_MODE: u8 = 0;
 static mut DMA_MASK: u8 = 0;
+const MEM_SIZE_KB: usize = GUEST_MEM_SIZE / 1024;
+const MEM_NIBBLE: u8 = ((MEM_SIZE_KB - 64) / 32) as u8;
 
 const CGA_COLS: usize = 80;
 const CGA_ROWS: usize = 25;
@@ -601,6 +606,18 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_SYS_CTRL {
                 (*io_access).Data = SYS_CTRL as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_SYS_PORTC {
+                let base = MEM_NIBBLE;
+                let mut val: u8 = if SYS_CTRL & 0x04 != 0 {
+                    base & 0xF
+                } else {
+                    (base >> 4) & 0xF
+                };
+                if SYS_CTRL & 0x02 != 0 {
+                    val |= 0x20;
+                }
+                (*io_access).Data = val as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 (*io_access).Data = CGA_MODE as u32;
                 S_OK
@@ -684,6 +701,8 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_SYS_CTRL {
                 SYS_CTRL = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port == IO_PORT_SYS_PORTC {
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 CGA_MODE = (*io_access).Data as u8;
@@ -883,7 +902,7 @@ fn main() {
     let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
     if init_whpx() == S_OK {
         println!("WHPX is present and initalized!");
-        if let Ok(vm) = SimpleVirtualMachine::new(0x100000) {
+        if let Ok(vm) = SimpleVirtualMachine::new(GUEST_MEM_SIZE) {
             println!("Successfully created virtual machine!");
             let bios_size = match vm.load_program(bios, 0xF0000) {
                 Ok(size) => size,
