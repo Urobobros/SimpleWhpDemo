@@ -1,6 +1,6 @@
 # AMI 8088 BIOS (31 Jan 1989) - Disassembly Notes
 
-This document summarises the initial instructions found in the `ami_8088_bios_31jan89.bin` ROM. These lines were produced using the helper script `scripts/disasm_ami.py` which relies on `ndisasm`.
+This document summarises the initial instructions found in the `ami_8088_bios_31jan89.bin` ROM. Only the first 8 KiB of this BIOS are available in the repository. These lines were produced using the helper script `scripts/disasm_ami.py` which relies on `ndisasm`.
 
 ```
 $ python3 scripts/disasm_ami.py ami_8088_bios_31jan89.bin 40
@@ -33,6 +33,8 @@ The first executed routine toggles bits on port `0x61` (timer/speaker):
 002C  E6 61             OUT  0x61,AL
 002E  C3                RET
 ```
+The emulator now tracks this port so these accesses no longer trigger
+the unknown‑port handler.
 
 After some setup the BIOS calls video services via `INT 10h`, loads data pointers, and continues with POST checks. Throughout POST it writes codes to port `0x80`.
 

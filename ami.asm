@@ -4037,7 +4037,6 @@ section .text
     db 0x2F
     db 0x38,0x39
     db 0x00,0xFE
-=======
     inc cx
     dec bp
     dec cx

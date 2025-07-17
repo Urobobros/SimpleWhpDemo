@@ -25,6 +25,11 @@ const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
 const IO_PORT_DISK_DATA:u16=0x00FF;
 const IO_PORT_POST:u16=0x0080;
+const IO_PORT_PIC_MASTER_CMD:u16=0x0020;
+const IO_PORT_PIC_MASTER_DATA:u16=0x0021;
+const IO_PORT_PIC_SLAVE_CMD:u16=0x00A0;
+const IO_PORT_PIC_SLAVE_DATA:u16=0x00A1;
+const IO_PORT_SYS_CTRL:u16=0x0061;
 
 fn port_name(port:u16)->&'static str
 {
@@ -34,6 +39,11 @@ fn port_name(port:u16)->&'static str
         IO_PORT_KEYBOARD_INPUT=>"KEYBOARD_INPUT",
         IO_PORT_DISK_DATA=>"DISK_DATA",
         IO_PORT_POST=>"POST",
+        IO_PORT_PIC_MASTER_CMD=>"PIC_MASTER_CMD",
+        IO_PORT_PIC_MASTER_DATA=>"PIC_MASTER_DATA",
+        IO_PORT_PIC_SLAVE_CMD=>"PIC_SLAVE_CMD",
+        IO_PORT_PIC_SLAVE_DATA=>"PIC_SLAVE_DATA",
+        IO_PORT_SYS_CTRL=>"SYS_CTRL",
         _=>"UNKNOWN"
     }
 }
@@ -43,6 +53,9 @@ static mut DISK_IMAGE:[u8;DISK_IMAGE_SIZE]=[0;DISK_IMAGE_SIZE];
 static mut DISK_OFFSET:usize=0;
 static mut LAST_UNKNOWN_PORT:u16=0;
 static mut UNKNOWN_PORT_COUNT:u32=0;
+static mut PIC_MASTER_IMR:u8=0;
+static mut PIC_SLAVE_IMR:u8=0;
+static mut SYS_CTRL:u8=0;
 
 const CGA_COLS:usize=80;
 const CGA_ROWS:usize=25;
@@ -439,6 +452,26 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 (*io_access).Data = 0;
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_SYS_CTRL
+                        {
+                                (*io_access).Data = SYS_CTRL as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_DATA
+                        {
+                                (*io_access).Data = PIC_MASTER_IMR as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_DATA
+                        {
+                                (*io_access).Data = PIC_SLAVE_IMR as u32;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_CMD || (*io_access).Port==IO_PORT_PIC_SLAVE_CMD
+                        {
+                                (*io_access).Data = 0;
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input from port 0x{:04X} ({}) is not implemented!", (*io_access).Port, port_name((*io_access).Port));
@@ -469,6 +502,31 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                         }
                         else if (*io_access).Port==IO_PORT_POST
                         {
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_SYS_CTRL
+                        {
+                                SYS_CTRL = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_CMD
+                        {
+                                PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_CMD
+                        {
+                                PIC_SLAVE_IMR = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_MASTER_DATA
+                        {
+                                PIC_MASTER_IMR = (*io_access).Data as u8;
+                                S_OK
+                        }
+                        else if (*io_access).Port==IO_PORT_PIC_SLAVE_DATA
+                        {
+                                PIC_SLAVE_IMR = (*io_access).Data as u8;
                                 S_OK
                         }
                         else
