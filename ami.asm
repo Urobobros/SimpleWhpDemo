@@ -4037,4 +4037,4041 @@ section .text
     db 0x2F
     db 0x38,0x39
     db 0x00,0xFE
+=======
+    inc cx
+    dec bp
+    dec cx
+    sub ax,0x3020
+    xor [bx],bp
+    xor si,[bx+di]
+    das
+    cmp [bx+di],bh
+    and [bx+di+0x42],cl
+    dec bp
+    and [bx+di+0x73],ch
+    and [bx+di+0x20],ah
+    push sp
+    dec bp
+    and [bx+0x66],ch
+    and [bx+di+0x42],cl
+    dec bp
+    test al,0xc
+    jz 0x2e
+    in al,0x61
+    xor al,0xc
+    test al,0xc
+    jz 0x2f
+    out 0x61,al
+    ret
+    cli
+    out 0x61,al
+    mov cx,0xb0c
+    call 0x1713
+    jz 0x3d
+    mov cx,0x607
+    test al,0xc
+    jz 0x43
+    mov ch,0x0
+    mov ah,0x1
+    sti
+    int 0x10
+    ret
+    push ds
+    xor si,si
+    mov ds,si
+    lds si,[0x78]
+    mov cl,[bx+si]
+    pop ds
+    ret
+    mov bl,0x1
+    jmp 0x6d5
+    cli
+    jmp short 0xbe
+    jo 0xffe4
+    cmp [bx+si],dh
+    cmp [bx+si],bh
+    sub ax,0x4942
+    dec di
+    push bx
+    and [bx+si],ch
+    inc bx
+    sub [bx+si],sp
+    xor [bx+di],di
+    cmp [di],dh
+    sub al,0x31
+    cmp [bx+si],di
+    ss sub al,0x20
+    inc cx
+    dec bp
+    dec cx
+    cs or ax,0x418a
+    insb
+    insb
+    and [bp+si+0x69],dl
+    push word 0x7374
+    and [bp+si+0x65],dl
+    jnc 0xf3
+    jc 0x106
+    fs sub al,0x20
+    sub [bp+di+0x29],al
+    inc cx
+    dec bp
+    dec cx
+    and [bx+si],ch
+    inc bx
+    sub [bx+di+0x4d],ax
+    dec cx
+    and [bx+si],ch
+    inc bx
+    sub [bx+di+0x4d],ax
+    dec cx
+    and [bx+si],ch
+    inc bx
+    sub [bx+di+0x4d],ax
+    dec cx
+    and [bx+si-0x18],dl
+    stosb
+    adc ax,0xf88b
+    call 0x1656
+    pop bx
+    ret
+    add [bx+si],al
+    add ah,bh
+    mov ax,cs
+    mov ss,ax
+    mov sp,0xe000
+    mov si,sp
+    xor ax,ax
+    mov es,ax
+    out 0xa0,al
+    dec ax
+    jnz 0xce
+    mov dx,0x3d8
+    out dx,al
+    out 0x83,al
+    inc ax
+    mov dl,0xb8
+    out dx,al
+    mov dx,0x213
+    out dx,al
+    mov al,0x4
+    out 0x8,al
+    mov al,0x99
+    out 0x63,al
+    pop di
+    mov al,0xa1
+    out 0x61,al
+    mov cx,0x1000
+    xor bp,bp
+    cs lodsw
+    add bp,ax
+    loop 0xf1
+    xor al,al
+    xor bp,ax
+    jz 0x103
+    mov bp,0x4
+    jmp 0x804
+    cmp word [es:0x472],0x1234
+    jnz 0x10f
+    mov bp,0x8000
+    mov al,0x13
+    out 0x20,al
+    pop di
+    mov al,0x8
+    out 0x21,al
+    pop di
+    mov al,0x9
+    out 0x21,al
+    pop di
+    mov al,0xff
+    out 0x21,al
+    mov al,0x54
+    out 0x43,al
+    pop di
+    mov ax,0x400
+    out 0x41,al
+    pop di
+    mov bx,0xff
+    xor cx,cx
+    mov al,0x40
+    out 0x43,al
+    pop di
+    dec sp
+    dec sp
+    in al,0x41
+    or bh,al
+    and bl,al
+    cmp bx,0xff00
+    loopne 0x132
+    jz 0x151
+    dec ah
+    jnz 0x130
+    jmp short 0x151
+    nop
+    jmp 0x804
+    mov al,0x12
+    out 0x41,al
+    pop di
+    mov al,0x36
+    out 0x43,al
+    pop di
+    mov al,0x0
+    out 0x40,al
+    pop di
+    out 0x40,al
+    out 0xd,al
+    mov si,0xffff
+    mov dx,0xffff
+    mov cx,0x8
+    inc dx
+    mov sp,0xe174
+    jmp 0x61d
+    jna 0x157
+    loope 0x16d
+    jmp short 0x17a
+    mov al,0xff
+    out 0x1,al
+    pop di
+    out 0x1,al
+    pop di
+    mov al,0x58
+    out 0xb,al
+    pop di
+    mov al,0x0
+    out 0x8,al
+    pop di
+    out 0xa,al
+    pop di
+    mov al,0x41
+    out 0xb,al
+    pop di
+    inc ax
+    out 0xb,al
+    pop di
+    inc ax
+    out 0xb,al
+    loop 0x19b
+    dec cx
+    jnz 0x19d
+    jmp 0x1aa
+    mov bp,0x6
+    jmp 0x804
+    add [bp+di-0x6000],bh
+    sub bh,0x4
+    jc 0x1c3
+    mov es,bx
+    mov si,0x4000
+    xor di,di
+    inc ax
+    stosb
+    shr si,1
+    mov di,si
+    jnz 0x1b9
+    jmp short 0x1ad
+    add bh,0x4
+    cmp bh,0xa0
+    jz 0x1ec
+    mov es,bx
+    inc di
+    xor [es:di],al
+    jnz 0x1ec
+    dec ax
+    shl di,1
+    cmp di,0x4000
+    jnz 0x1ce
+    xor di,di
+    xor [es:di],al
+    jnz 0x1ec
+    dec ax
+    jmp short 0x1c3
+    mov bp,0x7
+    jmp 0x804
+    or bx,bx
+    jz 0x1e6
+    mov sp,0xe1f6
+    jmp 0x1823
+    clc
+    loope 0x22c
+    leave
+    mov es,cx
+    mov ch,0x20
+    mov sp,0xe204
+    jmp 0x66c
+    push es
+    loop 0x27c
+    fidivr word [bx+si+0x40]
+    mov ds,ax
+    mov al,0x30
+    mov ss,ax
+    mov sp,0x100
+    mov [0x13],bx
+    mov cx,0x10
+    mov ax,0xff23
+    mov bx,cs
+    xor di,di
+    stosw
+    xchg ax,bx
+    stosw
+    xchg ax,bx
+    loop 0x222
+    mov cl,0x10
+    mov si,0xff03
+    cs movsw
+    mov ax,bx
+    stosw
+    loop 0x22d
+    mov byte [0x10],0x30
+    mov ax,0x7
+    int 0x10
+    xor byte [0x10],0x30
+    mov ax,0x1
+    int 0x10
+    in al,0x62
+    and al,0xf
+    mov ah,al
+    mov al,0xa9
+    jmp short 0x252
+    out 0x61,al
+    jmp short 0x256
+    in al,0x62
+    mov cl,0x4
+    shl al,cl
+    or al,ah
+    mov [0x10],al
+    mov bh,0xb0
+    mov cx,0x800
+    mov di,0x1
+    mov dx,0x3b8
+    and al,0x30
+    cmp al,0x30
+    mov ah,0x7
+    jz 0x290
+    mov ah,0x3
+    mov bh,0xb8
+    mov ch,0x20
+    dec di
+    mov dl,0xd8
+    cmp al,0x20
+    jz 0x290
+    mov ah,0x1
+    cmp al,0x10
+    jz 0x290
+    mov word [es:0x40],0xff53
+    jmp short 0x2fa
+    mov al,0x0
+    xchg ah,al
+    mov si,ax
+    int 0x10
+    mov es,bx
+    mov ax,di
+    out dx,al
+    jmp short 0x2c6
+    pop si
+    aad 0x60
+    ficom dword [bp+0x60]
+    salc
+    pop sp
+    pop cx
+    f2xm1
+    pop di
+    pop cx
+    fcom dword [si-0x14]
+    pop di
+    insb
+    pusha
+    pop dx
+    pop sp
+    jmp 0xe768:0xecf0
+    o32 push byte -0x18
+    push word 0x6867
+    in al,0x64
+    insb
+    jmp 0x1743
+    push dx
+    call 0x669
+    pop dx
+    jnz 0x2f1
+    mov ax,si
+    int 0x10
+    xor di,di
+    mov cx,0x28
+    mov ax,0x7020
+    rep stosw
+    mov ah,0x8
+    inc dx
+    inc dx
+    call 0x1a3d
+    jcxz 0x2f1
+    mov ah,0x1
+    call 0x1a3d
+    jcxz 0x2f1
+    or bp,0x4000
+    jmp short 0x2f6
+    mov bl,0x2
+    call 0x6cb
+    mov ax,si
+    int 0x10
+    mov bx,0xc000
+    or bp,bp
+    jns 0x307
+    mov word [0x72],0x1234
+    call 0x5c5
+    cmp bh,0xc8
+    jc 0x307
+    mov bx,0x8f
+    mov ah,0x3
+    int 0x10
+    push dx
+    mov dx,0x1403
+    mov si,0xe2ae
+    jmp short 0x33a
+    nop
+    mov ah,0x2
+    int 0x10
+    cs lodsb
+    neg al
+    rol al,1
+    mov ah,0x9
+    mov cx,0x1
+    int 0x10
+    inc dx
+    dec di
+    jnz 0x320
+    cmp dh,0x16
+    jz 0x344
+    mov dx,0x1600
+    mov di,0x15
+    mov bl,0x7
+    jmp short 0x320
+    pop dx
+    mov ah,0x2
+    int 0x10
+    mov si,0xe060
+    call 0x1805
+    mov dx,0x21
+    xor si,si
+    xor cx,cx
+    mov es,cx
+    cli
+    call 0x61d
+    jmp short 0x35e
+    mov al,0xff
+    out 0x21,al
+    mov byte [0x6b],0x0
+    sti
+    test byte [0x6b],0xff
+    loope 0x368
+    cli
+    jz 0x378
+    mov si,0xfe9c
+    jmp 0x17c5
+    mov word [es:0x8],0xe2c3
+    mov word [es:0x14],0xff54
+    mov di,0x20
+    mov si,0xfef3
+    mov cx,0x8
+    cs movsw
+    inc di
+    inc di
+    loop 0x38f
+    mov al,0xfe
+    out 0x21,al
+    sti
+    mov ax,[0x6c]
+    cmp ax,[0x6c]
+    loope 0x39d
+    jz 0x372
+    mov al,0x0
+    out 0x61,al
+    mov cx,0x6000
+    loop 0x3ac
+    call 0x822
+    in al,0x60
+    cmp al,0xaa
+    loopne 0x3b1
+    jz 0x3bd
+    or bp,0x2
+    loop 0x3bd
+    call 0x822
+    loop 0x3c2
+    in al,0x60
+    xor si,si
+    mov dx,0x210
+    call 0x61d
+    jnz 0x3f4
+    mov dl,0x15
+    mov di,0x1
+    mov [cs:di],al
+    jmp short 0x3da
+    in al,dx
+    inc dx
+    mov ah,al
+    jmp short 0x3e0
+    in al,dx
+    dec dx
+    cmp ax,di
+    jnz 0x3f0
+    shl di,1
+    jnz 0x3d5
+    dec dx
+    call 0x61d
+    jz 0x3f4
+    or bp,0x1
+    push es
+    xor bx,bx
+    or bp,bp
+    jns 0x411
+    add bh,0x4
+    cmp bx,[0x13]
+    jz 0x434
+    mov es,bx
+    mov cx,0x2000
+    xor di,di
+    xor ax,ax
+    rep stosw
+    jmp short 0x3fb
+    add bh,0x4
+    call 0x64d
+    cmp bx,[0x13]
+    jz 0x434
+    mov cx,0x2000
+    mov es,bx
+    call 0x669
+    jz 0x411
+    mov [0x13],bx
+    mov si,0xf03f
+    call 0x178e
+    call 0x17e9
+    call 0x1817
+    pop es
+    mov ax,[0x13]
+    mov cl,0x6
+    shr ax,cl
+    mov [0x13],ax
+    test bp,0x4000
+    jz 0x46e
+    mov bh,0x0
+    mov ah,0x3
+    int 0x10
+    push dx
+    mov dx,0x1603
+    mov cx,0x3
+    mov si,0xeba2
+    mov ah,0x2
+    int 0x10
+    mov ah,0x8
+    int 0x10
+    inc si
+    inc dx
+    xor al,[cs:si]
+    loope 0x458
+    jnz 0x458
+    pop dx
+    mov ah,0x2
+    int 0x10
+    push es
+    mov bx,0xc800
+    call 0x5c5
+    cmp bh,0xf6
+    jc 0x472
+    test bp,0x1
+    jz 0x486
+    mov si,0xffe2
+    call 0x17e6
+    test bp,0x2
+    jz 0x492
+    mov si,0xe5bd
+    call 0x17e6
+    mov bx,0xf600
+    mov es,bx
+    xor si,si
+    mov cx,0x2000
+    call 0x69d
+    mov di,0x60
+    mov ax,0xf832
+    jnz 0x4c5
+    cmp bh,0xf6
+    jnz 0x4b4
+    cmp word [es:0x0],byte -0x1
+    jz 0x4c1
+    add bh,0x2
+    cmp bh,0xfe
+    jc 0x495
+    mov ax,0xf600
+    inc di
+    inc di
+    pop es
+    stosw
+    jmp short 0x4cf
+    pop es
+    stosw
+    cmp bh,0xf6
+    jz 0x4cf
+    call 0x60f
+    mov ax,0x1e
+    mov [0x1a],ax
+    mov [0x1c],ax
+    mov si,0x78
+    mov [si+0x8],ax
+    add ax,0x20
+    mov [si+0xa],ax
+    in al,0x21
+    and al,0xfc
+    jmp short 0x4ea
+    out 0x21,al
+    sti
+    mov ax,0x1414
+    mov [si],ax
+    mov [si+0x2],ax
+    mov ax,0x101
+    mov [si+0x4],ax
+    mov [si+0x6],ax
+    mov dx,0x201
+    in al,dx
+    test al,0xf
+    jnz 0x50b
+    or byte [0x11],0x10
+    xor di,di
+    mov dx,0x3bc
+    call 0x6e4
+    mov dx,0x378
+    call 0x6e4
+    mov dx,0x278
+    call 0x6e4
+    push di
+    xor di,di
+    mov dx,0x3f8
+    call 0x729
+    mov dx,0x2f8
+    call 0x729
+    pop ax
+    mov cl,0x3
+    ror al,cl
+    or ax,di
+    or [0x11],al
+    test byte [0x10],0x1
+    jz 0x56f
+    in al,0x21
+    and al,0xbc
+    jmp short 0x546
+    out 0x21,al
+    xor dx,dx
+    xor ax,ax
+    int 0x13
+    jc 0x566
+    mov byte [0x3f],0x0
+    call 0xe8c
+    mov ch,0x4
+    call 0xdae
+    jc 0x566
+    mov ch,0x26
+    call 0xdae
+    jnc 0x56c
+    mov si,0xf71d
+    call 0x17e6
+    call 0xee4
+    call 0x56
+    and bp,0x3fff
+    jz 0x58d
+    call 0x56
+    mov si,0xe5a8
+    call 0x1805
+    mov ah,0x0
+    int 0x16
+    cmp ah,0x3b
+    jnz 0x581
+    call 0x56
+    test byte [0x10],0x1
+    jnz 0x597
+    jmp 0x5b
+    call 0x1823
+    mov al,0x80
+    out 0xa0,al
+    mov ah,0xf
+    int 0x10
+    xor ah,ah
+    int 0x10
+    int 0x19
+    or dl,[bx+si+0x72]
+    gs jnc 0x621
+    and [si],bh
+    inc si
+    xor [0x7420],di
+    outsw
+    and [bp+si+0x45],dl
+    push bx
+    push bp
+    dec bp
+    lds cx,[bp+di+0x45]
+    pop cx
+    inc dx
+    dec di
+    inc cx
+    push dx
+    les cx,[bp+0x33c3]
+    mul byte [0x35ad]
+    push bp
+    stosb
+    jnz 0x5f8
+    es lodsb
+    mov cl,0x5
+    shl ax,cl
+    add bx,ax
+    mov cl,0x4
+    shl ax,cl
+    mov cx,ax
+    xor si,si
+    call 0x69d
+    push ds
+    push bx
+    push bp
+    jnz 0x5fd
+    push cs
+    mov ax,0xe5f3
+    push ax
+    push es
+    mov ax,0x3
+    push ax
+    retf
+    cld
+    pop bp
+    pop bx
+    pop ds
+    ret
+    add bx,0x80
+    ret
+    pop bp
+    call 0x603
+    jmp short 0x5f5
+    mov bx,es
+    cmp bh,0xc8
+    jnc 0x60f
+    mov bl,0x2
+    jmp 0x6cb
+    xor di,di
+    mov si,0xf723
+    call 0x178e
+    call 0x1817
+    jmp 0x17e9
+    mov ax,0x55aa
+    mov bx,ax
+    out dx,al
+    xchg al,ah
+    or si,si
+    jz 0x62c
+    out dx,al
+    jmp short 0x62c
+    in al,dx
+    cmp al,ah
+    mov ax,bx
+    jnz 0x648
+    or si,si
+    jz 0x63c
+    in al,dx
+    cmp al,ah
+    jnz 0x648
+    cmp ax,0x55aa
+    jz 0x649
+    xor ax,0xaa55
+    jz 0x620
+    xor ax,ax
+    ret
+    not ax
+    jmp short 0x620
+    mov al,0xd
+    call 0x181e
+    mov ah,0x8
+    mov di,0x1
+    call 0x6a8
+    mov ax,bx
+    mov cl,0x6
+    shr ax,cl
+    call 0x1a26
+    mov si,0xf9a7
+    jmp 0x1808
+    call 0x1823
+    cld
+    mov dx,cx
+    mov ax,0xaaaa
+    xor di,di
+    mov cx,dx
+    rep stosw
+    xor di,di
+    mov cx,dx
+    scasw
+    loope 0x67c
+    jnz 0x697
+    mov di,cx
+    in al,0x62
+    test al,0xc0
+    mov al,ah
+    jnz 0x697
+    cmp ax,0xaaaa
+    jz 0x698
+    xor ax,0x5555
+    jz 0x672
+    xor ax,ax
+    ret
+    mov ax,0x5555
+    jmp short 0x672
+    xor ah,ah
+    es lodsb
+    add ah,al
+    loop 0x69f
+    ret
+    mov ah,0x5
+    mov al,0xb6
+    out 0x43,al
+    jmp short 0x6ae
+    mov al,ah
+    out 0x42,al
+    jmp short 0x6b4
+    out 0x42,al
+    in al,0x61
+    jmp short 0x6ba
+    or al,0x3
+    out 0x61,al
+    mov cx,0xff
+    loop 0x6c1
+    dec di
+    jnz 0x6be
+    and al,0xfd
+    out 0x61,al
+    ret
+    mov di,0x400
+    call 0x6a6
+    loop 0x6d1
+    loop 0x6d3
+    mov di,0x80
+    call 0x6a6
+    loop 0x6db
+    loop 0x6dd
+    dec bl
+    jnz 0x6d5
+    ret
+    xor si,si
+    call 0x61d
+    jnz 0x6f1
+    mov [di+0x8],dx
+    inc di
+    inc di
+    ret
+    cld
+    xor ax,ax
+    mov es,ax
+    mov ax,0xefc7
+    mov di,0x78
+    stosw
+    mov ax,cs
+    stosw
+    sti
+    mov bx,0x7c00
+    xor dx,dx
+    mov cx,0x4
+    xor ax,ax
+    int 0x13
+    push cx
+    mov cx,0x1
+    mov ax,0x201
+    int 0x13
+    pop cx
+    jnc 0x724
+    loop 0x70a
+    shl ah,1
+    mov si,0xf9d9
+    jmp 0x19ad
+    jmp 0x0:0x7c00
+    push dx
+    mov dl,0xfa
+    in al,dx
+    test al,0xf8
+    pop dx
+    jnz 0x738
+    mov [di+0x0],dx
+    inc di
+    inc di
+    ret
+    sti
+    push bx
+    push cx
+    push dx
+    push di
+    push ds
+    mov bx,0x40
+    mov ds,bx
+    mov bx,dx
+    mov di,[bx+0x7c]
+    and di,0xff
+    mov cl,0x0
+    shl di,cl
+    shl bx,1
+    mov dx,[bx+0x0]
+    and dx,dx
+    jz 0x772
+    shr ah,1
+    jz 0x788
+    dec ah
+    jnz 0x772
+    jnc 0x778
+    add dx,byte +0x5
+    jmp short 0x76b
+    in al,dx
+    mov ah,al
+    inc dx
+    jmp short 0x771
+    in al,dx
+    pop ds
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    iret
+    mov al,0x1
+    mov bx,0x120
+    call 0x7dc
+    jnz 0x79b
+    and ah,0x1e
+    in al,dx
+    jmp short 0x772
+    jnc 0x7a0
+    push ax
+    mov al,0x3
+    mov bx,0x2030
+    call 0x7dc
+    pop bx
+    mov al,bl
+    jnz 0x79b
+    out dx,al
+    jmp short 0x772
+    or ah,0x80
+    jmp short 0x772
+    mov ah,al
+    and al,0xe0
+    mov cx,0x417
+    jz 0x7b6
+    mov cl,0x5
+    shr al,cl
+    mov cx,0x600
+    shr cx,1
+    dec al
+    jnz 0x7b0
+    mov al,0x80
+    add dx,byte +0x3
+    out dx,al
+    push dx
+    mov al,ch
+    dec dx
+    dec dx
+    jmp short 0x7c3
+    out dx,al
+    mov al,cl
+    dec dx
+    jmp short 0x7c9
+    out dx,al
+    mov al,ah
+    and al,0x1f
+    pop dx
+    jmp short 0x7d1
+    out dx,al
+    sub al,al
+    dec dx
+    dec dx
+    jmp short 0x7d8
+    out dx,al
+    dec dx
+    jmp short 0x766
+    push dx
+    add dx,byte +0x4
+    out dx,al
+    inc dx
+    inc dx
+    push di
+    call 0x7f2
+    pop di
+    jnz 0x7f0
+    mov bl,bh
+    dec dx
+    call 0x7f2
+    pop dx
+    ret
+    xor cx,cx
+    in al,dx
+    mov ah,al
+    and al,bl
+    cmp al,bl
+    jz 0x803
+    loop 0x7f4
+    dec di
+    jnz 0x7f2
+    dec di
+    ret
+    mov bx,bp
+    mov sp,0xe811
+    mov di,0x80
+    call 0x6a6
+    adc ax,bp
+    loop 0x811
+    loop 0x813
+    dec bx
+    jnz 0x806
+    mov dx,0x4
+    loop 0x81b
+    dec dx
+    jnz 0x81b
+    jmp short 0x804
+    mov al,0xc0
+    out 0x61,al
+    mov al,0x40
+    jmp short 0x82a
+    out 0x61,al
+    ret
+    add [0xbb53],bl
+    inc ax
+    add [bp+0xadb],cl
+    in al,0x74
+    or ax,0xccfe
+    jz 0x856
+    dec ah
+    jnz 0x853
+    mov al,[0x17]
+    jmp short 0x853
+    sti
+    call 0x85f
+    jz 0x846
+    call 0xb96
+    mov [0x1a],bx
+    pop bx
+    pop ds
+    iret
+    call 0x85f
+    sti
+    pop bx
+    pop ds
+    retf 0x2
+    cli
+    mov bx,[0x1a]
+    cmp bx,[0x1c]
+    mov ax,[bx]
+    ret
+    mov ah,0x8
+    cmp al,0x38
+    jz 0x881
+    mov ah,0x4
+    cmp al,0x1d
+    jz 0x881
+    mov ah,0x2
+    cmp al,0x2a
+    jz 0x881
+    mov ah,0x1
+    cmp al,0x36
+    ret
+    sbb sp,[bx+di]
+    inc ax
+    and sp,[si]
+    and ax,0x265e
+    sub ch,[bx+si]
+    sub [bx+0x2b],bx
+    or [bx+si],al
+    push cx
+    push di
+    inc bp
+    push dx
+    push sp
+    pop cx
+    push bp
+    dec cx
+    dec di
+    push ax
+    jpo 0x91a
+    or ax,0x41ff
+    push bx
+    inc sp
+    inc si
+    inc di
+    dec ax
+    dec dx
+    dec bx
+    dec sp
+    cmp ah,[bp+si]
+    jng 0x8ab
+    jl 0x908
+    pop ax
+    inc bx
+    push si
+    inc dx
+    dec si
+    dec bp
+    cmp al,0x3e
+    aas
+    push word [bx]
+    jmp [bx+si]
+    call [si+0x55]
+    push si
+    push di
+    pop ax
+    pop cx
+    pop dx
+    pop bx
+    pop sp
+    pop bp
+    db 0xff
+    push word [bx]
+    cmp [bx+di],bh
+    sub ax,0x3534
+    sub si,[ss:bx+di]
+    xor dh,[bp+di]
+    xor [0x5fec],ch
+    insb
+    pop ax
+    pop di
+    pop sp
+    sbb si,[bx+di]
+    xor dh,[bp+di]
+    xor al,0x35
+    ss aaa
+    cmp [bx+di],bh
+    xor [di],ch
+    cmp ax,0x908
+    jno 0x963
+    gs jc 0x963
+    jns 0x966
+    imul bp,[bx+0x70],word 0x5d5b
+    or ax,0x61ff
+    jnc 0x95f
+    push dword 0x3b6c6b6a
+    daa
+    pusha
+    call far [si+0x7a]
+    js 0x96c
+    jna 0x96d
+    outsb
+    insw
+    sub al,0x2e
+    das
+    jmp far [bp+si]
+    jmp [bx+si]
+    db 0xff
+    cmp di,[si]
+    cmp ax,0x3f3e
+    inc ax
+    inc cx
+    inc dx
+    inc bx
+    inc sp
+    db 0xff
+    inc word [bx+0x48]
+    dec cx
+    sub ax,0xff4b
+    dec bp
+    sub cx,[bx+0x50]
+    push cx
+    push dx
+    push bx
+    insb
+    fsubp st3
+    xlatb
+    db 0xde
+    db 0xdb
+    mov ah,0x40
+    cmp al,0x3a
+    jz 0x944
+    mov ah,0x20
+    cmp al,0x45
+    jz 0x944
+    mov ah,0x10
+    cmp al,0x46
+    ret
+    test byte [0x17],0x40
+    jz 0x969
+    test byte [0x17],0x3
+    jnz 0x95f
+    cmp al,0x7a
+    ja 0x969
+    cmp al,0x61
+    jc 0x969
+    sub al,0x20
+    jmp short 0x969
+    cmp al,0x5a
+    ja 0x969
+    cmp al,0x41
+    jc 0x969
+    add al,0x20
+    mov bx,[0x1c]
+    push bx
+    call 0xb96
+    cmp bx,[0x1a]
+    jnz 0x97d
+    call 0xb72
+    jmp 0xb1e
+    mov [0x1c],bx
+    pop bx
+    mov [bx],ax
+    jmp 0xb19
+    sti
+    cld
+    push ax
+    push bx
+    push cx
+    push bp
+    push ds
+    mov bx,0x40
+    mov ds,bx
+    mov bp,sp
+    in al,0x60
+    mov ah,al
+    jmp short 0x99b
+    in al,0x61
+    jmp short 0x99f
+    mov bl,al
+    or al,0x80
+    out 0x61,al
+    jmp short 0x9a7
+    mov al,bl
+    out 0x61,al
+    mov al,ah
+    cmp al,0xff
+    jnz 0x9b7
+    call 0xb72
+    jmp 0xb1e
+    test al,0x80
+    jz 0x9ed
+    and al,0x7f
+    call 0x934
+    jz 0x9c8
+    mov ah,0x80
+    cmp al,0x52
+    jnz 0x9d1
+    not ah
+    and [0x18],ah
+    jmp 0xb19
+    call 0x86b
+    jnz 0x9ce
+    not ah
+    and [0x17],ah
+    cmp al,0x38
+    jnz 0x9ce
+    xor ax,ax
+    xchg [0x19],al
+    and al,al
+    jz 0x9ce
+    jmp 0x945
+    call 0x86b
+    jnz 0x9f8
+    or [0x17],ah
+    jmp short 0x9ce
+    and al,al
+    jz 0x9ce
+    cmp al,0x54
+    jnc 0x9ce
+    test byte [0x17],0x8
+    jz 0xa59
+    test byte [0x17],0x4
+    jz 0xa29
+    cmp al,0x53
+    jnz 0xa1b
+    mov word [0x72],0x1234
+    jmp 0x5b
+    cmp al,0x4a
+    jnz 0xa2c
+    in al,0x61
+    xor al,0xc
+    call 0x2f
+    jmp 0xb19
+    call 0xb26
+    call 0xb5f
+    mov bx,0xeba7
+    call 0xb52
+    cmp al,0xa
+    jnc 0xa4d
+    mov ah,[0x19]
+    shl ah,1
+    add al,ah
+    shl ah,1
+    shl ah,1
+    add al,ah
+    mov [0x19],al
+    jmp 0xb19
+    cmp ah,0x39
+    jz 0xa56
+    mov ah,al
+    xor al,al
+    jmp 0x945
+    test byte [0x17],0x4
+    jz 0xabb
+    call 0xb5f
+    mov bx,0xec00
+    call 0xb52
+    cmp ah,0x45
+    jnz 0xa91
+    or byte [0x18],0x8
+    mov al,0x20
+    out 0x20,al
+    cmp byte [0x49],0x7
+    jz 0xa87
+    mov al,[0x65]
+    push dx
+    mov dx,0x3d8
+    out dx,al
+    pop dx
+    test byte [0x18],0x8
+    jnz 0xa87
+    jmp 0xb1e
+    cmp ah,0x46
+    jnz 0xaaa
+    mov ax,[0x80]
+    mov [0x1a],ax
+    mov [0x1c],ax
+    mov byte [0x71],0x80
+    int 0x1b
+    xor ax,ax
+    jmp short 0xab8
+    cmp ah,0x37
+    jz 0xab4
+    cmp ah,0x3a
+    jna 0xab8
+    mov ah,al
+    xor al,al
+    jmp 0x945
+    call 0xb26
+    cmp al,0x52
+    jz 0xac5
+    call 0xb5f
+    test byte [0x17],0x3
+    jz 0xaf0
+    cmp al,0x37
+    jnz 0xada
+    mov al,0x20
+    out 0x20,al
+    push bp
+    int 0x5
+    pop bp
+    jmp short 0xb1e
+    mov bx,0xe882
+    test byte [0x17],0x20
+    jz 0xb06
+    call 0xb3c
+    cmp al,0x46
+    jna 0xb06
+    mov bx,0xe8db
+    jmp short 0xb06
+    mov bx,0xe8db
+    test byte [0x17],0x20
+    jz 0xb03
+    cmp al,0x46
+    jna 0xb06
+    mov bx,0xe882
+    jmp short 0xb06
+    call 0xb3c
+    call 0xb52
+    cmp ah,0x3a
+    jna 0xb16
+    cmp al,0x3a
+    jna 0xb16
+    mov ah,al
+    xor al,al
+    jmp 0x945
+    cli
+    mov al,0x20
+    out 0x20,al
+    mov sp,bp
+    pop ds
+    pop bp
+    pop cx
+    pop bx
+    pop ax
+    iret
+    call 0x934
+    jnz 0xb3b
+    test [0x18],ah
+    jnz 0xb39
+    or [0x18],ah
+    xor [0x17],ah
+    jmp short 0xb19
+    ret
+    cmp al,0x52
+    jnz 0xb51
+    test byte [0x18],0x80
+    jnz 0xb19
+    or byte [0x18],0x80
+    xor byte [0x17],0x80
+    ret
+    mov ah,al
+    dec al
+    cs xlatb
+    inc al
+    jz 0xb19
+    dec al
+    ret
+    test byte [0x18],0x8
+    jz 0xb71
+    cmp al,0x45
+    jz 0xb6f
+    and byte [0x18],0xf7
+    jmp short 0xb19
+    ret
+    mov al,0x20
+    out 0x20,al
+    mov cx,0x80
+    in al,0x61
+    push ax
+    and al,0xfe
+    push cx
+    or al,0x2
+    out 0x61,al
+    mov cl,0x50
+    loop 0xb85
+    and al,0xfd
+    out 0x61,al
+    mov cl,0x40
+    loop 0xb8d
+    pop cx
+    loop 0xb7e
+    pop ax
+    out 0x61,al
+    ret
+    inc bx
+    inc bx
+    cmp bx,[0x82]
+    jnz 0xba2
+    mov bx,[0x80]
+    ret
+    inc cx
+    dec bp
+    dec cx
+    inc si
+    db 0xff
+    js 0xc23
+    jpe 0xc27
+    jl 0xc2b
+    jng 0xc2f
+    add byte [bx+di-0x7c7e],0xff
+    call [bx+si]
+    adc [bp+si],dx
+    adc dx,[si]
+    adc ax,0x1716
+    sbb [bx+di],bl
+    db 0xff
+    db 0xff
+    db 0xff
+    call far [0x201f]
+    and [bp+si],sp
+    and sp,[si]
+    and ax,0xff26
+    db 0xff
+    db 0xff
+    db 0xff
+    jmp far [si]
+    sub ax,0x2f2e
+    xor [bx+di],dh
+    xor bh,bh
+    db 0xff
+    db 0xff
+    db 0xff
+    db 0xff
+    jmp [bx+si]
+    jmp far [bx+si+0x69]
+    push byte +0x6b
+    insb
+    insw
+    outsb
+    outsw
+    jo 0xc5c
+    db 0xff
+    inc word [bx]
+    or [bx+di],cl
+    inc word [si]
+    add ax,0xff06
+    add [bp+si],ax
+    add ax,[bx+si]
+    inc cx
+    call 0x84b7
+    call 0x27b9
+    inc word [bx+si]
+    db 0xff
+    db 0xff
+    call far [0xffff]
+    db 0xff
+    call far [bx]
+    db 0xff
+    jg 0xc0e
+    adc [bx],dx
+    add ax,0x1412
+    sbb [di],dx
+    or [bx],cx
+    adc [bp+di],bl
+    sbb ax,0xff0a
+    add [bp+di],dx
+    add al,0x6
+    pop es
+    or [bp+si],cl
+    or cx,[si]
+    db 0xff
+    db 0xff
+    db 0xff
+    call far [si]
+    sbb bl,[bx+si]
+    add dx,[0xe02]
+    or ax,0xffff
+    db 0xff
+    push word [bp+si-0x1]
+    and bh,bh
+    pop si
+    pop di
+    pusha
+    popa
+    bound sp,[bp+di+0x64]
+    gs a32 inc ebp
+    inc si
+    ja 0xc47
+    test bh,bh
+    jnc 0xc4b
+    jz 0xc4d
+    jnz 0xc4f
+    jna 0xc51
+    push sp
+    cs mov ah,0xaa
+    cs lodsb
+    sti
+    cld
+    push ax
+    push cx
+    push dx
+    push bx
+    push bp
+    push si
+    push di
+    push ds
+    push es
+    mov si,0x40
+    mov ds,si
+    and byte [0x3f],0x7f
+    mov si,ax
+    in al,0x61
+    push ax
+    and al,0xf3
+    out 0x61,al
+    mov ax,si
+    mov al,ah
+    cmp al,0x5
+    ja 0xcab
+    cbw
+    mov di,ax
+    mov ax,si
+    shl di,1
+    call [cs:di-0x134b]
+    mov bp,sp
+    mov [bp+0x12],ax
+    mov ax,0x201
+    jc 0xc9a
+    and byte [bp+0x18],0xfe
+    dec ax
+    or [bp+0x18],ax
+    pop ax
+    call 0x20
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop bp
+    pop bx
+    pop dx
+    pop cx
+    pop ax
+    iret
+    mov ax,0x100
+    mov [0x41],ah
+    stc
+    jmp short 0xc8b
+    shr sp,byte 0xf3
+    in al,dx
+    clc
+    in al,dx
+    clc
+    in al,dx
+    clc
+    in al,dx
+    clc
+    in al,dx
+    mov byte [0x3e],0x0
+    call 0x1911
+    jc 0xce5
+    xor bx,bx
+    call 0x49
+    mov ah,cl
+    mov al,0x3
+    inc bx
+    call 0x49
+    mov di,cx
+    mov si,ax
+    mov ch,0x3
+    call 0xeef
+    jc 0xce5
+    xor ah,ah
+    mov [0x41],ah
+    mov al,ah
+    lahf
+    call 0xee4
+    sahf
+    mov ah,al
+    ret
+    mov al,[0x41]
+    jmp short 0xd6f
+    cmp dl,0x3
+    jna 0xd07
+    mov ah,0x1
+    mov [0x41],ah
+    xor al,al
+    stc
+    ret
+    test ah,0x1
+    jz 0xd11
+    or byte [0x3f],0x80
+    call 0xe8c
+    push cx
+    push ax
+    cmp ah,0x5
+    jz 0xd7c
+    push bx
+    mov bx,0x3
+    call 0x49
+    pop bx
+    shl al,cl
+    mov cl,0x80
+    mul cl
+    dec ax
+    mov cx,ax
+    call 0x188c
+    jnc 0xd38
+    pop cx
+    pop cx
+    call 0xee4
+    jmp short 0xcff
+    pop ax
+    push ax
+    cmp ah,0x2
+    mov al,0x46
+    jz 0xd4a
+    test ah,0x1
+    mov al,0x4a
+    jnz 0xd4a
+    mov al,0x42
+    call 0x185f
+    pop ax
+    pop cx
+    call 0xe12
+    or al,al
+    jz 0xd6f
+    push cx
+    mov bx,0x4
+    call 0x49
+    mov al,cl
+    inc al
+    mov si,0x42
+    cmp ch,[si+0x3]
+    jnz 0xd6c
+    mov al,[si+0x5]
+    pop cx
+    sub al,al
+    call 0xee4
+    mov ah,[0x41]
+    or ah,ah
+    jz 0xd7b
+    stc
+    ret
+    push bx
+    mov bx,0x4
+    call 0x49
+    mov al,cl
+    pop bx
+    mov cl,0x4
+    mul cl
+    jmp short 0xd29
+    shl dh,1
+    shl dh,1
+    and dh,0x4
+    or dh,dl
+    mov dl,0x4d
+    push ds
+    xor si,si
+    mov ds,si
+    lds si,[0x78]
+    mov bp,[si+0x7]
+    mov di,[si+0x3]
+    pop ds
+    mov si,dx
+    mov ch,0x6
+    jmp 0xe6e
+    push bx
+    push cx
+    push dx
+    mov ah,[0x3e]
+    mov cl,dl
+    inc cl
+    shr ah,cl
+    jc 0xdda
+    mov dh,dl
+    mov dl,0x7
+    mov si,dx
+    mov ch,0x2
+    call 0x195b
+    jc 0xe0a
+    pop dx
+    push dx
+    mov cl,dl
+    mov dl,0x1
+    shl dl,cl
+    or [0x3e],dl
+    pop dx
+    pop cx
+    push cx
+    push dx
+    shl dh,1
+    shl dh,1
+    and dh,0x4
+    or dh,dl
+    mov dl,0xf
+    mov si,dx
+    mov cl,ch
+    mov di,cx
+    mov ch,0x3
+    call 0x195b
+    jc 0xe0a
+    mov bx,0x9
+    call 0x49
+    mov al,cl
+    or al,al
+    jz 0xe08
+    mov cx,0x226
+    loop 0xe01
+    nop
+    dec al
+    jmp short 0xdfa
+    xor ah,ah
+    mov [0x41],ah
+    pop dx
+    pop cx
+    pop bx
+    ret
+    push cx
+    push dx
+    push ax
+    call 0xdae
+    jnc 0xe2a
+    pop si
+    xor al,al
+    push ax
+    mov bx,0x42
+    mov cx,0x7
+    call 0xfa0
+    pop ax
+    jmp short 0xe85
+    pop ax
+    cmp ah,0x5
+    jnz 0xe33
+    jmp 0xd8c
+    push ds
+    xor si,si
+    mov ds,si
+    lds si,[0x78]
+    mov bp,[si+0x2]
+    and bp,0xff00
+    xor bx,bx
+    mov bl,cl
+    or bp,bx
+    mov bx,[si+0x4]
+    mov cl,[si+0x6]
+    pop ds
+    push cx
+    mov cl,ch
+    mov ch,dh
+    mov di,cx
+    shl dh,1
+    shl dh,1
+    and dh,0x4
+    or dh,dl
+    mov dl,0xe6
+    cmp ah,0x3
+    jnz 0xe69
+    mov dl,0xc5
+    mov si,dx
+    pop cx
+    mov ch,0x9
+    call 0xf45
+    jc 0xe1b
+    mov bx,0x42
+    mov cx,0x7
+    call 0xfa0
+    jnc 0xe82
+    xor al,al
+    jmp short 0xe85
+    call 0x18d4
+    mov [0x41],ah
+    pop dx
+    pop cx
+    ret
+    push ax
+    push dx
+    push cx
+    cli
+    mov byte [0x40],0xff
+    mov cl,dl
+    mov al,[0x3f]
+    mov ah,al
+    inc cl
+    shr al,cl
+    jc 0xedf
+    mov al,0x1
+    dec cl
+    shl al,cl
+    and ah,0xf0
+    or ah,al
+    mov [0x3f],ah
+    sti
+    mov al,ah
+    and al,0xf
+    mov cl,0x4
+    ror al,cl
+    or al,0xc
+    or al,dl
+    mov dx,0x3f2
+    out dx,al
+    shl ah,1
+    jnc 0xee0
+    push bx
+    mov bx,0xa
+    call 0x49
+    mov al,cl
+    pop bx
+    or al,al
+    jz 0xee0
+    xor cx,cx
+    loop 0xed6
+    nop
+    dec al
+    jnz 0xed4
+    jmp short 0xee0
+    sti
+    pop cx
+    pop dx
+    pop ax
+    ret
+    mov bx,0x2
+    call 0x49
+    mov [0x40],cl
+    ret
+    mov ax,si
+    push si
+    mov ah,al
+    call 0xf6b
+    dec ch
+    pop si
+    jna 0xf44
+    mov ax,si
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ax,di
+    mov ah,al
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ax,di
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ax,bp
+    mov ah,al
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ax,bp
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ah,bl
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ah,bh
+    call 0xf6b
+    dec ch
+    jna 0xf44
+    mov ah,cl
+    call 0xf6b
+    ret
+    and byte [0x3e],0x7f
+    call 0xeef
+    jc 0xf52
+    call 0x1972
+    ret
+    add [bx+si],al
+    add [bx+si],al
+    sti
+    push ds
+    push ax
+    mov ax,0x40
+    mov ds,ax
+    or byte [0x3e],0x80
+    mov al,0x20
+    out 0x20,al
+    pop ax
+    pop ds
+    iret
+    push cx
+    push dx
+    mov cx,0xc
+    loop 0xf70
+    nop
+    mov si,0x1
+    mov dx,0x3f4
+    in al,dx
+    test al,0x40
+    loopne 0xf79
+    jz 0xf88
+    dec si
+    jnz 0xf79
+    mov ah,0x80
+    stc
+    jmp short 0xf9d
+    mov si,0x1
+    xor cx,cx
+    in al,dx
+    test al,0x80
+    loope 0xf8d
+    jnz 0xf99
+    dec si
+    jnz 0xf8d
+    jmp short 0xf83
+    inc dx
+    mov al,ah
+    out dx,al
+    pop dx
+    pop cx
+    ret
+    push dx
+    push bx
+    push cx
+    call 0x18ab
+    pop cx
+    jc 0xfc3
+    mov [bx],al
+    inc bx
+    loop 0xfa2
+    mov cx,0xc
+    loop 0xfb1
+    nop
+    mov dx,0x3f4
+    in al,dx
+    test al,0x10
+    jz 0xfc1
+    mov ah,0x20
+    stc
+    jmp short 0xfc3
+    xor ah,ah
+    pop bx
+    pop dx
+    ret
+    add bh,cl
+    add ah,[di]
+    add cl,[bx+si]
+    sub bh,bh
+    push ax
+    neg byte [bx+di]
+    add al,0xfb
+    push bx
+    push dx
+    push ds
+    mov bx,0x40
+    mov ds,bx
+    mov bx,dx
+    shl bx,1
+    mov dx,[bx+0x8]
+    and dx,dx
+    jz 0x103b
+    shr ah,1
+    mov ah,al
+    jnz 0x1033
+    jc 0x101a
+    inc dx
+    in al,dx
+    test al,0x20
+    jnz 0x1014
+    dec dx
+    mov al,ah
+    out dx,al
+    inc dx
+    shr bx,1
+    mov bl,[bx+0x78]
+    push cx
+    mov cl,0x0
+    xor bh,bh
+    shl bx,cl
+    xor cx,cx
+    in al,dx
+    test al,0x80
+    jnz 0x1027
+    loop 0x1009
+    dec bx
+    jnz 0x1007
+    pop cx
+    and al,0xf8
+    or al,0x1
+    jmp short 0x1037
+    mov al,0x8
+    inc dx
+    inc dx
+    out dx,al
+    mov bx,0x400
+    dec bx
+    jnz 0x1022
+    jmp short 0x102e
+    pop cx
+    mov al,0xd
+    inc dx
+    out dx,al
+    jmp short 0x102e
+    mov al,0xc
+    out dx,al
+    dec dx
+    dec dx
+    inc dx
+    in al,dx
+    and al,0xf8
+    xor al,0x48
+    xchg ah,al
+    pop ds
+    pop dx
+    pop bx
+    iret
+    dec bp
+    inc bp
+    dec bp
+    dec di
+    push dx
+    fld dword [si]
+    int1
+    db 0xda
+    int1
+    in al,0xf1
+    stc
+    int1
+    pslld mm4,[bp+di-0x3c0e]
+    repne
+    db 0xc7
+    repne
+    db 0xda
+    gs rep hlt
+    xchg sp,si
+    aas
+    cmc
+    fs cmc
+    xor bp,0xf58c
+    vpsubq ymm7,ymm1,ymm4
+    push ax
+    push cx
+    push dx
+    push bx
+    push bp
+    push si
+    push di
+    push ds
+    push es
+    cmp ah,0xf
+    ja 0x1097
+    push ax
+    mov al,ah
+    cbw
+    mov di,ax
+    mov si,0x40
+    mov ds,si
+    jz 0x108f
+    mov ax,0xb000
+    call 0x1713
+    jz 0x108d
+    mov ax,0xb800
+    mov es,ax
+    pop ax
+    shl di,1
+    call [cs:di-0xfbb]
+    pop es
+    pop ds
+    pop di
+    pop si
+    pop bp
+    pop bx
+    pop dx
+    pop cx
+    pop ax
+    iret
+    add [bx+si],al
+    add [bx+si],bh
+    sub [di],ch
+    or bl,[bx]
+    push es
+    sbb [si],bx
+    add al,[bx]
+    push es
+    pop es
+    add [bx+si],al
+    add [bx+si],al
+    jno 0x1106
+    pop dx
+    or bl,[bx]
+    push es
+    sbb [si],bx
+    add al,[bx]
+    push es
+    pop es
+    add [bx+si],al
+    add [bx+si],al
+    cmp [bx+si],ch
+    sub ax,0x7f0a
+    push es
+    fs jo 0x10cf
+    add [0x7],ax
+    add [bx+si],al
+    add [bx+di+0x50],ah
+    push dx
+    hint_nop8 word [0x1919]
+    add cl,[di]
+    or cx,[si]
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],cl
+    add [bx+si],dl
+    add [bx+si+0x0],al
+    inc ax
+    sub [bx+si],ch
+    push ax
+    push ax
+    sub [bx+si],ch
+    push ax
+    push ax
+    sub al,0x28
+    sub ax,0x2a29
+    cs push ds
+    sub [bp+di],ax
+    add ax,[di]
+    add ax,0x303
+    add ax,[si]
+    mov ah,0x0
+    mov dx,0x3d8
+    call 0x1713
+    jnz 0x1115
+    mov ah,0x1
+    mov dx,0x3b8
+    mov al,0x7
+    xchg ah,al
+    out dx,al
+    sub dx,byte +0x4
+    mov [0x63],dx
+    mov al,0x3f
+    cmp ah,0x6
+    jz 0x1128
+    mov al,0x30
+    mov [0x66],al
+    mov al,ah
+    mov [0x49],al
+    mov bx,0xf0f4
+    cs xlatb
+    mov [0x65],al
+    mov al,0x28
+    test ah,0x2
+    jz 0x1141
+    mov al,0x50
+    mov bl,ah
+    cbw
+    mov [0x4a],ax
+    mov ax,0x800
+    cmp bl,0x1
+    jna 0x115f
+    mov ax,0x1000
+    cmp bl,0x3
+    jna 0x115f
+    cmp bl,0x7
+    jz 0x115f
+    mov ax,0x4000
+    mov [0x4c],ax
+    xor ax,ax
+    mov [0x4e],ax
+    mov [0x62],al
+    mov di,0x50
+    mov cx,0x8
+    mov [di],ax
+    inc di
+    inc di
+    loop 0x1170
+    push es
+    push bx
+    mov es,cx
+    les si,[es:0x74]
+    cmp bl,0x6
+    jnz 0x1186
+    dec bl
+    shr bl,1
+    shl bl,1
+    shl bl,1
+    shl bl,1
+    shl bl,1
+    xor bh,bh
+    add si,bx
+    mov cx,0x10
+    mov al,bh
+    out dx,al
+    jmp short 0x119c
+    inc dx
+    es lodsb
+    out dx,al
+    jmp short 0x11a2
+    inc bh
+    dec dx
+    loop 0x1197
+    mov ax,[es:si-0x6]
+    xchg ah,al
+    mov [0x60],ax
+    pop bx
+    pop es
+    mov cx,0x800
+    mov ax,0x720
+    cmp bl,0x7
+    jz 0x11c7
+    mov cx,0x2000
+    cmp bl,0x3
+    jna 0x11c7
+    xor ax,ax
+    xor di,di
+    rep stosw
+    mov al,[0x65]
+    add dx,byte +0x4
+    out dx,al
+    jmp short 0x11d4
+    mov al,[0x66]
+    inc dx
+    out dx,al
+    ret
+    mov [0x60],cx
+    mov al,0xa
+    call 0x1682
+    ret
+    mov al,bh
+    cbw
+    mov bx,ax
+    shl bx,1
+    mov [bx+0x50],dx
+    cmp al,[0x62]
+    jnz 0x11f8
+    call 0x1646
+    ret
+    mov bl,bh
+    xor bh,bh
+    shl bx,1
+    mov bp,sp
+    mov ax,[bx+0x50]
+    mov [bp+0xe],ax
+    mov ax,[0x60]
+    mov [bp+0x10],ax
+    ret
+    mov bp,sp
+    mov dx,[0x63]
+    add dx,byte +0x6
+    mov si,dx
+    in al,dx
+    test al,0x4
+    mov ah,0x0
+    jnz 0x129b
+    test al,0x2
+    jz 0x129f
+    sub dx,byte +0x6
+    mov al,0x10
+    mov ch,0x11
+    out dx,al
+    jmp short 0x122f
+    inc dx
+    in al,dx
+    xchg ch,al
+    dec dx
+    jmp short 0x1236
+    out dx,al
+    jmp short 0x1239
+    inc dx
+    in al,dx
+    xchg cl,al
+    mov ax,[0x4e]
+    shr ax,1
+    sub cx,ax
+    mov al,[0x49]
+    mov bx,0xf0fc
+    cs xlatb
+    sub cx,ax
+    jns 0x1252
+    xor cx,cx
+    call 0x1705
+    mov al,[0x4a]
+    xchg ax,cx
+    jc 0x125d
+    mov cl,0x28
+    div cl
+    mov ch,al
+    xchg ah,al
+    mov dx,ax
+    cbw
+    mov bx,ax
+    call 0x1705
+    jc 0x1284
+    shl ch,1
+    shr dh,1
+    shr dh,1
+    cmp ah,0x6
+    jnz 0x128a
+    shl dl,1
+    shl bx,1
+    shl bx,1
+    shl bx,1
+    shl bx,1
+    jmp short 0x1290
+    shl ch,1
+    shl ch,1
+    shl ch,1
+    shl bx,1
+    shl bx,1
+    shl bx,1
+    mov [bp+0xe],dx
+    mov [bp+0x11],ch
+    mov [bp+0xc],bx
+    mov ah,0x1
+    mov dx,si
+    inc dx
+    out dx,al
+    mov [bp+0x13],ah
+    ret
+    mov [0x62],al
+    cbw
+    push ax
+    mul word [0x4c]
+    mov [0x4e],ax
+    shr ax,1
+    mov cx,ax
+    mov al,0xc
+    call 0x1682
+    pop bx
+    shl bx,1
+    mov dx,[bx+0x50]
+    call 0x1646
+    ret
+    xor bl,bl
+    jmp short 0x12cc
+    mov bl,0xff
+    mov si,dx
+    std
+    push ds
+    push bx
+    sub dx,cx
+    add dx,0x101
+    push dx
+    push ax
+    call 0x1705
+    mov dx,0x28
+    jnc 0x12fe
+    cmp ah,0x2
+    jz 0x12e8
+    cmp ah,0x3
+    jnz 0x12fa
+    mov dx,0x3da
+    push cx
+    xor cx,cx
+    in al,dx
+    test al,0x8
+    loope 0x12ee
+    mov al,0x25
+    mov dx,0x3d8
+    out dx,al
+    pop cx
+    mov dx,[0x4a]
+    mov bp,dx
+    shl bp,1
+    and bl,bl
+    jz 0x130a
+    neg bp
+    mov cx,si
+    call 0x1705
+    xchg ax,cx
+    mov cl,dl
+    mov dx,ax
+    jnc 0x1323
+    call 0x1677
+    shl ax,1
+    add ax,[0x4e]
+    mov di,ax
+    pop ax
+    pop dx
+    jmp short 0x1348
+    call 0x16f0
+    mov di,ax
+    pop ax
+    pop dx
+    shl dh,1
+    shl dh,1
+    cmp ch,0x6
+    jz 0x133c
+    shl di,1
+    shl dl,1
+    and bl,bl
+    jz 0x133c
+    inc di
+    and bl,bl
+    jz 0x1344
+    add di,0xf0
+    shl al,1
+    shl al,1
+    push es
+    pop ds
+    mov bh,dh
+    or al,al
+    jz 0x13a4
+    sub dh,al
+    jz 0x13a4
+    mov bh,al
+    mul cl
+    shl ax,1
+    and bl,bl
+    jz 0x1360
+    neg ax
+    mov si,di
+    add si,ax
+    call 0x16ff
+    jc 0x13ab
+    push si
+    push di
+    mov cl,dl
+    rep movsb
+    pop di
+    pop si
+    push si
+    push di
+    add si,0x2000
+    add di,0x2000
+    mov cl,dl
+    rep movsb
+    pop di
+    pop si
+    add si,bp
+    add di,bp
+    dec dh
+    jnz 0x1369
+    pop ax
+    mov al,ah
+    push di
+    mov cl,dl
+    rep stosb
+    pop di
+    push di
+    add di,0x2000
+    mov cl,dl
+    rep stosb
+    pop di
+    add di,bp
+    dec bh
+    jnz 0x138c
+    pop ds
+    ret
+    call 0x16ff
+    jnc 0x1389
+    jmp short 0x13bb
+    push si
+    push di
+    mov cl,dl
+    rep movsw
+    pop di
+    pop si
+    add si,bp
+    add di,bp
+    dec dh
+    jnz 0x13ab
+    pop ax
+    mov al,0x20
+    push di
+    mov cl,dl
+    rep stosw
+    pop di
+    add di,bp
+    dec bh
+    jnz 0x13be
+    pop ds
+    cmp byte [0x49],0x7
+    jz 0x13d9
+    mov al,[0x65]
+    mov dx,0x3d8
+    out dx,al
+    ret
+    mov bp,sp
+    call 0x1705
+    jnc 0x13ff
+    call 0x165e
+    mov si,ax
+    call 0x1656
+    push cx
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loopne 0x13ec
+    cli
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loope 0x13f4
+    es lodsw
+    sti
+    pop cx
+    jmp short 0x145f
+    mov di,0x8
+    sub sp,di
+    mov bx,sp
+    push bx
+    neg di
+    mov bx,0x2000
+    call 0x16ec
+    mov si,ax
+    cmp byte [0x49],0x6
+    push es
+    pop ds
+    jz 0x142d
+    shl si,1
+    mov ax,[si]
+    call 0x169e
+    mov ax,[bx+si]
+    add si,byte +0x50
+    call 0x169e
+    jnz 0x141c
+    jmp short 0x143c
+    mov al,[si]
+    mov [bp+di],al
+    inc di
+    mov al,[bx+si]
+    add si,byte +0x50
+    mov [bp+di],al
+    inc di
+    jnz 0x142d
+    push ss
+    pop ds
+    push cs
+    pop es
+    pop si
+    mov di,0xfa6e
+    xor al,al
+    call 0x16b5
+    jz 0x145f
+    xor ax,ax
+    mov es,ax
+    les di,[es:0x7c]
+    mov cx,es
+    or cx,di
+    jz 0x145f
+    mov al,0x80
+    call 0x16b5
+    mov [bp+0x12],ax
+    mov sp,bp
+    ret
+    call 0x1705
+    jnc 0x14a8
+    mov ah,bl
+    call 0xb0
+    push cx
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loopne 0x1472
+    cli
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loope 0x147a
+    mov ax,bx
+    stosw
+    sti
+    pop cx
+    loop 0x146f
+    ret
+    call 0x1705
+    jnc 0x14a8
+    call 0xb0
+    push cx
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loopne 0x1492
+    cli
+    xor cx,cx
+    in al,dx
+    test al,0x1
+    loope 0x149a
+    mov al,bl
+    stosb
+    sti
+    pop cx
+    inc di
+    loop 0x148f
+    ret
+    push ax
+    and ax,0x7f
+    shl ax,1
+    shl ax,1
+    shl ax,1
+    push ax
+    call 0x16ec
+    mov di,ax
+    mov si,0xfa6e
+    mov dh,[0x49]
+    mov dl,bl
+    push cs
+    pop ds
+    pop ax
+    pop bx
+    and bl,bl
+    jns 0x14d1
+    xor si,si
+    mov ds,si
+    lds si,[0x7c]
+    add si,ax
+    mov bx,0x2000
+    cmp dh,0x6
+    jz 0x1516
+    shl di,1
+    mov al,dl
+    and al,0x3
+    xor dh,dh
+    or dh,al
+    shl al,1
+    shl al,1
+    jnz 0x14e3
+    push cx
+    mov cx,0x4
+    push si
+    push di
+    lodsb
+    call 0x16cf
+    jns 0x14fa
+    xor ax,[es:di]
+    mov [es:di],ax
+    lodsb
+    call 0x16cf
+    jns 0x1506
+    xor ax,[es:bx+di]
+    mov [es:bx+di],ax
+    add di,byte +0x50
+    loop 0x14f1
+    pop di
+    pop si
+    pop cx
+    inc di
+    inc di
+    loop 0x14eb
+    ret
+    shl dl,1
+    lahf
+    push cx
+    mov cx,0x4
+    push si
+    push di
+    lodsb
+    sahf
+    jnc 0x1526
+    xor al,[es:di]
+    mov [es:di],al
+    lodsb
+    sahf
+    jnc 0x1530
+    xor al,[es:bx+di]
+    mov [es:bx+di],al
+    add di,byte +0x50
+    loop 0x151f
+    pop di
+    pop si
+    pop cx
+    inc di
+    loop 0x1519
+    ret
+    mov al,[0x66]
+    and bh,bh
+    jz 0x1551
+    or al,0x20
+    test bl,0x1
+    jnz 0x1558
+    and al,0xdf
+    jmp short 0x1558
+    and al,0xe0
+    and bl,0x1f
+    or al,bl
+    mov [0x66],al
+    mov dx,[0x63]
+    add dx,byte +0x5
+    out dx,al
+    ret
+    mov bl,al
+    call 0x160e
+    mov ah,bl
+    and bl,ch
+    and ah,ah
+    jns 0x1575
+    xor al,bl
+    jmp short 0x157b
+    not ch
+    and al,ch
+    or al,bl
+    ror al,cl
+    mov [es:si],al
+    ret
+    call 0x160e
+    and al,ch
+    mov bp,sp
+    mov [bp+0x12],al
+    ret
+    push ax
+    mov ah,0x3
+    mov bh,[0x62]
+    int 0x10
+    pop ax
+    cmp al,0x8
+    jz 0x15ba
+    cmp al,0xd
+    jz 0x15b8
+    cmp al,0x7
+    jz 0x15b2
+    cmp al,0xa
+    jz 0x15ad
+    mov ah,0xa
+    call 0x15d8
+    jmp short 0x15c0
+    call 0x15e7
+    jmp short 0x15c0
+    mov di,0x180
+    jmp 0x6a6
+    xor dl,dl
+    and dl,dl
+    jz 0x15c0
+    dec dl
+    mov ah,0x2
+    int 0x10
+    ret
+    mov al,[0x49]
+    mov ah,[0x4a]
+    mov bp,sp
+    mov [bp+0x12],ax
+    mov al,[0x62]
+    mov [bp+0xd],al
+    ret
+    mov cx,0x1
+    int 0x10
+    inc dl
+    cmp dl,[0x4a]
+    jnz 0x160d
+    xor dl,dl
+    inc dh
+    cmp dh,0x19
+    jnz 0x160d
+    dec dh
+    call 0x1705
+    mov ah,0x0
+    jnc 0x15fb
+    mov ah,0x8
+    int 0x10
+    push bx
+    push dx
+    xor cx,cx
+    mov dl,[0x4a]
+    dec dl
+    mov bx,0x601
+    xchg ax,bx
+    int 0x10
+    pop dx
+    pop bx
+    ret
+    ror dx,1
+    mov al,0x50
+    mul dl
+    shl dh,1
+    jnc 0x161b
+    add ax,0x2000
+    mov si,ax
+    mov ax,cx
+    mov cx,0x103
+    mov dl,0x7
+    and dl,al
+    cmp byte [0x49],0x6
+    jnc 0x1638
+    mov cx,0x302
+    mov dl,0x3
+    and dl,al
+    shl dl,1
+    inc dl
+    inc dl
+    shr ax,cl
+    add si,ax
+    mov cl,dl
+    mov al,[es:si]
+    rol al,cl
+    ret
+    call 0x1677
+    mov cx,[0x4e]
+    shr cx,1
+    add cx,ax
+    mov al,0xe
+    jmp short 0x1682
+    nop
+    mov dx,[0x63]
+    add dx,byte +0x6
+    ret
+    mov bl,bh
+    xor bh,bh
+    shl bx,1
+    mov dx,[bx+0x50]
+    call 0x1677
+    shl ax,1
+    shr bx,1
+    xchg ax,bx
+    mul word [0x4c]
+    add ax,bx
+    ret
+    mov al,dh
+    mul byte [0x4a]
+    xor dh,dh
+    add ax,dx
+    ret
+    mov dx,[0x63]
+    out dx,al
+    jmp short 0x1689
+    inc dx
+    xchg ch,al
+    out dx,al
+    jmp short 0x168f
+    inc ch
+    dec dx
+    xchg ch,al
+    out dx,al
+    jmp short 0x1697
+    inc dx
+    xchg cl,al
+    out dx,al
+    jmp short 0x169d
+    ret
+    mov dx,ax
+    shl ax,1
+    or ax,dx
+    xchg ah,al
+    mov cx,0x8
+    shl ax,1
+    rcl dl,1
+    shl ax,1
+    loop 0x16a9
+    mov [bp+di],dl
+    inc di
+    ret
+    mov cx,0x80
+    push cx
+    mov cx,0x8
+    push si
+    push di
+    repe cmpsb
+    pop di
+    pop si
+    pop cx
+    jz 0x16ce
+    add di,byte +0x8
+    inc al
+    loop 0x16b8
+    and al,al
+    ret
+    push bx
+    mov ah,0x8
+    shl al,1
+    rcl bx,1
+    shl bx,1
+    dec ah
+    jnz 0x16d2
+    mov ax,bx
+    shr ax,1
+    or ax,bx
+    and al,dh
+    and ah,dh
+    xchg ah,al
+    and dl,dl
+    pop bx
+    ret
+    mov dx,[0x50]
+    mov al,dh
+    mul byte [0x4a]
+    shl ax,1
+    shl ax,1
+    xor dh,dh
+    add ax,dx
+    ret
+    xor ah,ah
+    xchg ch,ah
+    jmp short 0x1709
+    mov ah,[0x49]
+    cmp ah,0x4
+    jc 0x1712
+    cmp ah,0x7
+    cmc
+    ret
+    push ax
+    mov al,[0x10]
+    and al,0x30
+    cmp al,0x30
+    pop ax
+    ret
+    inc si
+    dec sp
+    dec di
+    push ax
+    push ax
+    fst dword [bp+si+0x4f]
+    int 0x0
+    add [bx+si+0x61],dl
+    jc 0x1795
+    jz 0x17a7
+    and [bx+di+0x6150],dh
+    jc 0x179d
+    jz 0x17af
+    and [bp+si+0x6150],dh
+    jc 0x17a5
+    jz 0x17b7
+    and [bx],bh
+    aas
+    aas
+    mov di,0xe450
+    bound bp,[bx+si+0x75c0]
+    add bl,[bx+si-0x31]
+    xor ax,ax
+    out 0xa0,al
+    mov ds,ax
+    mov dx,[0x413]
+    int 0x10
+    cli
+    cld
+    call 0x1823
+    xor bx,bx
+    xor si,si
+    mov ds,bx
+    mov cx,0x4000
+    lodsb
+    in al,0x62
+    test al,0x80
+    mov di,0xf728
+    jnz 0x1786
+    test al,0x40
+    mov di,0xf730
+    jnz 0x1786
+    loop 0x1766
+    add bh,0x4
+    sub dx,byte +0x10
+    jnz 0x1761
+    mov si,0xf738
+    jmp short 0x17c5
+    dec si
+    xchg di,si
+    call 0x178e
+    jmp short 0x17cc
+    call 0x17fb
+    mov al,0x28
+    call 0x181e
+    mov ax,bx
+    call 0x17a9
+    mov al,0x3a
+    call 0x181e
+    mov ax,di
+    call 0x17a9
+    mov al,0x29
+    jmp short 0x181e
+    push ax
+    mov al,ah
+    call 0x17b0
+    pop ax
+    push ax
+    mov cl,0x4
+    shr al,cl
+    call 0x17b9
+    pop ax
+    and al,0xf
+    cmp al,0xa
+    jc 0x17c1
+    add al,0x7
+    add al,0x30
+    jmp short 0x181e
+    xor ax,ax
+    int 0x10
+    call 0x17fb
+    mov si,0xf7d9
+    call 0x1805
+    call 0x56
+    sti
+    hlt
+    jmp short 0x17d6
+    push bx
+    pop cx
+    push bx
+    push sp
+    inc bp
+    dec bp
+    and [bx+si+0x41],cl
+    dec sp
+    push sp
+    inc bp
+    db 0xc4
+    call 0x17fb
+    test byte [0x10],0x1
+    jnz 0x17f6
+    mov al,0x85
+    out 0x61,al
+    jmp short 0x17cc
+    or bp,0x20
+    ret
+    call 0x1805
+    mov si,0xffe9
+    call 0x1808
+    ret
+    call 0x1817
+    cld
+    cs lodsb
+    push ax
+    and al,0x7f
+    call 0x181e
+    pop ax
+    shl al,1
+    jnc 0x1808
+    ret
+    mov al,0xd
+    call 0x181e
+    mov al,0xa
+    mov ah,0xe
+    int 0x10
+    ret
+    in al,0x61
+    or al,0x30
+    jmp short 0x1829
+    out 0x61,al
+    and al,0xcf
+    jmp short 0x182f
+    out 0x61,al
+    ret
+    mov si,0xf837
+    jmp short 0x17c5
+    push dx
+    dec di
+    dec bp
+    and [bp+si+0x41],al
+    push bx
+    dec cx
+    ret
+    add bl,bh
+    push ds
+    mov ax,0x40
+    mov ds,ax
+    mov ax,[0x13]
+    pop ds
+    iret
+    sti
+    push ds
+    mov ax,0x40
+    mov ds,ax
+    mov ax,[0x10]
+    pop ds
+    iret
+    mov ah,0x86
+    stc
+    retf 0x2
+    cli
+    out 0xc,al
+    jmp short 0x1864
+    out 0xb,al
+    jmp short 0x1868
+    mov al,cl
+    out 0x5,al
+    jmp short 0x186e
+    mov al,ch
+    out 0x5,al
+    jmp short 0x1874
+    mov al,bl
+    out 0x4,al
+    jmp short 0x187a
+    mov al,bh
+    out 0x4,al
+    jmp short 0x1880
+    mov ax,es
+    out 0x81,al
+    jmp short 0x1886
+    mov al,0x2
+    out 0xa,al
+    sti
+    ret
+    push cx
+    xor ax,ax
+    mov si,es
+    mov cx,0x4
+    shl si,1
+    rcl al,1
+    loop 0x1894
+    add bx,si
+    adc ax,0x0
+    mov es,ax
+    pop cx
+    mov ax,cx
+    add ax,bx
+    jnc 0x18aa
+    mov ah,0x9
+    ret
+    push dx
+    mov cx,0xc
+    loop 0x18af
+    nop
+    mov si,0x1
+    mov dx,0x3f4
+    in al,dx
+    test al,0x80
+    jnz 0x18c7
+    loop 0x18b8
+    dec si
+    jnz 0x18b8
+    mov ah,0x80
+    stc
+    pop dx
+    ret
+    in al,dx
+    test al,0x40
+    jnz 0x18d0
+    mov ah,0x20
+    jmp short 0x18c4
+    inc dx
+    in al,dx
+    pop dx
+    ret
+    test byte [bx],0xc0
+    jnz 0x18dc
+    xor ah,ah
+    ret
+    test byte [bx],0x40
+    jz 0x190e
+    mov bl,[bx+0x1]
+    test bl,0x1
+    mov ah,0x2
+    jnz 0x1910
+    test bl,0x2
+    mov ah,0x3
+    jnz 0x1910
+    test bl,0x4
+    mov ah,0x4
+    jnz 0x1910
+    test bl,0x10
+    mov ah,0x8
+    jnz 0x1910
+    test bl,0x20
+    mov ah,0x10
+    jnz 0x1910
+    test bl,0x80
+    mov ah,0x4
+    jnz 0x1910
+    mov ah,0x20
+    ret
+    cli
+    and byte [0x3f],0x7f
+    mov al,[0x3f]
+    mov ah,al
+    mov cl,0x4
+    shl al,cl
+    shr ah,1
+    jc 0x1933
+    shr ah,1
+    jc 0x1932
+    shr ah,1
+    jc 0x1931
+    shr ah,1
+    jnc 0x1933
+    inc ax
+    inc ax
+    inc ax
+    or al,0x8
+    mov dx,0x3f2
+    out dx,al
+    mov cx,0x5
+    loop 0x193c
+    or al,0xc
+    out dx,al
+    sti
+    call 0x1972
+    jc 0x1956
+    call 0x1992
+    jc 0x1956
+    and dl,0xc0
+    cmp dl,0xc0
+    jnz 0x1957
+    xor ah,ah
+    ret
+    mov ah,0x20
+    stc
+    ret
+    call 0xf45
+    jc 0x1971
+    call 0x1992
+    jc 0x1971
+    and dl,0x60
+    cmp dl,0x60
+    clc
+    jnz 0x1971
+    mov ah,0x40
+    stc
+    ret
+    push cx
+    mov si,0x2
+    xor cx,cx
+    test byte [0x3e],0x80
+    jnz 0x1989
+    loop 0x1978
+    dec si
+    jnz 0x1978
+    pop cx
+    mov ah,0x80
+    stc
+    ret
+    and byte [0x3e],0x7f
+    pop cx
+    xor ah,ah
+    ret
+    mov ah,0x8
+    call 0xf6b
+    jc 0x19a6
+    mov bx,0x42
+    mov cx,0x2
+    call 0xfa0
+    jc 0x19a6
+    mov dl,[bx]
+    ret
+    and [bp+di+0x42],cl
+    and [bx-0x35],cl
+    jnc 0x19b2
+    mov si,0xf9e9
+    mov ax,cs
+    xor ax,[es:0x62]
+    jnz 0x19c4
+    cmp word [es:0x60],0xf832
+    jz 0x19c6
+    int 0x18
+    call 0x1805
+    mov si,0xf9fb
+    call 0x1805
+    mov ah,0x0
+    int 0x16
+    call 0x1817
+    jmp 0x6f2
+    and [bx+si],ah
+    and [bx+si],ah
+    inc dx
+    dec di
+    dec di
+    push sp
+    and [bp+0x41],al
+    dec cx
+    dec sp
+    push bp
+    push dx
+    lds sp,[bx+si]
+    and [bx+si],ah
+    inc sp
+    push dx
+    dec cx
+    push si
+    inc bp
+    and [bp+0x4f],cl
+    push sp
+    and [bp+si+0x45],dl
+    inc cx
+    inc sp
+    db 0xd9
+    or cl,[bx+di+0x6e]
+    jnc 0x1a65
+    jc 0x1a76
+    and [si+0x69],ah
+    jnc 0x1a72
+    gs jz 0x1a7e
+    and [gs:bx+di+0x6e],ch
+    and [bx+di+0x3a],al
+    or ax,0x500a
+    jc 0x1a7b
+    jnc 0x1a8b
+    and [bx+di+0x6e],ah
+    jns 0x1a3d
+    imul sp,[di+0x79],byte +0x20
+    cs scasb
+    mov cx,0xa
+    xor dx,dx
+    div cx
+    or ax,ax
+    jz 0x1a36
+    push dx
+    call 0x1a29
+    pop dx
+    mov al,dl
+    or al,0x30
+    jmp 0x181e
+    xor cx,cx
+    in al,dx
+    test ah,al
+    loope 0x1a3f
+    jz 0x1a4d
+    xor cx,cx
+    in al,dx
+    test ah,al
+    loopne 0x1a48
+    ret
+    in al,0x61
+    push ax
+    xor al,0xc
+    call 0x2f
+    pop ax
+    and al,0x4
+    or al,0x3
+    xchg ah,al
+    push di
+    mov di,0x20
+    push di
+    call 0x6a8
+    loop 0x1a65
+    pop di
+    call 0x6a8
+    pop di
+    ret
+    add al,0x0
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [si],bh
+    inc dx
+    movsw
+    cmp word [di+0x4299],0x3c3c
+    jng 0x1a5c
+    inc bx
+    out 0x7e,ax
+    cmp al,0x44
+    out dx,al
+    db 0xfe
+    db 0xfe
+    jl 0x1ac4
+    adc [bx+si],al
+    adc [bx+si],bh
+    jl 0x1a90
+    jl 0x1acc
+    adc [bx+si],al
+    sbb [si],bh
+    db 0xdb
+    db 0xff
+    fistp dword [bx+si]
+    cmp al,0x0
+    sbb [si],bh
+    jng 0x1aa1
+    jng 0x1abc
+    cmp al,0x0
+    add [bx+si],al
+    cmp al,0x3c
+    cmp al,0x3c
+    add [bx+si],al
+    db 0xff
+    inc bx
+    ret
+    ret
+    ret
+    db 0xff
+    inc word [bx+si]
+    jng 0x1afb
+    inc dx
+    inc dx
+    inc dx
+    jng 0x1abe
+    inc word [bx+di-0x4243]
+    mov bp,0x81bd
+    dec word [bx]
+    pop es
+    pop es
+    jnl 0x1a97
+    int3
+    int3
+    js 0x1b47
+    int3
+    int3
+    int3
+    js 0x1b04
+    cld
+    xor [bx],bl
+    xor di,[bx]
+    xor [bx+si],dh
+    jo 0x1acd
+    loopne 0x1b1e
+    arpl [bx+0x63],di
+    arpl [bx-0x1a],sp
+    rcr bl,byte 0xdb
+    cmp al,0xe7
+    out 0x3c,ax
+    fcmovnu st3
+    db 0xc0
+    lock clc
+    db 0xfe
+    clc
+    lock rol byte [bx+si],byte 0x6
+    push ds
+    ds
+    db 0xfe
+    ds push ds
+    push es
+    add [bx+si],dh
+    js 0x1afd
+    xor [bx+si],dh
+    cld
+    js 0x1b36
+    insb
+    insb
+    insb
+    insb
+    insb
+    add [si+0x0],ch
+    jg 0x1aeb
+    fcmovnu st3
+    jpo 0x1b2f
+    sbb ax,[bx+si]
+    cmp al,0x60
+    cmp al,0x66
+    o32 cmp al,0x6
+    cmp al,0x0
+    add [bx+si],al
+    add dh,bh
+    db 0xfe
+    inc byte [bx+si]
+    sbb [si],bh
+    jng 0x1b42
+    jng 0x1b68
+    sbb [bp+0x30],bh
+    js 0x1b2d
+    xor [bx+si],dh
+    xor [bx+si],dh
+    add [bx+si],dh
+    xor [bx+si],dh
+    xor ah,bh
+    js 0x1b6d
+    add [bx+si],al
+    or [si],cl
+    dec byte [si]
+    or [bx+si],al
+    add [bx+si],al
+    and [bx+si-0x2],ah
+    pusha
+    and [bx+si],al
+    add [bx+si],al
+    add al,al
+    sar dh,byte 0x0
+    add [bx+si],al
+    add [si],ah
+    inc dx
+    inc word [bp+si+0x24]
+    add [bx+si],al
+    add [bx+si],dl
+    cmp [si-0x2],bh
+    inc byte [bx+si]
+    add [bx+si],al
+    db 0xfe
+    db 0xfe
+    jl 0x1ba3
+    adc [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],bl
+    sbb [bx+si],bl
+    sbb [bx+si],bl
+    add [bx+si],bl
+    add ah,cl
+    int3
+    int3
+    add [bx+si],al
+    add [bx+si],al
+    add [0xfe6c],dh
+    insb
+    db 0xfe
+    insb
+    fadd dword [bx+si]
+    sbb [bp-0x40],bh
+    jl 0x1b99
+    cld
+    xor [bx+si],al
+    ret 0xcc6
+    sbb [bx+si],dh
+    o32 mov byte [bx+si],0x38
+    insb
+    cmp [bx+si-0x22],dh
+    int3
+    jna 0x1ba6
+    xor [bx+si],dh
+    pusha
+    add [bx+si],al
+    add [bx+si],al
+    add [si],cl
+    sbb [bx+si],dh
+    xor [bx+si],dh
+    sbb [si],cl
+    add [bx+si],dh
+    sbb [si],cl
+    or al,0xc
+    sbb [bx+si],dh
+    add [bx+si],al
+    insb
+    cmp dh,bh
+    cmp [si+0x0],ch
+    add [bx+si],al
+    sbb [bx+si],bl
+    jng 0x1be3
+    sbb [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    sbb [bx+si],bl
+    xor [bx+si],al
+    add [bx+si],al
+    jng 0x1bdb
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    sbb [bx+si],bl
+    add [bp+si],al
+    push es
+    or al,0x18
+    xor [bx+si-0x40],ah
+    add [si-0x32],bh
+    fdivrp st6
+    out 0xc6,al
+    jl 0x1bf6
+    sbb [bx+si],bh
+    sbb [bx+si],bl
+    sbb [bx+si],bl
+    jng 0x1bfe
+    jl 0x1bc6
+    push es
+    sbb al,0x70
+    db 0xc6
+    inc byte [bx+si]
+    jl 0x1bce
+    push es
+    sbb al,0x6
+    db 0xc6
+    jl 0x1c0e
+    sbb al,0x3c
+    insb
+    int3
+    dec byte [si]
+    or al,0x0
+    inc al
+    cld
+    push es
+    push es
+    db 0xc6
+    jl 0x1c1e
+    cmp al,0x60
+    sar ah,byte 0xc6
+    db 0xc6
+    jl 0x1c26
+    inc dh
+    or al,0x18
+    xor [bx+si],dh
+    xor [bx+si],al
+    jl 0x1bf6
+    db 0xc6
+    jl 0x1bf9
+    db 0xc6
+    jl 0x1c36
+    jl 0x1bfe
+    db 0xc6
+    jng 0x1c41
+    or al,0x78
+    add [bx+si],al
+    sbb [bx+si],bl
+    add [bx+si],al
+    sbb [bx+si],bl
+    add [bx+si],al
+    sbb [bx+si],bl
+    add [bx+si],al
+    sbb [bx+si],bl
+    xor [si],cl
+    sbb [bx+si],dh
+    pusha
+    xor [bx+si],bl
+    or al,0x0
+    add [bx+si],al
+    jng 0x1c5a
+    add [bp+0x0],bh
+    add [bx+si],dh
+    sbb [si],cl
+    push es
+    or al,0x18
+    xor [bx+si],al
+    cmp al,0x66
+    push es
+    or al,0x18
+    add [bx+si],bl
+    add [si-0x3a],bh
+    db 0xde
+    db 0xde
+    faddp st0
+    jl 0x1c76
+    cmp [si-0x3a],ch
+    db 0xc6
+    inc dh
+    mov byte [bx+si],0xfc
+    outsb
+    o32 jl 0x1ce9
+    outsb
+    cld
+    add [0xc062],bh
+    rol al,byte 0x62
+    ds add al,bh
+    outsb
+    o32 outsb
+    clc
+    add dh,bh
+    bound sp,[bx+si+0x78]
+    pusha
+    db 0x62
+    inc byte [bx+si]
+    db 0xfe
+    bound sp,[bx+si+0x78]
+    pusha
+    pusha
+    lock add [0xc062],bh
+    ror dh,byte 0x66
+    ds add dh,al
+    mov dh,0xfe
+    mov dh,0xc6
+    add [si],bh
+    sbb [bx+si],bl
+    sbb [bx+si],bl
+    sbb [si],bh
+    add [0xc0c],bl
+    or al,0xc
+    int3
+    js 0x1cc6
+    out 0x66,al
+    insb
+    js 0x1d43
+    insb
+    out 0x0,al
+    lock pusha
+    pusha
+    pusha
+    pusha
+    o32 inc byte [bx+si]
+    db 0xc6
+    out dx,al
+    db 0xfe
+    salc
+    mov dh,0xc6
+    add dh,al
+    out 0xf6,al
+    db 0xfe
+    fmulp st6
+    mov byte [bx+si],0x7c
+    mov dh,0xc6
+    mov dh,0x7c
+    add ah,bh
+    o32 jl 0x1d53
+    pusha
+    loopne 0x1cf6
+    jl 0x1cbe
+    db 0xc6
+    salc
+    fidivr word [si+0x6]
+    add ah,bh
+    o32 jl 0x1d7b
+    insb
+    out 0x0,al
+    jl 0x1cce
+    loopne 0x1d42
+    push cs
+    db 0xc6
+    jl 0x1d0e
+    jng 0x1d6a
+    sbb [bx+si],bl
+    sbb [bx+si],bl
+    cmp al,0x0
+    o32 cmp al,0x0
+    o32 cmp al,0x18
+    add dh,al
+    mov dh,0xd6
+    db 0xfe
+    inc dh
+    add dh,al
+    insb
+    cmp [bx+si],bh
+    insb
+    mov dh,0x0
+    o32 cmp al,0x18
+    sbb [si],bh
+    add dh,bh
+    int3
+    sbb [bx+si],dh
+    pusha
+    db 0xc6
+    inc byte [bx+si]
+    cmp al,0x30
+    xor [bx+si],dh
+    xor [bx+si],dh
+    cmp al,0x0
+    add al,0x60
+    xor [bx+si],bl
+    or al,0x6
+    add [si],bh
+    or al,0xc
+    or al,0xc
+    or al,0x3c
+    add [bx+si],bl
+    cmp al,0x66
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    call far [bx+si]
+    sbb [si],cl
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],bh
+    or al,0x7c
+    int3
+    jna 0x1d7e
+    pusha
+    pusha
+    pusha
+    jl 0x1de9
+    o32 fadd qword [bx+si]
+    add [bx+si],al
+    jl 0x1d4e
+    rol ah,byte 0x7c
+    add [si],cl
+    or al,0xc
+    jl 0x1d5f
+    int3
+    jna 0x1d96
+    add [bx+si],al
+    js 0x1d66
+    cld
+    sar byte [si+0x0],byte 0x38
+    insb
+    pusha
+    clc
+    pusha
+    pusha
+    loopne 0x1da6
+    add [bx+si],al
+    jna 0x1d76
+    int3
+    jl 0x1db9
+    jl 0x1d8f
+    pusha
+    pusha
+    jl 0x1e19
+    o32 add [bx+si],dh
+    add [bx+si+0x30],dh
+    xor [bx+si],dh
+    cmp [bx+si],al
+    or al,0x0
+    sbb al,0xc
+    or al,0xcc
+    int3
+    js 0x1da7
+    pusha
+    o32 insb
+    js 0x1e38
+    o32 add [bx+si+0x30],dh
+    xor [bx+si],dh
+    xor [bx+si],dh
+    cmp [bx+si],al
+    add [bx+si],al
+    int3
+    db 0xfe
+    salc
+    mov dh,0x0
+    add [bx+si],al
+    fsub qword [bp+0x66]
+    o32 add [bx+si],al
+    add [si],bh
+    o32 cmp al,0x0
+    add [bx+si],al
+    fsub qword [bp+0x66]
+    jl 0x1e55
+    loopne 0x1df7
+    add [bp-0x34],dh
+    int3
+    jl 0x1e09
+    push cs
+    add [bx+si],al
+    fdiv qword [bp+0x60]
+    pusha
+    pusha
+    add [bx+si],al
+    add [bx+si-0x40],bh
+    js 0x1e18
+    js 0x1e0e
+    adc [bx+si],dh
+    js 0x1e42
+    xor [si],dh
+    sbb [bx+si],al
+    add [bx+si],al
+    int3
+    int3
+    int3
+    int3
+    test byte [bx+si],0x0
+    add [bp+0x66],ah
+    o32 cmp al,0x18
+    add [bx+si],al
+    add dh,al
+    db 0xc6
+    salc
+    db 0xfe
+    insb
+    add [bx+si],al
+    add ah,cl
+    js 0x1e63
+    js 0x1e01
+    add [bx+si],al
+    add ah,cl
+    int3
+    int3
+    jl 0x1e49
+    jl 0x1e3f
+    add ah,bh
+    sbb [bx+si],dh
+    pusha
+    cld
+    add [0x1818],cl
+    jo 0x1e63
+    sbb [0x3000],cl
+    xor [bx+si],dh
+    add [bx+si],dh
+    xor [bx+si],dh
+    add [bx+si+0x18],dh
+    sbb [0x1818],cl
+    jo 0x1e5e
+    add [bp-0x24],dh
+    add [bx+si],al
+    add [bx+si],al
+    add [bx+si],dl
+    cmp [si-0x3a],ch
+    mov dh,0xfe
+    add bl,bh
+    cmp ah,0x1
+    ja 0x1e9b
+    push ds
+    push ax
+    mov ax,0x40
+    mov ds,ax
+    pop ax
+    mov al,0x0
+    cli
+    jz 0x1e8f
+    xchg [0x70],al
+    mov dx,[0x6c]
+    mov cx,[0x6e]
+    jmp short 0x1e9a
+    mov [0x70],al
+    mov [0x6c],dx
+    mov [0x6e],cx
+    pop ds
+    iret
+    dec cx
+    dec si
+    push sp
+    inc bp
+    push dx
+    push dx
+    push bp
+    push ax
+    aam 0xfb
+    push ds
+    push ax
+    push dx
+    mov ax,0x40
+    mov ds,ax
+    cli
+    inc word [0x6c]
+    jnz 0x1eb9
+    inc word [0x6e]
+    sti
+    cmp word [0x6e],byte +0x18
+    jnz 0x1ed7
+    cmp word [0x6c],0xb0
+    jnz 0x1ed7
+    xor ax,ax
+    cli
+    mov [0x6c],ax
+    mov byte [0x70],0x1
+    mov [0x6e],ax
+    dec byte [0x40]
+    jnz 0x1ee8
+    mov al,0xc
+    and byte [0x3f],0xf0
+    mov dx,0x3f2
+    out dx,al
+    int 0x1c
+    cli
+    mov al,0x20
+    out 0x20,al
+    pop dx
+    pop ax
+    pop ds
+    iret
+    movsw
+    inc byte [bx+0x23e9]
+    jmp [bp+di]
+    jmp [bp+di]
+    jmp [bp+di]
+    call [bx-0x11]
+    and di,di
+    gs lock dec bp
+    clc
+    inc cx
+    clc
+    pop cx
+    in al,dx
+    cmp di,sp
+    pop cx
+    clc
+    cs call 0xee5
+    add [bx+si],al
+    repne out 0x6e,al
+    db 0xfe
+    push bx
+    call [bp+di-0x1]
+    movsb
+    lock
+    db 0xc7
+    out dx,ax
+    add [bx+si],al
+    push ax
+    push dx
+    mov dx,0x20
+    mov al,0xb
+    out dx,al
+    jmp short 0x1f2d
+    in al,dx
+    or al,al
+    jz 0x1f44
+    mov ah,al
+    inc dx
+    in al,dx
+    or al,ah
+    jmp short 0x1f3a
+    out dx,al
+    mov al,0x20
+    dec dx
+    jmp short 0x1f40
+    out dx,al
+    mov al,ah
+    inc ax
+    dec ax
+    push ds
+    mov dx,0x40
+    mov ds,dx
+    mov [0x6b],al
+    pop ds
+    pop dx
+    pop ax
+    iret
+    add bh,cl
+    push ax
+    push bx
+    push cx
+    push dx
+    push di
+    push ds
+    mov dx,0x40
+    mov ds,dx
+    mov al,0x1
+    xchg [0x100],al
+    cmp al,0x1
+    jz 0x1fca
+    sti
+    xor dx,dx
+    mov ah,0x2
+    int 0x17
+    xor ah,0x80
+    test ah,0xa9
+    jz 0x1f7f
+    call 0x56
+    mov cl,0xff
+    jmp short 0x1fc5
+    call 0x1fd1
+    mov ah,0xf
+    int 0x10
+    mov bl,ah
+    mov ah,0x3
+    int 0x10
+    push dx
+    sub dx,dx
+    mov ah,0x2
+    int 0x10
+    mov ah,0x8
+    int 0x10
+    and al,al
+    jnz 0x1f9d
+    mov al,0x20
+    call 0x1fd8
+    test ah,0x29
+    jnz 0x1fbb
+    inc dl
+    cmp dl,bl
+    jnz 0x1f8f
+    sub dl,dl
+    call 0x1fd1
+    inc dh
+    cmp dh,0x19
+    jnz 0x1f8f
+    mov cl,0x0
+    jmp short 0x1fc0
+    call 0x56
+    mov cl,0xff
+    pop dx
+    mov ah,0x2
+    int 0x10
+    cli
+    mov [0x100],cl
+    pop ds
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    iret
+    mov al,0xd
+    call 0x1fd8
+    mov al,0xa
+    push dx
+    xor dx,dx
+    xor ah,ah
+    int 0x17
+    pop dx
+    ret
+    add [bx+di+0x2f],cl
+    dec di
+    sub ax,0x4f42
+    fsub dword [bx+si]
+    inc bp
+    push dx
+    push dx
+    dec di
+    push dx
+    mov al,[0x5bea]
+    loopne 0x1ff4
+    lock xor [bx+di],dh
+    das
+    xor si,[bx+di]
+    das
+    cmp [bx+di],bh
+    add dh,bh
     db 0x71
