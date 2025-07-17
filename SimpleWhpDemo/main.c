@@ -212,11 +212,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         putc(((PUCHAR)&IoAccess->Data)[i], stdout);
                 return S_OK;
         }
-        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
-        {
-                // Ignore PIT control register writes.
-                return S_OK;
-        }
         else
         {
                 printf("Unknown I/O Port: 0x%04X is accessed!\n", IoAccess->Port);
