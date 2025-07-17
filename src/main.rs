@@ -7,20 +7,17 @@ use aligned::*;
 static GLOBAL_EMULATOR_HANDLE:AtomicPtr<c_void>=AtomicPtr::new(null_mut());
 static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 {
-        Size:size_of::<WHV_EMULATOR_CALLBACKS>() as u32,
-        Reserved:0,
-        WHvEmulatorIoPortCallback:Some(emu_io_port_callback),
-        WHvEmulatorMemoryCallback:Some(emu_memory_callback),
-        WHvEmulatorGetVirtualProcessorRegisters:Some(emu_get_vcpu_reg_callback),
-        WHvEmulatorSetVirtualProcessorRegisters:Some(emu_set_vcpu_reg_callback),
+	Size:size_of::<WHV_EMULATOR_CALLBACKS>() as u32,
+	Reserved:0,
+	WHvEmulatorIoPortCallback:Some(emu_io_port_callback),
+	WHvEmulatorMemoryCallback:Some(emu_memory_callback),
+	WHvEmulatorGetVirtualProcessorRegisters:Some(emu_get_vcpu_reg_callback),
+	WHvEmulatorSetVirtualProcessorRegisters:Some(emu_set_vcpu_reg_callback),
         WHvEmulatorTranslateGvaPage:Some(emu_translate_gva_callback)
 };
 
-static mut DMA_PAGE_CH3:u8=0;
-
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
-const IO_PORT_DMA_PAGE_CH3:u16=0x0083;
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -303,21 +300,6 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 println!("Input is not implemented!");
                                 E_NOTIMPL
                         }
-                }
-                else if (*io_access).Port==IO_PORT_DMA_PAGE_CH3
-                {
-                        if (*io_access).Direction==0
-                        {
-                                (*io_access).Data=(unsafe{DMA_PAGE_CH3}) as u64;
-                        }
-                        else
-                        {
-                                if (*io_access).AccessSize>0
-                                {
-                                        unsafe{DMA_PAGE_CH3=(((*io_access).Data)&0xFF) as u8;}
-                                }
-                        }
-                        S_OK
                 }
                 else if (*io_access).Port==IO_PORT_STRING_PRINT
                 {
