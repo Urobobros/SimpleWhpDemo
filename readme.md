@@ -139,6 +139,11 @@ rustup target add x86_64-pc-windows-gnu
 
 Then pass `--target x86_64-pc-windows-gnu` to Cargo when checking or building.
 
+If you forget this flag and run Cargo with the default Linux target, the build
+will fail with errors like `could not find Win32 in windows` because the
+`windows` crate only enables its Win32 modules when compiling for a Windows
+target.
+
 **Note**: This demo is written in Rust 2024. Make sure your compiler version is new enough.
 
 ## Personal Comments

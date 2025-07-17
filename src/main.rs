@@ -47,6 +47,7 @@ const IO_PORT_DMA_PAGE3: u16 = 0x0083;
 const IO_PORT_VIDEO_MISC_B8: u16 = 0x00B8;
 const IO_PORT_SPECIAL_213: u16 = 0x0213;
 const IO_PORT_PIT_CMD: u16 = 0x0008;
+const IO_PORT_PIT_COUNTER1: u16 = 0x0041;
 const IO_PORT_PIT_CONTROL: u16 = 0x0043;
 const IO_PORT_TIMER_MISC: u16 = 0x0063;
 
@@ -66,6 +67,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_DMA_PAGE3 => "DMA_PAGE3",
         IO_PORT_VIDEO_MISC_B8 => "VIDEO_MISC_B8",
         IO_PORT_SPECIAL_213 => "PORT_213",
+        IO_PORT_PIT_COUNTER1 => "PIT_COUNTER1",
         IO_PORT_PIT_CONTROL => "PIT_CONTROL",
         IO_PORT_PIT_CMD => "PIT_CMD",
         IO_PORT_TIMER_MISC => "TIMER_MISC",
@@ -82,6 +84,7 @@ static mut PIC_MASTER_IMR: u8 = 0;
 static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
 static mut PIT_CONTROL: u8 = 0;
+static mut PIT_COUNTER1: u8 = 0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 
@@ -458,13 +461,14 @@ impl SimpleVirtualMachine {
                         // Treat HLT as a NOP so BIOS busy
                         // loops keep running even with
                         // interrupts disabled.
-                        let rip_name = WHV_REGISTER_NAME::WHvX64RegisterRip;
+                        let rip_name = WHvX64RegisterRip;
                         let mut rip_val = WHV_REGISTER_VALUE {
-                            AsUINT64: exit_ctxt.VpContext.Rip,
+                            Reg64: exit_ctxt.VpContext.Rip,
                         };
-                        rip_val.AsUINT64 += exit_ctxt.VpContext.InstructionLength as u64;
+                        // HLT is a 1-byte instruction
                         unsafe {
-                            WHvSetVirtualProcessorRegisters(partition, 0, &rip_name, 1, &rip_val);
+                            rip_val.Reg64 += 1;
+                            WHvSetVirtualProcessorRegisters(self.handle, 0, &rip_name, 1, &rip_val);
                         }
                         cont_exec = true;
                     }
@@ -587,6 +591,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
+                (*io_access).Data = PIT_COUNTER1 as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;
                 S_OK
@@ -603,6 +610,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
                 || (*io_access).Port == IO_PORT_PIT_CONTROL
+                || (*io_access).Port == IO_PORT_PIT_COUNTER1
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
                 (*io_access).Data = 0;
@@ -650,6 +658,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
+                PIT_COUNTER1 = (*io_access).Data as u8;
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
                 S_OK
@@ -667,6 +678,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_SPECIAL_213
                 || (*io_access).Port == IO_PORT_PIT_CMD
                 || (*io_access).Port == IO_PORT_PIT_CONTROL
+                || (*io_access).Port == IO_PORT_PIT_COUNTER1
                 || (*io_access).Port == IO_PORT_TIMER_MISC
             {
                 // These ports are touched by the BIOS during POST but
