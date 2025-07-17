@@ -309,10 +309,19 @@ impl SimpleVirtualMachine
 							}
 						}
 					}
-					WHvRunVpExitReasonX64Halt=>
-					{
-						cont_exec=false;
-					}
+                                        WHvRunVpExitReasonX64Halt=>
+                                        {
+                                                // Treat HLT as a NOP so BIOS busy
+                                                // loops keep running even with
+                                                // interrupts disabled.
+                                                let rip_name = WHV_REGISTER_NAME::WHvX64RegisterRip;
+                                                let mut rip_val = WHV_REGISTER_VALUE{AsUINT64:exit_ctxt.VpContext.Rip};
+                                                rip_val.AsUINT64 += exit_ctxt.VpContext.InstructionLength as u64;
+                                                unsafe {
+                                                        WHvSetVirtualProcessorRegisters(partition,0,&rip_name,1,&rip_val);
+                                                }
+                                                cont_exec=true;
+                                        }
 					_=>
 					{
 						println!("Unknown Exit Reason: 0x{:X}!",exit_ctxt.ExitReason.0);

@@ -432,11 +432,13 @@ HRESULT SwExecuteProgram()
 				puts("The specified processor state is invalid!");
 				ContinueExecution = FALSE;
 				break;
-			case WHvRunVpExitReasonX64Halt:
-				ContinueExecution = _bittest64(&ExitContext.VpContext.Rflags, 9);
-				Rip.Reg64 += ExitContext.VpContext.InstructionLength;
-				hr = WHvSetVirtualProcessorRegisters(hPart, 0, &RipName, 1, &Rip);
-				break;
+                        case WHvRunVpExitReasonX64Halt:
+                                /* Treat HLT as a NOP so the BIOS can busy wait
+                                   even when interrupts are disabled. */
+                                Rip.Reg64 += ExitContext.VpContext.InstructionLength;
+                                hr = WHvSetVirtualProcessorRegisters(hPart, 0, &RipName, 1, &Rip);
+                                ContinueExecution = TRUE;
+                                break;
 			default:
 				printf("Unknown VM-Exit Code=0x%X!\n", ExitContext.ExitReason);
 				ContinueExecution = FALSE;
