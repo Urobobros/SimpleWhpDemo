@@ -32,6 +32,9 @@ const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
 const GUEST_MEM_SIZE: usize = 0x100000;
 
+/// Duration for the startup beep and speaker output in milliseconds.
+const BEEP_DURATION_MS: u32 = 300;
+
 fn openal_beep(freq: u32, dur_ms: u32) {
     unsafe {
         let device = al::alcOpenDevice(std::ptr::null());
@@ -901,8 +904,8 @@ unsafe extern "system" fn emu_io_port_callback(
                     } else {
                         750
                     };
-                    let _ = Beep(freq, 60);
-                    openal_beep(freq, 60);
+                    let _ = Beep(freq, BEEP_DURATION_MS);
+                    openal_beep(freq, BEEP_DURATION_MS);
                 }
                 SPEAKER_ON = new_state;
                 S_OK
@@ -1170,7 +1173,7 @@ fn main() {
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
-    openal_beep(1000, 300);
+    openal_beep(1000, BEEP_DURATION_MS);
     let args: Vec<String> = std::env::args().collect();
     let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
     let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);

@@ -17,6 +17,8 @@
 #define CGA_ROWS 25
 #define DEFAULT_BIOS "ami_8088_bios_31jan89.bin"
 #define FALLBACK_BIOS "ivt.fw"
+/* Duration for the startup beep and speaker output, in milliseconds */
+#define BEEP_DURATION_MS 300
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
 
@@ -699,8 +701,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                if (new_state && !SpeakerOn)
                {
                        DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
-                       Beep(freq, 60);
-                       OpenalBeep(freq, 60);
+                      Beep(freq, BEEP_DURATION_MS);
+                      OpenalBeep(freq, BEEP_DURATION_MS);
                }
                SpeakerOn = new_state;
                return S_OK;
@@ -1021,7 +1023,7 @@ int main(int argc, char* argv[], char* envp[])
         * initialization. This helps confirm that OpenAL output works
         * before any other emulation happens.
         */
-       OpenalBeep(1000, 300);
+       OpenalBeep(1000, BEEP_DURATION_MS);
 #endif
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
        PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
