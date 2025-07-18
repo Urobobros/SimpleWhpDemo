@@ -23,5 +23,8 @@
     <ClInclude Include="vmdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="font8x8_basic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

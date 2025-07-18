@@ -3,6 +3,7 @@ org 0x0
 
 %define int_default_cs  0
 %define str_prt_port    0
+%define disk_data_port  0xFF
 
 ; In an arbitrary real-mode environment, the IVT is usually stored
 ; at the base address of 0.
@@ -25,10 +26,10 @@ dw virt_stack_fault,int_default_cs
 dw virt_general_protection_fault,int_default_cs
 dw virt_page_fault,int_default_cs
 dw virt_reserved_exception,int_default_cs
-dw virt_x87_pending_fpu_fault,int_default_cs
+dw virt_int10_handler,int_default_cs
 dw virt_alignment_check_fault,int_default_cs
 dw virt_machine_check_abort,int_default_cs
-dw virt_simd_fpu_fault,int_default_cs
+dw virt_int13_handler,int_default_cs
 dw virt_virtualization_exception,int_default_cs
 dw virt_control_protection_fault,int_default_cs
 dw virt_reserved_exception,int_default_cs
@@ -281,9 +282,43 @@ dw virt_unknown_interrupt,int_default_cs
 dw virt_unknown_interrupt,int_default_cs
 dw virt_unknown_interrupt,int_default_cs
 
+virt_int10_handler:
+        cmp ah,0x0E
+        je int10_teletype
+        iret
+
+int10_teletype:
+        mov dx,str_prt_port
+        out dx,al
+        iret
+
+virt_int13_handler:
+        cmp ah,2
+        je int13_read_sector
+        mov si,int13_print_string
+        call strlen
+        mov cx,dx
+        mov dx,str_prt_port
+        rep outsb
+        stc
+        iret
+
+int13_read_sector:
+        push dx
+        mov dx,disk_data_port
+        mov cx,512
+.rdloop:
+        in al,dx
+        mov es:[bx],al
+        inc bx
+        loop .rdloop
+        pop dx
+        clc
+        iret
+
 virt_int21_handler:
-	cmp ah,9
-	je int21_print_string_stdout
+        cmp ah,9
+        je int21_print_string_stdout
 	cmp ah,0
 	je int21_termination
 	iret
@@ -373,6 +408,13 @@ interrupt_print_string:
 db "[Firmware] Unknown Interrupt!",10,'$',0
 halted_print_string:
 db "[Firmware] Halted due to int21h! /w ah=0",10,'$',0
+
+int13_print_string:
+db "[Firmware] INT13 called (stub)",10,'$',0
+
+; Firmware version string
+fw_version_string:
+db "IVT firmware v0.1.0",0
 
 strlen:
 	cld
