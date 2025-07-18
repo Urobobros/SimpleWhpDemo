@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 aligned = "0.4.2"
 openal-sys = "1.16.0"
+sdl2 = "0.38"
+font8x8 = "0.3"
 
 [dependencies.windows]
 version = "0.59.0"
