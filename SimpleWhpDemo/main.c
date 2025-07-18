@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <Windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
@@ -1014,6 +1015,14 @@ int main(int argc, char* argv[], char* envp[])
 {
        puts("SimpleWhpDemo version 1.1.1");
        puts("IVT firmware version 0.1.0");
+#if SW_HAVE_OPENAL
+       /*
+        * Emit a slightly longer tone so there's enough time for audio
+        * initialization. This helps confirm that OpenAL output works
+        * before any other emulation happens.
+        */
+       OpenalBeep(1000, 300);
+#endif
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
        PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
 	SwCheckSystemHypervisor();

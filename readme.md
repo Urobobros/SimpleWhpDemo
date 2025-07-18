@@ -3,6 +3,7 @@ This project is a simple demo of running a real-mode DOS program in Windows 10 x
 
 Current version: **1.1.1**. The bundled firmware (`ivt.fw`) is version **0.1.0**.
 The emulator can also boot the real AMI BIOS `ami_8088_bios_31jan89.bin` when present.
+On launch it plays a short OpenAL tone so you can confirm that sound output works before the guest boots.
 
 ## Showcase
 With a minimal analog firmware, SimpleWhpDemo is running a hello world program which is also capable to be running in a real DOS system. (The screenshot demonstrates the comparison to DOSBox)
