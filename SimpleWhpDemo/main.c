@@ -4,6 +4,15 @@
 #include <Windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
+#if __has_include(<SDL.h>)
+#   include <SDL.h>
+#   define SW_HAVE_SDL2 1
+#elif __has_include(<SDL2/SDL.h>)
+#   include <SDL2/SDL.h>
+#   define SW_HAVE_SDL2 1
+#else
+#   define SW_HAVE_SDL2 0
+#endif
 #if __has_include(<AL/al.h>) && __has_include(<AL/alc.h>)
 #   include <AL/al.h>
 #   include <AL/alc.h>
@@ -12,6 +21,7 @@
 #   define SW_HAVE_OPENAL 0
 #endif
 #include "vmdef.h"
+#include "font8x8_basic.h"
 
 #define CGA_COLS 80
 #define CGA_ROWS 25
@@ -21,6 +31,10 @@
 #define BEEP_DURATION_MS 300
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
+#if SW_HAVE_SDL2
+static SDL_Window* SdlWindow = NULL;
+static SDL_Renderer* SdlRenderer = NULL;
+#endif
 
 #if SW_HAVE_OPENAL
 static void OpenalBeep(DWORD freq, DWORD dur_ms)
@@ -98,6 +112,9 @@ static void CgaPutChar(char ch)
         }
         if(CgaCursor>=CGA_COLS*CGA_ROWS)
                 CgaCursor = CGA_COLS*CGA_ROWS-1;
+#if SW_HAVE_SDL2
+        RenderCgaWindow();
+#endif
 }
 
 static void PrintCgaBuffer()
@@ -116,9 +133,41 @@ static void PrintCgaBuffer()
                         if(ch==0) ch=' ';
                         putc(ch, stdout);
                 }
-                putc('\n', stdout);
+        putc('\n', stdout);
         }
 }
+
+#if SW_HAVE_SDL2
+static void RenderCgaWindow()
+{
+        if (!SdlRenderer) return;
+        SDL_Event e;
+        while (SDL_PollEvent(&e))
+        {
+                if (e.type == SDL_QUIT) exit(0);
+        }
+        SDL_SetRenderDrawColor(SdlRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        SDL_RenderClear(SdlRenderer);
+        for (UINT32 r = 0; r < CGA_ROWS; ++r)
+        {
+                for (UINT32 c = 0; c < CGA_COLS; ++c)
+                {
+                        USHORT cell = CgaBuffer[r * CGA_COLS + c];
+                        unsigned char ch = (unsigned char)(cell & 0xFF);
+                        for (int y = 0; y < 8; ++y)
+                        {
+                                unsigned char bits = font8x8_basic[ch][y];
+                                for (int x = 0; x < 8; ++x)
+                                {
+                                        if (bits & (1 << x))
+                                                SDL_RenderDrawPoint(SdlRenderer, c * 8 + x, r * 8 + y);
+                                }
+                        }
+                }
+        }
+        SDL_RenderPresent(SdlRenderer);
+}
+#endif
 
 HRESULT SwCheckSystemHypervisor()
 {
@@ -1025,6 +1074,19 @@ int main(int argc, char* argv[], char* envp[])
         */
        OpenalBeep(1000, BEEP_DURATION_MS);
 #endif
+#if SW_HAVE_SDL2
+       if (SDL_Init(SDL_INIT_VIDEO) == 0)
+       {
+               SdlWindow = SDL_CreateWindow("SimpleWhpDemo",
+                                            SDL_WINDOWPOS_CENTERED,
+                                            SDL_WINDOWPOS_CENTERED,
+                                            CGA_COLS * 8,
+                                            CGA_ROWS * 8,
+                                            0);
+               if (SdlWindow)
+                       SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+       }
+#endif
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
        PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
 	SwCheckSystemHypervisor();
@@ -1102,8 +1164,13 @@ int main(int argc, char* argv[], char* envp[])
 			}
 			else
 				puts("Failed to load the program!");
-			SwTerminateVirtualMachine();
-		}
-	}
-	return 0;
+                       SwTerminateVirtualMachine();
+               }
+       }
+#if SW_HAVE_SDL2
+       if (SdlRenderer) SDL_DestroyRenderer(SdlRenderer);
+       if (SdlWindow) SDL_DestroyWindow(SdlWindow);
+       if (SdlWindow || SdlRenderer) SDL_Quit();
+#endif
+       return 0;
 }
