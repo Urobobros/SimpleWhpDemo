@@ -1167,6 +1167,7 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
+
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, 300);
