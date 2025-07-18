@@ -1,18 +1,22 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <Windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
+
 #if __has_include(<SDL.h>)
+#   define SDL_MAIN_HANDLED    
 #   include <SDL.h>
 #   define SW_HAVE_SDL2 1
 #elif __has_include(<SDL2/SDL.h>)
+#   define SDL_MAIN_HANDLED     
 #   include <SDL2/SDL.h>
 #   define SW_HAVE_SDL2 1
 #else
 #   define SW_HAVE_SDL2 0
 #endif
+
 #if __has_include(<AL/al.h>) && __has_include(<AL/alc.h>)
 #   include <AL/al.h>
 #   include <AL/alc.h>
@@ -1080,6 +1084,11 @@ HRESULT SwExecuteProgram()
 		}
 	}
 	return hr;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+{
+    return main(__argc, __argv, _environ);
 }
 
 int main(int argc, char* argv[], char* envp[])
