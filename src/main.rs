@@ -1,15 +1,15 @@
 #![allow(static_mut_refs)]
+use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
+use std::thread::sleep;
+use std::time::Duration;
 use std::{
     ffi::c_void,
     ptr::null_mut,
     slice,
     sync::atomic::{AtomicPtr, Ordering},
 };
-use std::f32::consts::PI;
-use std::thread::sleep;
-use std::time::Duration;
 
 use openal_sys as al;
 
@@ -20,7 +20,7 @@ use windows::{
         Storage::FileSystem::*,
         System::{Hypervisor::*, Memory::*},
     },
-    core::{HRESULT, Result, Error, PCWSTR},
+    core::{Error, HRESULT, PCWSTR, Result},
 };
 
 #[link(name = "Kernel32")]
@@ -52,7 +52,11 @@ fn openal_beep(freq: u32, dur_ms: u32) {
         let mut samples: Vec<i16> = Vec::with_capacity(samples_len);
         for n in 0..samples_len {
             let t = n as f32 / sample_rate as f32;
-            let val = if (t * freq as f32).fract() < 0.5 { 0.8 } else { -0.8 };
+            let val = if (t * freq as f32).fract() < 0.5 {
+                0.8
+            } else {
+                -0.8
+            };
             samples.push((val * i16::MAX as f32) as i16);
         }
         al::alBufferData(
@@ -1163,8 +1167,10 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
-    // Emit a short beep so sound output can be verified right away.
-    openal_beep(750, 60);
+
+    // Emit a slightly longer beep so the audio device has time to start up.
+    // This helps confirm OpenAL is working before emulation proceeds.
+    openal_beep(1000, 300);
     let args: Vec<String> = std::env::args().collect();
     let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
     let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
