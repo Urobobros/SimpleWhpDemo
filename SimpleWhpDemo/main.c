@@ -34,6 +34,26 @@ static UINT32 CgaCursor = 0;
 #if SW_HAVE_SDL2
 static SDL_Window* SdlWindow = NULL;
 static SDL_Renderer* SdlRenderer = NULL;
+static void RenderCgaWindow(void);
+#endif
+
+/* Older Windows SDKs may not declare the Emulator API */
+#ifndef WHvEmulatorCreateEmulator
+HRESULT WINAPI WHvEmulatorCreateEmulator(
+    const WHV_EMULATOR_CALLBACKS* Callbacks,
+    WHV_EMULATOR_HANDLE* Emulator
+    );
+HRESULT WINAPI WHvEmulatorDestroyEmulator(
+    WHV_EMULATOR_HANDLE Emulator
+    );
+HRESULT WINAPI WHvEmulatorTryIoEmulation(
+    WHV_EMULATOR_HANDLE Emulator,
+    const void* Context,
+    const WHV_VP_EXIT_CONTEXT* VpContext,
+    const WHV_X64_IO_PORT_ACCESS_CONTEXT* IoContext,
+    WHV_EMULATOR_STATUS* EmulatorReturnStatus
+    );
+
 #endif
 
 #if SW_HAVE_OPENAL
