@@ -35,6 +35,7 @@
 #define BEEP_DURATION_MS 300
 static USHORT CgaBuffer[CGA_COLS*CGA_ROWS];
 static UINT32 CgaCursor = 0;
+static USHORT CgaShadow[CGA_COLS*CGA_ROWS];
 #if SW_HAVE_SDL2
 static SDL_Window* SdlWindow = NULL;
 static SDL_Renderer* SdlRenderer = NULL;
@@ -159,6 +160,29 @@ static void PrintCgaBuffer()
                 }
         putc('\n', stdout);
         }
+}
+
+static void SyncCgaFromMemory(void)
+{
+        if (!VirtualMemory) return;
+        USHORT* vram = (USHORT*)((PUCHAR)VirtualMemory + 0xB8000);
+        BOOL dirty = FALSE;
+        for (UINT32 i = 0; i < CGA_COLS * CGA_ROWS; ++i)
+        {
+                USHORT val = vram[i];
+                if (CgaShadow[i] != val)
+                {
+                        CgaShadow[i] = val;
+                        CgaBuffer[i] = val;
+                        dirty = TRUE;
+                }
+        }
+#if SW_HAVE_SDL2
+        if (dirty)
+                RenderCgaWindow();
+#else
+        UNREFERENCED_PARAMETER(dirty);
+#endif
 }
 
 #if SW_HAVE_SDL2
@@ -1076,14 +1100,15 @@ HRESULT SwExecuteProgram()
 				ContinueExecution = FALSE;
 				break;
 			}
-		}
-		else
-		{
-			printf("Failed to run virtual processor! HRESULT=0x%X\n", hr);
-			ContinueExecution = FALSE;
-		}
-	}
-	return hr;
+                }
+                else
+                {
+                        printf("Failed to run virtual processor! HRESULT=0x%X\n", hr);
+                        ContinueExecution = FALSE;
+                }
+                SyncCgaFromMemory();
+        }
+        return hr;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)

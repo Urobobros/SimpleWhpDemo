@@ -89,6 +89,8 @@ SimpleWhpDemo.exe beep.com
 ```
 Both the Rust and C versions now play the tone using OpenAL, matching how
 PCem outputs speaker audio.
+Both builds also mirror the CGA text memory at `0xB8000` to the SDL window so
+direct writes by the guest appear instantly.
 
 Always run the hypervisor with the assembled `.com` file rather than the source
 `*.asm` to avoid spurious "Input is not implemented" messages.
@@ -152,11 +154,11 @@ SimpleWhpDemo.exe hello.com
 The firmware's INT 10h handler will capture the calls and output the string via
 the emulated CGA device.
 
-While the program runs, characters sent through INT 10h are also stored in an
-80×25 text buffer. At shutdown the contents of guest video memory at
-`0xB8000` are read back so writes performed directly by the guest are
-displayed as well. The combined buffer is printed on the host console so you
-can see the final screen contents.
+While the program runs, characters sent through INT 10h are stored in an
+80×25 text buffer. The CGA text memory at `0xB8000` is mirrored live so
+direct writes by the guest immediately update the SDL window. At shutdown the
+buffer is still printed on the host console so you can see the final screen
+contents.
 
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.

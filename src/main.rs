@@ -11,10 +11,10 @@ use std::{
     sync::atomic::{AtomicPtr, Ordering},
 };
 
-use openal_sys as al;
-use sdl2::{pixels::Color, rect::Rect, EventPump, Sdl};
-use sdl2::render::WindowCanvas;
 use font8x8::legacy::BASIC_LEGACY;
+use openal_sys as al;
+use sdl2::render::WindowCanvas;
+use sdl2::{EventPump, Sdl, pixels::Color, rect::Rect};
 
 use aligned::*;
 use windows::{
@@ -245,6 +245,7 @@ const CGA_COLS: usize = 80;
 const CGA_ROWS: usize = 25;
 static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 static mut CGA_CURSOR: usize = 0;
+static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 
 fn cga_put_char(ch: u8) {
     unsafe {
@@ -288,6 +289,23 @@ fn print_cga_buffer(mem: *const u8) {
                 print!("{}", ch as char);
             }
             println!("");
+        }
+    }
+}
+
+fn sync_cga_from_memory(mem: *const u8) {
+    unsafe {
+        let mut dirty = false;
+        for i in 0..CGA_COLS * CGA_ROWS {
+            let val = *(mem.add(0xB8000 + 2 * i) as *const u16);
+            if CGA_SHADOW[i] != val {
+                CGA_SHADOW[i] = val;
+                CGA_BUFFER[i] = val;
+                dirty = true;
+            }
+        }
+        if dirty {
+            render_cga_window();
         }
     }
 }
@@ -664,6 +682,7 @@ impl SimpleVirtualMachine {
                         cont_exec = false;
                     }
                 }
+                sync_cga_from_memory(self.vmem as *const u8);
             }
         }
     }

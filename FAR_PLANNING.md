@@ -44,7 +44,7 @@ instrukci `jmp far` do této oblasti. Stejný princip používá i tento projekt
 - [x] Načtení diskového obrazu a `INT 13h` (jednosektorový stub)
 - [x] Ukázkový program „HELLO“
 - [x] Skript pro disassemblování BIOSu
-- [ ] Plná textová CGA paměť 80×25 (plánováno)
+- [x] Plná textová CGA paměť 80×25 s vykreslováním do SDL okna
 
 ## 🧪 Integrace a testy
 - Unit testy pro čtení/zápis paměti a správné mapování BIOSu.
