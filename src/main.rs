@@ -12,6 +12,9 @@ use std::{
 };
 
 use openal_sys as al;
+use sdl2::{pixels::Color, rect::Rect, EventPump, Sdl};
+use sdl2::render::WindowCanvas;
+use font8x8::legacy::BASIC_LEGACY;
 
 use aligned::*;
 use windows::{
@@ -93,6 +96,10 @@ static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACK
     WHvEmulatorSetVirtualProcessorRegisters: Some(emu_set_vcpu_reg_callback),
     WHvEmulatorTranslateGvaPage: Some(emu_translate_gva_callback),
 };
+
+static mut SDL_CANVAS: Option<WindowCanvas> = None;
+static mut SDL_PUMP: Option<EventPump> = None;
+static mut SDL_CONTEXT: Option<Sdl> = None;
 
 const IO_PORT_STRING_PRINT: u16 = 0x0000;
 const IO_PORT_KEYBOARD_INPUT: u16 = 0x0001; // legacy
@@ -261,6 +268,7 @@ fn cga_put_char(ch: u8) {
         if CGA_CURSOR >= CGA_COLS * CGA_ROWS {
             CGA_CURSOR = CGA_COLS * CGA_ROWS - 1;
         }
+        render_cga_window();
     }
 }
 
@@ -280,6 +288,35 @@ fn print_cga_buffer(mem: *const u8) {
                 print!("{}", ch as char);
             }
             println!("");
+        }
+    }
+}
+
+fn render_cga_window() {
+    unsafe {
+        if let Some(canvas) = SDL_CANVAS.as_mut() {
+            if let Some(pump) = SDL_PUMP.as_mut() {
+                for _ in pump.poll_iter() {}
+            }
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.clear();
+            for r in 0..CGA_ROWS {
+                for c in 0..CGA_COLS {
+                    let cell = CGA_BUFFER[r * CGA_COLS + c];
+                    let ch = (cell & 0xFF) as usize;
+                    let glyph = BASIC_LEGACY[ch];
+                    for (y, row_bits) in glyph.iter().enumerate() {
+                        for x in 0..8 {
+                            if (row_bits >> x) & 1 != 0 {
+                                let px = (c * 8 + (7 - x)) as i32;
+                                let py = (r * 8 + y) as i32;
+                                let _ = canvas.fill_rect(Rect::new(px, py, 1, 1));
+                            }
+                        }
+                    }
+                }
+            }
+            canvas.present();
         }
     }
 }
@@ -1174,6 +1211,29 @@ fn main() {
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, BEEP_DURATION_MS);
+    unsafe {
+        if let Ok(sdl) = sdl2::init() {
+            if let Ok(video) = sdl.video() {
+                if let Ok(window) = video
+                    .window(
+                        "SimpleWhpDemo",
+                        (CGA_COLS * 8) as u32,
+                        (CGA_ROWS * 8) as u32,
+                    )
+                    .position_centered()
+                    .build()
+                {
+                    if let Ok(canvas) = window.into_canvas().present_vsync().build() {
+                        if let Ok(pump) = sdl.event_pump() {
+                            SDL_CONTEXT = Some(sdl);
+                            SDL_CANVAS = Some(canvas);
+                            SDL_PUMP = Some(pump);
+                        }
+                    }
+                }
+            }
+        }
+    }
     let args: Vec<String> = std::env::args().collect();
     let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
     let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
