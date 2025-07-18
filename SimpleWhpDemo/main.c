@@ -53,6 +53,7 @@ HRESULT WINAPI WHvEmulatorTryIoEmulation(
     const WHV_X64_IO_PORT_ACCESS_CONTEXT* IoContext,
     WHV_EMULATOR_STATUS* EmulatorReturnStatus
     );
+
 #endif
 
 #if SW_HAVE_OPENAL
