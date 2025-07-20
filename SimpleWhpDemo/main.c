@@ -29,6 +29,23 @@
 #include "font8x8_basic.h"
 #include "include/portlog.h"
 
+static void PortLogRead(const WHV_EMULATOR_IO_ACCESS_INFO* io)
+{
+#if defined(_DEBUG) || defined(PORT_DEBUG)
+    if (io->Direction == 0)
+    {
+        if (io->AccessSize == 1)
+            PORT_LOG("IN  port 0x%04X, size 1, value 0x%02X\n", io->Port, (unsigned)(io->Data & 0xFF));
+        else if (io->AccessSize == 2)
+            PORT_LOG("IN  port 0x%04X, size 2, value 0x%04X\n", io->Port, (unsigned)(io->Data & 0xFFFF));
+        else
+            PORT_LOG("IN  port 0x%04X, size %u, value 0x%08X\n", io->Port, io->AccessSize, (unsigned)io->Data);
+    }
+#endif
+}
+
+#define RETURN_OK do { PortLogRead(IoAccess); return S_OK; } while(0)
+
 #define CGA_COLS 80
 #define CGA_ROWS 25
 #define DEFAULT_BIOS "ami_8088_bios_31jan89.bin"
@@ -680,9 +697,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         UpdatePit();
         if (IoAccess->Direction == 0)
         {
-       if (IoAccess->Port != IO_PORT_SYS_PORTC) {
-                       PORT_LOG("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
-       }
                 if (IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -690,12 +704,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                 int ch = getchar();
                                 ((PUCHAR)&IoAccess->Data)[i] = (UCHAR)ch;
                         }
-                        return S_OK;
+                        RETURN_OK;
                 }
                 else if (IoAccess->Port == IO_PORT_KBD_STATUS)
                 {
                         IoAccess->Data = 0;
-                        return S_OK;
+                        RETURN_OK;
                 }
                else if (IoAccess->Port <= 0x0007)
                {
@@ -704,9 +718,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
                {
@@ -715,17 +728,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                ((PUCHAR)&IoAccess->Data)[i] = DiskImage[DiskOffset];
                                DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
                        }
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_POST)
                {
                        IoAccess->Data = 0;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_SYS_CTRL)
                {
                        IoAccess->Data = SysCtrl;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_SYS_PORTC)
                {
@@ -733,77 +746,73 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        if (SysCtrl & 0x02)
                                val |= 0x20;
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
                {
                        IoAccess->Data = MdaMode;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_MASK)
                {
                        IoAccess->Data = DmaMask;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_MODE)
                {
                        IoAccess->Data = DmaMode;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CGA_MODE)
                {
                        IoAccess->Data = CgaMode;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_TEMP)
                {
                        IoAccess->Data = DmaTemp;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
                {
                        IoAccess->Data = DmaClear;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
                {
                        IoAccess->Data = PitControl;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
                {
                        UCHAR val = PitRead(0);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
                        UCHAR val = PitRead(1);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
                        UCHAR val = PitRead(2);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
                {
                        IoAccess->Data = PicMasterImr;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
                {
                        IoAccess->Data = PicSlaveImr;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port <= 0x0007)
                {
@@ -812,79 +821,78 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
                {
                        IoAccess->Data = DmaPage1;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_0210)
                {
                        IoAccess->Data = Port0210Val;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_0278)
                {
                        IoAccess->Data = Port0278Val;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_02FA)
                {
                        IoAccess->Data = Port02faVal;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_0378)
                {
                        IoAccess->Data = Port0378Val;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_03BC)
                {
                        IoAccess->Data = Port03bcVal;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_03FA)
                {
                        IoAccess->Data = Port03faVal;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_0201)
                {
                        IoAccess->Data = Port0201Val;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
                {
                        IoAccess->Data = CrtcMdaIndex;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
                {
                        IoAccess->Data = CrtcMdaRegs[CrtcMdaIndex];
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_MDA)
                {
                        IoAccess->Data = AttrMda;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
                {
                        IoAccess->Data = CrtcCgaIndex;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
                {
                        IoAccess->Data = CrtcCgaRegs[CrtcCgaIndex];
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_CGA)
                {
                        IoAccess->Data = AttrCga;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CGA_STATUS)
                {
@@ -894,27 +902,27 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                CgaLastToggleMs = now;
                        }
                        IoAccess->Data = CgaStatus;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_FDC_DOR)
                {
                        IoAccess->Data = FdcDor;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_FDC_STATUS)
                {
                        IoAccess->Data = FdcStatus;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_FDC_DATA)
                {
                        IoAccess->Data = FdcData;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
                {
                        IoAccess->Data = 0;
-                       return S_OK;
+                       RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
                         IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
@@ -926,7 +934,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Port == IO_PORT_TIMER_MISC)
                {
                        IoAccess->Data = 0;
-                       return S_OK;
+                       RETURN_OK;
                }
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
@@ -945,7 +953,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                 *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
                         DmaFlipFlop = !DmaFlipFlop;
                 }
-                return S_OK;
+                RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
         {
@@ -954,15 +962,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         DiskImage[DiskOffset] = ((PUCHAR)&IoAccess->Data)[i];
                         DiskOffset = (DiskOffset + 1) % DISK_IMAGE_SIZE;
                 }
-                return S_OK;
+                RETURN_OK;
         }
        else if (IoAccess->Port == IO_PORT_POST)
        {
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_SYS_PORTC)
        {
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
        {
@@ -976,27 +984,27 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
                SpeakerOn = new_state;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_MDA_MODE)
        {
                MdaMode = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_MASK)
        {
                DmaMask = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_MODE)
        {
                DmaMode = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CGA_MODE)
        {
                CgaMode = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
        {
@@ -1017,28 +1025,28 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        ch->Bcd = (cmd & 1) != 0;
                        ch->RwLow = TRUE;
                }
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
        {
                PitWrite(0, (UCHAR)IoAccess->Data);
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
                PitWrite(1, (UCHAR)IoAccess->Data);
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
        {
                DmaTemp = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
        {
                DmaFlipFlop = FALSE;
                DmaClear = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port <= 0x0007)
        {
@@ -1053,128 +1061,128 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
                        DmaFlipFlop = !DmaFlipFlop;
                }
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
        {
                DmaPage1 = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0210)
        {
                Port0210Val = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0278)
        {
                Port0278Val = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_02FA)
        {
                Port02faVal = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0378)
        {
                Port0378Val = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_03BC)
        {
                Port03bcVal = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_03FA)
        {
                Port03faVal = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0201)
        {
                Port0201Val = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
        {
                PitWrite(2, (UCHAR)IoAccess->Data);
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
        {
                CrtcMdaIndex = (UCHAR)IoAccess->Data & 0x1F;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
        {
                CrtcMdaData = (UCHAR)IoAccess->Data;
                CrtcMdaRegs[CrtcMdaIndex] = CrtcMdaData;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_ATTR_MDA)
        {
                AttrMda = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
        {
                CrtcCgaIndex = (UCHAR)IoAccess->Data & 0x1F;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
        {
                CrtcCgaData = (UCHAR)IoAccess->Data;
                CrtcCgaRegs[CrtcCgaIndex] = CrtcCgaData;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_ATTR_CGA)
        {
                AttrCga = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CGA_STATUS)
        {
                CgaStatus = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_DOR)
        {
                FdcDor = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_STATUS)
        {
                FdcStatus = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_DATA)
        {
                FdcData = (UCHAR)IoAccess->Data;
-               return S_OK;
+               RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
        {
                PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
-               return S_OK;
+               RETURN_OK;
        }
         else if (IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
         {
                 PicSlaveImr = (UCHAR)IoAccess->Data;
-                return S_OK;
+                RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
         {
                 PicMasterImr = (UCHAR)IoAccess->Data;
-                return S_OK;
+                RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
         {
                 PicSlaveImr = (UCHAR)IoAccess->Data;
-                return S_OK;
+                RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS)
         {
-                return S_OK;
+                RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
                  IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
@@ -1186,7 +1194,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                  IoAccess->Port == IO_PORT_TIMER_MISC)
         {
                 /* Ports touched by the BIOS during POST but not modeled. */
-                return S_OK;
+                RETURN_OK;
         }
         else
         {
