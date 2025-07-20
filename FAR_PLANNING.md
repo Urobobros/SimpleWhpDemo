@@ -50,3 +50,9 @@ instrukci `jmp far` do této oblasti. Stejný princip používá i tento projekt
 - Unit testy pro čtení/zápis paměti a správné mapování BIOSu.
 - Funkční test: po spuštění musí být v logu vidět start BIOSu a zobrazený text „HELLO“.
 - CI pipeline s buildem, testy a přehledem pokrytí.
+## ➕ Přiblížení se k PCem
+Následující úpravy pomáhají sladit chování emulátoru s projektem PCem a snižují odchylky při startu BIOSu:
+- Vlákno pro simulaci vertikálního retracu CGA každých 16 ms.
+- Asynchronní generování pípnutí na pozadí, aby host neváhal při zápisech na port 0x61.
+- Výchozí hodnota registru CGA režimu `0x29` stejně jako v PCem.
+- Inicializace CRTC registrů na hodnoty zachycené z PCem.
