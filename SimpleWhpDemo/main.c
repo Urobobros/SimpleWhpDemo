@@ -575,7 +575,7 @@ static UINT32 UnknownPortCount = 0;
 static UCHAR PicMasterImr = 0;
 static UCHAR PicSlaveImr = 0;
 static UCHAR SysCtrl = 0;
-static UCHAR CgaMode = 0;
+static UCHAR CgaMode = 0x29;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
 static UCHAR DmaTemp = 0;
@@ -597,7 +597,11 @@ static UCHAR CrtcMdaRegs[32] = {0};
 static UCHAR AttrMda = 0;
 static UCHAR CrtcCgaIndex = 0;
 static UCHAR CrtcCgaData = 0;
-static UCHAR CrtcCgaRegs[32] = {0};
+static UCHAR CrtcCgaRegs[32] = {
+        0x71, 0x50, 0x5A, 0x0A, 0x1F, 0x06, 0x19, 0x1C,
+        0x02, 0x07, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
 static UCHAR AttrCga = 0;
 static UCHAR CgaStatus = 0;
 static ULONGLONG CgaLastToggleMs = 0;
