@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <Windows.h>
-#include <WinHvPlatform.h>
-#include <WinHvEmulation.h>
+#include <windows.h>
+#include <winhvplatform.h>
+#include <winhvemulation.h>
 
 #if __has_include(<SDL.h>)
 #   define SDL_MAIN_HANDLED    
@@ -83,19 +83,14 @@ static const SDL_Color CgaPalette[16] = {
 #ifndef WHvEmulatorCreateEmulator
 HRESULT WINAPI WHvEmulatorCreateEmulator(
     const WHV_EMULATOR_CALLBACKS* Callbacks,
-    WHV_EMULATOR_HANDLE* Emulator
-    );
-HRESULT WINAPI WHvEmulatorDestroyEmulator(
-    WHV_EMULATOR_HANDLE Emulator
-    );
+    WHV_EMULATOR_HANDLE* Emulator);
+HRESULT WINAPI WHvEmulatorDestroyEmulator(WHV_EMULATOR_HANDLE Emulator);
 HRESULT WINAPI WHvEmulatorTryIoEmulation(
     WHV_EMULATOR_HANDLE Emulator,
-    const void* Context,
+    VOID* Context,
     const WHV_VP_EXIT_CONTEXT* VpContext,
     const WHV_X64_IO_PORT_ACCESS_CONTEXT* IoContext,
-    WHV_EMULATOR_STATUS* EmulatorReturnStatus
-    );
-
+    WHV_EMULATOR_STATUS* EmulatorReturnStatus);
 #endif
 
 #if SW_HAVE_OPENAL
