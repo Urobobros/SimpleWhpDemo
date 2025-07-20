@@ -242,7 +242,7 @@ impl PitChannel {
 static mut PIT_CONTROL: u8 = 0;
 static mut PIT_CHANNELS: [PitChannel; 3] = [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
-static mut CGA_MODE: u8 = 0;
+static mut CGA_MODE: u8 = 0x29;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
 static mut DMA_MODE: u8 = 0;
@@ -263,7 +263,11 @@ static mut CRTC_MDA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_MDA: u8 = 0;
 static mut CRTC_CGA_INDEX: u8 = 0;
 static mut CRTC_CGA_DATA: u8 = 0;
-static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
+static mut CRTC_CGA_REGS: [u8; 32] = [
+    0x71, 0x50, 0x5A, 0x0A, 0x1F, 0x06, 0x19, 0x1C,
+    0x02, 0x07, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
 static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
 static mut CGA_LAST_TOGGLE: Option<Instant> = None;
