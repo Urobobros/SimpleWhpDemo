@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <windows.h>
-#include <winhvplatform.h>
-#include <winhvemulation.h>
+#include <Windows.h>
+#include <WinHvPlatform.h>
+#include <WinHvEmulation.h>
 
 #if __has_include(<SDL.h>)
 #   define SDL_MAIN_HANDLED    
@@ -83,14 +83,18 @@ static const SDL_Color CgaPalette[16] = {
 #ifndef WHvEmulatorCreateEmulator
 HRESULT WINAPI WHvEmulatorCreateEmulator(
     const WHV_EMULATOR_CALLBACKS* Callbacks,
-    WHV_EMULATOR_HANDLE* Emulator);
-HRESULT WINAPI WHvEmulatorDestroyEmulator(WHV_EMULATOR_HANDLE Emulator);
+    WHV_EMULATOR_HANDLE* Emulator
+    );
+HRESULT WINAPI WHvEmulatorDestroyEmulator(
+    WHV_EMULATOR_HANDLE Emulator
+    );
 HRESULT WINAPI WHvEmulatorTryIoEmulation(
     WHV_EMULATOR_HANDLE Emulator,
-    VOID* Context,
+    const void* Context,
     const WHV_VP_EXIT_CONTEXT* VpContext,
     const WHV_X64_IO_PORT_ACCESS_CONTEXT* IoContext,
-    WHV_EMULATOR_STATUS* EmulatorReturnStatus);
+    WHV_EMULATOR_STATUS* EmulatorReturnStatus
+    );
 #endif
 
 #if SW_HAVE_OPENAL
@@ -158,17 +162,15 @@ typedef struct {
 } PIT_CHANNEL;
 static PIT_CHANNEL PitChannels[3] = {0};
 static ULONGLONG PitLastUpdate = 0;
-static double PitFractionalTicks = 0.0;
 
 static void UpdatePit(void)
 {
         ULONGLONG now = GetTickCount64();
         if (PitLastUpdate) {
                 ULONGLONG elapsed = now - PitLastUpdate;
-                double ticks_f = ((double)elapsed / 1000.0) * (double)PIT_FREQUENCY + PitFractionalTicks;
-                ULONGLONG ticks = (ULONGLONG)floor(ticks_f);
-                PitFractionalTicks = ticks_f - (double)ticks;
+                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
                 if (ticks) {
+                        PitLastUpdate = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
                                 ULONG reload = ch->Reload ? ch->Reload : 0x10000;
@@ -186,7 +188,6 @@ static void UpdatePit(void)
                                 ch->Count = (USHORT)(count == 0x10000 ? 0 : count);
                         }
                 }
-                PitLastUpdate = now;
         } else {
                 PitLastUpdate = now;
         }
@@ -221,7 +222,7 @@ static void PitWrite(int idx, UCHAR val)
         switch (ch->Access) {
         case 2:
                 ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-                ch->Count = ch->Reload;
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
                 break;
         case 3:
                 if (ch->RwLow) {
@@ -229,13 +230,13 @@ static void PitWrite(int idx, UCHAR val)
                         ch->RwLow = FALSE;
                 } else {
                         ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-                        ch->Count = ch->Reload;
+                        ch->Count = ch->Reload ? ch->Reload : 0x10000;
                         ch->RwLow = TRUE;
                 }
                 break;
         default:
                 ch->Reload = (ch->Reload & 0xFF00) | val;
-                ch->Count = ch->Reload;
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
                 break;
         }
 }

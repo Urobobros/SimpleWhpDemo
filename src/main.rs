@@ -244,7 +244,6 @@ static mut PIT_CONTROL: u8 = 0;
 static mut PIT_CHANNELS: [PitChannel; 3] =
     [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
-static mut PIT_FRACTIONAL_TICKS: f64 = 0.0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
@@ -309,10 +308,9 @@ fn update_pit() {
         let now = Instant::now();
         if let Some(last) = PIT_LAST_UPDATE {
             let elapsed = now.duration_since(last);
-            let mut ticks_f = elapsed.as_secs_f64() * PIT_FREQUENCY as f64 + PIT_FRACTIONAL_TICKS;
-            let ticks = ticks_f.floor() as u64;
-            PIT_FRACTIONAL_TICKS = ticks_f - ticks as f64;
+            let ticks = (elapsed.as_secs_f64() * PIT_FREQUENCY as f64) as u64;
             if ticks > 0 {
+                PIT_LAST_UPDATE = Some(now);
                 for ch in &mut PIT_CHANNELS {
                     let reload = if ch.reload == 0 {
                         0x10000u32
@@ -337,7 +335,6 @@ fn update_pit() {
                     ch.count = if count == 0x10000 { 0 } else { count as u16 };
                 }
             }
-            PIT_LAST_UPDATE = Some(now);
         } else {
             PIT_LAST_UPDATE = Some(now);
         }
@@ -385,7 +382,7 @@ fn pit_write(idx: usize, val: u8) {
         match ch.access {
             2 => {
                 ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
-                ch.count = ch.reload;
+                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
             }
             3 => {
                 if ch.rw_low {
@@ -393,13 +390,13 @@ fn pit_write(idx: usize, val: u8) {
                     ch.rw_low = false;
                 } else {
                     ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
-                    ch.count = ch.reload;
+                    ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
                     ch.rw_low = true;
                 }
             }
             _ => {
                 ch.reload = (ch.reload & 0xFF00) | val as u16;
-                ch.count = ch.reload;
+                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
             }
         }
     }
