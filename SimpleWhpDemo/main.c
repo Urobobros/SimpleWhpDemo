@@ -40,6 +40,24 @@ static USHORT CgaShadow[CGA_COLS*CGA_ROWS];
 static SDL_Window* SdlWindow = NULL;
 static SDL_Renderer* SdlRenderer = NULL;
 static void RenderCgaWindow(void);
+static const SDL_Color CgaPalette[16] = {
+        {0, 0, 0, 255},
+        {0, 0, 170, 255},
+        {0, 170, 0, 255},
+        {0, 170, 170, 255},
+        {170, 0, 0, 255},
+        {170, 0, 170, 255},
+        {170, 85, 0, 255},
+        {170, 170, 170, 255},
+        {85, 85, 85, 255},
+        {85, 85, 255, 255},
+        {85, 255, 85, 255},
+        {85, 255, 255, 255},
+        {255, 85, 85, 255},
+        {255, 85, 255, 255},
+        {255, 255, 85, 255},
+        {255, 255, 255, 255}
+};
 #endif
 
 /* Older Windows SDKs may not declare the Emulator API */
@@ -202,13 +220,25 @@ static void RenderCgaWindow()
                 {
                         USHORT cell = CgaBuffer[r * CGA_COLS + c];
                         unsigned char ch = (unsigned char)(cell & 0xFF);
-                        for (int y = 0; y < 8; ++y)
+                        unsigned char attr = (unsigned char)(cell >> 8);
+                        unsigned fg = attr & 0x0F;
+                        unsigned bg = (attr >> 4) & 0x07;
+                        SDL_Rect bgrect = { (int)(c * 8), (int)(r * 8), 8, 8 };
+                        SDL_Color bgc = CgaPalette[bg];
+                        SDL_SetRenderDrawColor(SdlRenderer, bgc.r, bgc.g, bgc.b, SDL_ALPHA_OPAQUE);
+                        SDL_RenderFillRect(SdlRenderer, &bgrect);
+                        if (!(attr & 0x80))
                         {
-                                unsigned char bits = font8x8_basic[ch][y];
-                                for (int x = 0; x < 8; ++x)
+                                SDL_Color fgc = CgaPalette[fg];
+                                SDL_SetRenderDrawColor(SdlRenderer, fgc.r, fgc.g, fgc.b, SDL_ALPHA_OPAQUE);
+                                for (int y = 0; y < 8; ++y)
                                 {
-                                        if (bits & (1 << x))
-                                                SDL_RenderDrawPoint(SdlRenderer, c * 8 + x, r * 8 + y);
+                                        unsigned char bits = font8x8_basic[ch][y];
+                                        for (int x = 0; x < 8; ++x)
+                                        {
+                                                if (bits & (1 << x))
+                                                        SDL_RenderDrawPoint(SdlRenderer, c * 8 + x, r * 8 + y);
+                                        }
                                 }
                         }
                 }
@@ -464,7 +494,8 @@ static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
 static UCHAR DmaChan[6] = {0};
-static const UCHAR Port62MemNibble = ((GuestMemorySize / 1024 - 64) / 32);
+/* Value returned when reading port 0x62 to report RAM size. */
+static const UCHAR Port62MemNibble = ((GuestRamKB - 64) / 32);
 
 BOOL LoadDiskImage(PCSTR FileName)
 {

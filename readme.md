@@ -5,6 +5,10 @@ Current version: **1.1.1**. The bundled firmware (`ivt.fw`) is version **0.1.0**
 The emulator can also boot the real AMI BIOS `ami_8088_bios_31jan89.bin` when present.
 On launch it plays a short OpenAL tone so you can confirm that sound output works before the guest boots.
 
+By default the virtual machine exposes 640 KiB of conventional RAM, matching a
+typical IBM XT configuration. The rest of the 1 MiB address space is used for
+ROM and device memory.
+
 ## Showcase
 With a minimal analog firmware, SimpleWhpDemo is running a hello world program which is also capable to be running in a real DOS system. (The screenshot demonstrates the comparison to DOSBox)
 ![Hello DOS](HelloDOS.png)
@@ -156,9 +160,10 @@ the emulated CGA device.
 
 While the program runs, characters sent through INT 10h are stored in an
 80×25 text buffer. The CGA text memory at `0xB8000` is mirrored live so
-direct writes by the guest immediately update the SDL window. At shutdown the
-buffer is still printed on the host console so you can see the final screen
-contents.
+direct writes by the guest immediately update the SDL window. The emulator now
+honors the 16 CGA text colors so attributes set by the program appear with the
+proper foreground and background shades. At shutdown the buffer is still printed
+on the host console so you can inspect the final screen contents.
 
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.

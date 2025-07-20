@@ -1,7 +1,9 @@
 #pragma once
 
-// Give the guest 1MiB of memory.
+/* Total address space mapped for the guest (1 MiB). */
 #define GuestMemorySize         0x100000
+/* Conventional memory size reported by port 0x62. */
+#define GuestRamKB              640
 
 #define IO_PORT_STRING_PRINT	0x0000
 #define IO_PORT_KEYBOARD_INPUT  0x0001 /* legacy */

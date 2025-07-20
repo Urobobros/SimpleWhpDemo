@@ -33,7 +33,10 @@ unsafe extern "system" {
 
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
+/// Total address space mapped for the guest (1 MiB).
 const GUEST_MEM_SIZE: usize = 0x100000;
+/// Conventional RAM size reported through port 0x62.
+const GUEST_RAM_KB: usize = 640;
 
 /// Duration for the startup beep and speaker output in milliseconds.
 const BEEP_DURATION_MS: u32 = 300;
@@ -238,11 +241,31 @@ static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
 static mut DMA_CHAN: [u8; 6] = [0; 6];
-const MEM_SIZE_KB: usize = GUEST_MEM_SIZE / 1024;
+/// Memory size reported by the BIOS (in KB).
+const MEM_SIZE_KB: usize = GUEST_RAM_KB;
+/// Value returned by reading port 0x62.
 const MEM_NIBBLE: u8 = ((MEM_SIZE_KB - 64) / 32) as u8;
 
 const CGA_COLS: usize = 80;
 const CGA_ROWS: usize = 25;
+const CGA_COLORS: [(u8, u8, u8); 16] = [
+    (0, 0, 0),
+    (0, 0, 170),
+    (0, 170, 0),
+    (0, 170, 170),
+    (170, 0, 0),
+    (170, 0, 170),
+    (170, 85, 0),
+    (170, 170, 170),
+    (85, 85, 85),
+    (85, 85, 255),
+    (85, 255, 85),
+    (85, 255, 255),
+    (255, 85, 85),
+    (255, 85, 255),
+    (255, 255, 85),
+    (255, 255, 255),
+];
 static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
@@ -322,13 +345,24 @@ fn render_cga_window() {
                 for c in 0..CGA_COLS {
                     let cell = CGA_BUFFER[r * CGA_COLS + c];
                     let ch = (cell & 0xFF) as usize;
-                    let glyph = BASIC_LEGACY[ch];
-                    for (y, row_bits) in glyph.iter().enumerate() {
-                        for x in 0..8 {
-                            if (row_bits >> x) & 1 != 0 {
-                                let px = (c * 8 + (7 - x)) as i32;
-                                let py = (r * 8 + y) as i32;
-                                let _ = canvas.fill_rect(Rect::new(px, py, 1, 1));
+                    let attr = ((cell >> 8) & 0xFF) as usize;
+                    let fg = attr & 0x0F;
+                    let bg = (attr >> 4) & 0x07;
+                    let blink = attr & 0x80 != 0;
+                    let bgc = CGA_COLORS[bg];
+                    canvas.set_draw_color(Color::RGB(bgc.0, bgc.1, bgc.2));
+                    let _ = canvas.fill_rect(Rect::new((c * 8) as i32, (r * 8) as i32, 8, 8));
+                    if !blink {
+                        let fgc = CGA_COLORS[fg];
+                        canvas.set_draw_color(Color::RGB(fgc.0, fgc.1, fgc.2));
+                        let glyph = BASIC_LEGACY[ch];
+                        for (y, row_bits) in glyph.iter().enumerate() {
+                            for x in 0..8 {
+                                if (row_bits >> x) & 1 != 0 {
+                                    let px = (c * 8 + (7 - x)) as i32;
+                                    let py = (r * 8 + y) as i32;
+                                    let _ = canvas.fill_rect(Rect::new(px, py, 1, 1));
+                                }
                             }
                         }
                     }
