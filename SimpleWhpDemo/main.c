@@ -509,6 +509,8 @@ static UCHAR CrtcCgaData = 0;
 static UCHAR CrtcCgaRegs[32] = {0};
 static UCHAR AttrCga = 0;
 static UCHAR CgaStatus = 0;
+static ULONGLONG CgaLastToggleMs = 0;
+#define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
@@ -779,7 +781,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_CGA_STATUS)
                {
-                       CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                       ULONGLONG now = GetTickCount64();
+                       if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS) {
+                               CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                               CgaLastToggleMs = now;
+                       }
                        IoAccess->Data = CgaStatus;
                        return S_OK;
                }
@@ -1185,6 +1191,7 @@ int main(int argc, char* argv[], char* envp[])
         * before any other emulation happens.
         */
        OpenalBeep(1000, BEEP_DURATION_MS);
+       CgaLastToggleMs = GetTickCount64();
 #endif
 #if SW_HAVE_SDL2
        if (SDL_Init(SDL_INIT_VIDEO) == 0)
