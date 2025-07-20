@@ -565,7 +565,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
 {
         if (IoAccess->Direction == 0)
         {
-                printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
+                if (IoAccess->Port != IO_PORT_SYS_PORTC)
+                        printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
                 if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT || IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -610,6 +611,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        if (SysCtrl & 0x02)
                                val |= 0x20;
                        IoAccess->Data = val;
+                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_MDA_MODE)

@@ -791,12 +791,14 @@ unsafe extern "system" fn emu_io_port_callback(
 ) -> HRESULT {
     unsafe {
         if (*io_access).Direction == 0 {
-            println!(
-                "IN  port 0x{:04X} ({}) , size {}",
-                (*io_access).Port,
-                port_name((*io_access).Port),
-                (*io_access).AccessSize
-            );
+            if (*io_access).Port != IO_PORT_SYS_PORTC {
+                println!(
+                    "IN  port 0x{:04X} ({}) , size {}",
+                    (*io_access).Port,
+                    port_name((*io_access).Port),
+                    (*io_access).AccessSize
+                );
+            }
             if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
             {
                 for i in 0..(*io_access).AccessSize {
@@ -837,6 +839,13 @@ unsafe extern "system" fn emu_io_port_callback(
                     val |= 0x20;
                 }
                 (*io_access).Data = val as u32;
+                println!(
+                    "IN  port 0x{:04X} ({}) , size {}, value 0x{:02X}",
+                    (*io_access).Port,
+                    port_name((*io_access).Port),
+                    (*io_access).AccessSize,
+                    val
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 (*io_access).Data = CGA_MODE as u32;
