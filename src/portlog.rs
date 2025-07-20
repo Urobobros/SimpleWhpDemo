@@ -8,7 +8,12 @@ static PORT_LOG: Lazy<Mutex<Option<File>>> = Lazy::new(|| Mutex::new(None));
 pub fn port_log(msg: &str) {
     let mut opt = PORT_LOG.lock().unwrap();
     if opt.is_none() {
-        if let Ok(f) = OpenOptions::new().write(true).create(true).truncate(true).open("port.log") {
+        if let Ok(f) = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open("port.log")
+        {
             *opt = Some(f);
         } else {
             return;

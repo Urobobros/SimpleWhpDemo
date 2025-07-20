@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{
     ffi::c_void,
     ptr::null_mut,
@@ -238,6 +238,8 @@ static mut CRTC_CGA_DATA: u8 = 0;
 static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
+static mut CGA_LAST_TOGGLE: Option<Instant> = None;
+const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
@@ -813,7 +815,11 @@ unsafe extern "system" fn emu_io_port_callback(
                     port_name((*io_access).Port),
                     (*io_access).AccessSize
                 );
-                portlog::port_log(&format!("IN  port 0x{:04X}, size {}\n", (*io_access).Port, (*io_access).AccessSize));
+                portlog::port_log(&format!(
+                    "IN  port 0x{:04X}, size {}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize
+                ));
             }
             if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
             {
@@ -862,7 +868,12 @@ unsafe extern "system" fn emu_io_port_callback(
                     (*io_access).AccessSize,
                     val
                 );
-                portlog::port_log(&format!("IN  port 0x{:04X}, size {}, value 0x{:02X}\n", (*io_access).Port, (*io_access).AccessSize, val));
+                portlog::port_log(&format!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    val
+                ));
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 (*io_access).Data = CGA_MODE as u32;
@@ -952,7 +963,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = ATTR_CGA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
-                CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                let now = Instant::now();
+                if let Some(last) = CGA_LAST_TOGGLE {
+                    if now.duration_since(last) >= CGA_TOGGLE_PERIOD {
+                        CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                        CGA_LAST_TOGGLE = Some(now);
+                    }
+                } else {
+                    CGA_LAST_TOGGLE = Some(now);
+                }
                 (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
@@ -996,7 +1015,12 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).AccessSize,
                 (*io_access).Data
             );
-            portlog::port_log(&format!("OUT port 0x{:04X}, size {}, value 0x{:X}\n", (*io_access).Port, (*io_access).AccessSize, (*io_access).Data));
+            portlog::port_log(&format!(
+                "OUT port 0x{:04X}, size {}, value 0x{:X}\n",
+                (*io_access).Port,
+                (*io_access).AccessSize,
+                (*io_access).Data
+            ));
             if (*io_access).Port == IO_PORT_STRING_PRINT {
                 for i in 0..(*io_access).AccessSize {
                     let ch = (((*io_access).Data >> (i * 8)) as u8);
@@ -1291,6 +1315,9 @@ fn main() {
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, BEEP_DURATION_MS);
+    unsafe {
+        CGA_LAST_TOGGLE = Some(Instant::now());
+    }
     unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {
