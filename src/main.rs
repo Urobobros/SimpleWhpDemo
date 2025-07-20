@@ -105,8 +105,8 @@ static mut SDL_CANVAS: Option<WindowCanvas> = None;
 static mut SDL_PUMP: Option<EventPump> = None;
 static mut SDL_CONTEXT: Option<Sdl> = None;
 
-const IO_PORT_STRING_PRINT: u16 = 0x0000;
-const IO_PORT_KEYBOARD_INPUT: u16 = 0x0001; // legacy
+const IO_PORT_DMA_ADDR0: u16 = 0x0000;
+const IO_PORT_DMA_COUNT0: u16 = 0x0001;
 const IO_PORT_KBD_DATA: u16 = 0x0060;
 const IO_PORT_KBD_STATUS: u16 = 0x0064;
 const IO_PORT_DISK_DATA: u16 = 0x00FF;
@@ -153,8 +153,8 @@ const IO_PORT_FDC_DATA: u16 = 0x03F5;
 
 fn port_name(port: u16) -> &'static str {
     match port {
-        IO_PORT_STRING_PRINT => "STRING_PRINT",
-        IO_PORT_KEYBOARD_INPUT => "KEYBOARD_INPUT",
+        IO_PORT_DMA_ADDR0 => "DMA_ADDR0",
+        IO_PORT_DMA_COUNT0 => "DMA_CNT0",
         IO_PORT_KBD_DATA => "KBD_DATA",
         IO_PORT_KBD_STATUS => "KBD_STATUS",
         IO_PORT_DISK_DATA => "DISK_DATA",
@@ -243,7 +243,7 @@ const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
-static mut DMA_CHAN: [u8; 6] = [0; 6];
+static mut DMA_CHAN: [u8; 8] = [0; 8];
 /// Memory size reported by the BIOS (in KB).
 const MEM_SIZE_KB: usize = GUEST_RAM_KB;
 /// Value returned by reading port 0x62.
@@ -821,8 +821,7 @@ unsafe extern "system" fn emu_io_port_callback(
                     (*io_access).AccessSize
                 ));
             }
-            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
-            {
+            if (*io_access).Port == IO_PORT_KBD_DATA {
                 for i in 0..(*io_access).AccessSize {
                     let mut buf = [0u8; 1];
                     if std::io::stdin().read_exact(&mut buf).is_ok() {
@@ -833,9 +832,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 }
                 S_OK
             } else if (*io_access).Port == IO_PORT_KBD_STATUS {
-                (*io_access).Data = 0;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_STRING_PRINT {
                 (*io_access).Data = 0;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DISK_DATA {
@@ -916,8 +912,8 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
                 (*io_access).Data = PIC_SLAVE_IMR as u32;
                 S_OK
-            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - 0x0002) as usize;
+            } else if (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
                 (*io_access).Data = DMA_CHAN[idx] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
@@ -1021,14 +1017,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).AccessSize,
                 (*io_access).Data
             ));
-            if (*io_access).Port == IO_PORT_STRING_PRINT {
-                for i in 0..(*io_access).AccessSize {
-                    let ch = (((*io_access).Data >> (i * 8)) as u8);
-                    print!("{}", ch as char);
-                    cga_put_char(ch);
-                }
-                S_OK
-            } else if (*io_access).Port == IO_PORT_DISK_DATA {
+            if (*io_access).Port == IO_PORT_DISK_DATA {
                 for i in 0..(*io_access).AccessSize as usize {
                     DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i * 8)) as u8;
                     DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
@@ -1084,8 +1073,8 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_DMA_CLEAR {
                 DMA_CLEAR = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - 0x0002) as usize;
+            } else if (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
                 DMA_CHAN[idx] = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
@@ -1158,7 +1147,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_KBD_DATA
                 || (*io_access).Port == IO_PORT_KBD_STATUS
-                || (*io_access).Port == IO_PORT_KEYBOARD_INPUT
             {
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3

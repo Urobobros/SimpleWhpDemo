@@ -514,7 +514,7 @@ static ULONGLONG CgaLastToggleMs = 0;
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
-static UCHAR DmaChan[6] = {0};
+static UCHAR DmaChan[8] = {0};
 /* Value returned when reading port 0x62 to report RAM size. */
 static const UCHAR Port62MemNibble = ((GuestRamKB - 64) / 32);
 
@@ -533,8 +533,8 @@ static const char* GetPortName(USHORT port)
 {
         switch (port)
         {
-        case IO_PORT_STRING_PRINT:    return "STRING_PRINT";
-        case IO_PORT_KEYBOARD_INPUT:  return "KEYBOARD_INPUT";
+        case IO_PORT_DMA_ADDR0:       return "DMA_ADDR0";
+        case IO_PORT_DMA_COUNT0:      return "DMA_CNT0";
         case IO_PORT_KBD_DATA:        return "KBD_DATA";
         case IO_PORT_KBD_STATUS:      return "KBD_STATUS";
         case IO_PORT_DISK_DATA:       return "DISK_DATA";
@@ -590,7 +590,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
                         PortLog("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
                }
-                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT || IoAccess->Port == IO_PORT_KBD_DATA)
+                if (IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         {
@@ -604,9 +604,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                else if (IoAccess->Port == IO_PORT_STRING_PRINT)
+                else if (IoAccess->Port <= 0x0007)
                 {
-                        IoAccess->Data = 0;
+                        IoAccess->Data = DmaChan[IoAccess->Port];
                         return S_OK;
                 }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -703,10 +703,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = PicSlaveImr;
                        return S_OK;
                }
-               else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+               else if (IoAccess->Port <= 0x0007)
                {
-                       UINT32 idx = IoAccess->Port - 0x0002;
-                       IoAccess->Data = DmaChan[idx];
+                       IoAccess->Data = DmaChan[IoAccess->Port];
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -826,14 +825,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
         printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
         PortLog("OUT port 0x%04X, size %u, value 0x%X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
-        if (IoAccess->Port == IO_PORT_STRING_PRINT)
+        if (IoAccess->Port <= 0x0007)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                {
-                        char ch = ((PUCHAR)&IoAccess->Data)[i];
-                        putc(ch, stdout);
-                        CgaPutChar(ch);
-                }
+                        DmaChan[IoAccess->Port] = ((PUCHAR)&IoAccess->Data)[i];
                 return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -913,10 +908,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                DmaClear = (UCHAR)IoAccess->Data;
                return S_OK;
        }
-       else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+       else if (IoAccess->Port <= 0x0007)
        {
-               UINT32 idx = IoAccess->Port - 0x0002;
-               DmaChan[idx] = (UCHAR)IoAccess->Data;
+               DmaChan[IoAccess->Port] = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -1036,7 +1030,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 PicSlaveImr = (UCHAR)IoAccess->Data;
                 return S_OK;
         }
-        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS || IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS)
         {
                 return S_OK;
         }

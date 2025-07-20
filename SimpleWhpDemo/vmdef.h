@@ -5,8 +5,8 @@
 /* Conventional memory size reported by port 0x62. */
 #define GuestRamKB              640
 
-#define IO_PORT_STRING_PRINT	0x0000
-#define IO_PORT_KEYBOARD_INPUT  0x0001 /* legacy */
+#define IO_PORT_DMA_ADDR0	0x0000
+#define IO_PORT_DMA_COUNT0       0x0001
 #define IO_PORT_KBD_DATA        0x0060
 #define IO_PORT_KBD_STATUS      0x0064
 #define IO_PORT_DISK_DATA       0x00FF
