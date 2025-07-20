@@ -122,6 +122,11 @@ If you own the original AMI BIOS image `ami_8088_bios_31jan89.bin`, you can load
 SimpleWhpDemo.exe hello.com ami_8088_bios_31jan89.bin
 ```
 When the file is missing the emulator falls back to `ivt.fw` automatically.
+To boot the firmware without a test program simply pass only the BIOS file:
+
+```bat
+SimpleWhpDemo.exe ami_8088_bios_31jan89.bin
+```
 
 To emulate the 8088's 20‑bit address wrap‑around, the guest's first megabyte of
 memory is mirrored at `0x100000`. This prevents crashes when the BIOS executes

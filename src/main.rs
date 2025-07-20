@@ -1330,8 +1330,22 @@ fn main() {
         }
     }
     let args: Vec<String> = std::env::args().collect();
-    let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
-    let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
+    let mut program: Option<&str> = Some("hello.com");
+    let mut bios: &str = DEFAULT_BIOS;
+    if args.len() >= 2 {
+        if args.len() >= 3 {
+            program = Some(&args[1]);
+            bios = &args[2];
+        } else {
+            let arg = &args[1];
+            if arg.ends_with(".bin") || arg.ends_with(".fw") {
+                program = None;
+                bios = arg;
+            } else {
+                program = Some(arg);
+            }
+        }
+    }
     if init_whpx() == S_OK {
         println!("WHPX is present and initalized!");
         if let Ok(vm) = SimpleVirtualMachine::new(GUEST_MEM_SIZE) {
@@ -1357,8 +1371,10 @@ fn main() {
             if bios_size < 0x10000 {
                 vm.mirror_region(0xF0000, bios_size, 0x10000);
             }
-            if let Err(e) = vm.load_program(program, 0x10100) {
-                panic!("Failed to load program! Reason: {e}");
+            if let Some(p) = program {
+                if let Err(e) = vm.load_program(p, 0x10100) {
+                    panic!("Failed to load program! Reason: {e}");
+                }
             }
             if !load_disk_image("disk.img\0") {
                 println!("Warning: disk image not loaded, disk reads will return zeros.");
