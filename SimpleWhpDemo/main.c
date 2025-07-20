@@ -823,8 +823,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
        }
-        printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
-        PortLog("OUT port 0x%04X, size %u, value 0x%X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+        printf("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+        PortLog("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port <= 0x0007)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
