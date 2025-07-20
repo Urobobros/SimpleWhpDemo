@@ -180,6 +180,24 @@ static void PrintCgaBuffer()
         }
 }
 
+static void ClearCgaBuffer(void)
+{
+        CgaCursor = 0;
+        USHORT* vram = NULL;
+        if (VirtualMemory)
+                vram = (USHORT*)((PUCHAR)VirtualMemory + 0xB8000);
+        for (UINT32 i = 0; i < CGA_COLS * CGA_ROWS; ++i)
+        {
+                CgaBuffer[i] = 0x0720;
+                CgaShadow[i] = 0x0720;
+                if (vram)
+                        vram[i] = 0x0720;
+        }
+#if SW_HAVE_SDL2
+        RenderCgaWindow();
+#endif
+}
+
 static void SyncCgaFromMemory(void)
 {
         if (!VirtualMemory) return;
@@ -1171,7 +1189,7 @@ int main(int argc, char* argv[], char* envp[])
                                             CGA_ROWS * 8,
                                             0);
                if (SdlWindow)
-                       SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+                       SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_ACCELERATED);
        }
 #endif
        PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
@@ -1245,6 +1263,7 @@ int main(int argc, char* argv[], char* envp[])
                                 if (!LoadDiskResult)
                                         puts("Warning: disk image not loaded, disk reads will return zeros.");
                                 puts("============ Program Start ============");
+                                ClearCgaBuffer();
                                SwExecuteProgram();
                                 puts("============= Program End =============");
                                 PrintCgaBuffer();

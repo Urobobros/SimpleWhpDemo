@@ -316,6 +316,20 @@ fn print_cga_buffer(mem: *const u8) {
     }
 }
 
+fn clear_cga_buffer(mem: *mut u8) {
+    unsafe {
+        CGA_CURSOR = 0;
+        for i in 0..CGA_COLS * CGA_ROWS {
+            CGA_BUFFER[i] = 0x0720;
+            CGA_SHADOW[i] = 0x0720;
+            if !mem.is_null() {
+                *(mem.add(0xB8000 + 2 * i) as *mut u16) = 0x0720;
+            }
+        }
+        render_cga_window();
+    }
+}
+
 fn sync_cga_from_memory(mem: *const u8) {
     unsafe {
         let mut dirty = false;
@@ -1285,7 +1299,7 @@ fn main() {
                     .position_centered()
                     .build()
                 {
-                    if let Ok(canvas) = window.into_canvas().present_vsync().build() {
+                    if let Ok(canvas) = window.into_canvas().accelerated().build() {
                         if let Ok(pump) = sdl.event_pump() {
                             SDL_CONTEXT = Some(sdl);
                             SDL_CANVAS = Some(canvas);
@@ -1331,6 +1345,7 @@ fn main() {
                 println!("Warning: disk image not loaded, disk reads will return zeros.");
             }
             println!("============ Program Start ============");
+            clear_cga_buffer(vm.vmem as *mut u8);
             vm.run();
             println!("============= Program End =============");
             print_cga_buffer(vm.vmem as *const u8);
