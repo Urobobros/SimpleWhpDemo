@@ -132,6 +132,34 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
+typedef struct {
+        DWORD Freq;
+        DWORD Dur;
+} BEEP_PARAMS;
+
+static DWORD WINAPI BeepThread(LPVOID param)
+{
+        BEEP_PARAMS* bp = (BEEP_PARAMS*)param;
+#if SW_HAVE_OPENAL
+        OpenalBeep(bp->Freq, bp->Dur);
+#else
+        UNREFERENCED_PARAMETER(bp);
+#endif
+        Beep(bp->Freq, bp->Dur);
+        free(bp);
+        return 0;
+}
+
+static void BeepAsync(DWORD freq, DWORD dur_ms)
+{
+        BEEP_PARAMS* bp = (BEEP_PARAMS*)malloc(sizeof(BEEP_PARAMS));
+        if (!bp) return;
+        bp->Freq = freq;
+        bp->Dur = dur_ms;
+        HANDLE h = CreateThread(NULL, 0, BeepThread, bp, 0, NULL);
+        if (h) CloseHandle(h); else free(bp);
+}
+
 /* Programmable Interval Timer (PIT) definitions */
 #define PIT_FREQUENCY 1193182ULL
 typedef struct {
@@ -966,8 +994,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        DWORD count = PitChannels[2].Reload ? PitChannels[2].Reload : 65536;
                        DWORD freq = 1193182 / count;
-                      Beep(freq, BEEP_DURATION_MS);
-                      OpenalBeep(freq, BEEP_DURATION_MS);
+                      BeepAsync(freq, BEEP_DURATION_MS);
                }
                SpeakerOn = new_state;
                return S_OK;
@@ -1322,7 +1349,7 @@ int main(int argc, char* argv[], char* envp[])
         * initialization. This helps confirm that OpenAL output works
         * before any other emulation happens.
         */
-       OpenalBeep(1000, BEEP_DURATION_MS);
+       BeepAsync(1000, BEEP_DURATION_MS);
        CgaLastToggleMs = GetTickCount64();
 #endif
 #if SW_HAVE_SDL2

@@ -2,7 +2,7 @@
 use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
-use std::thread::sleep;
+use std::thread::{sleep, spawn};
 use std::time::{Duration, Instant};
 use std::{
     ffi::c_void,
@@ -88,6 +88,10 @@ fn openal_beep(freq: u32, dur_ms: u32) {
         al::alcDestroyContext(context);
         al::alcCloseDevice(device);
     }
+}
+
+fn openal_beep_async(freq: u32, dur_ms: u32) {
+    spawn(move || openal_beep(freq, dur_ms));
 }
 
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
@@ -1146,8 +1150,7 @@ unsafe extern "system" fn emu_io_port_callback(
                         65536
                     };
                     let freq = 1_193_182 / count;
-                    let _ = Beep(freq, BEEP_DURATION_MS);
-                    openal_beep(freq, BEEP_DURATION_MS);
+                    openal_beep_async(freq, BEEP_DURATION_MS);
                 }
                 SPEAKER_ON = new_state;
                 S_OK
@@ -1430,7 +1433,7 @@ fn main() {
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
-    openal_beep(1000, BEEP_DURATION_MS);
+    openal_beep_async(1000, BEEP_DURATION_MS);
     unsafe {
         CGA_LAST_TOGGLE = Some(Instant::now());
     }
