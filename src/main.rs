@@ -396,8 +396,12 @@ fn pit_write(idx: usize, val: u8) {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
         match ch.access {
+            1 => {
+                ch.reload = val as u16;
+                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
+            }
             2 => {
-                ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
+                ch.reload = (val as u16) << 8;
                 ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
             }
             3 => {

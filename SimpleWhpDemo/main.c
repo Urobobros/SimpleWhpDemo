@@ -238,11 +238,15 @@ static void PitWrite(int idx, UCHAR val)
 {
         PIT_CHANNEL* ch = &PitChannels[idx];
         switch (ch->Access) {
-        case 2:
-                ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+        case 1: /* low byte */
+                ch->Reload = val;
                 ch->Count = ch->Reload ? ch->Reload : 0x10000;
                 break;
-        case 3:
+        case 2: /* high byte */
+                ch->Reload = ((USHORT)val << 8);
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
+                break;
+        case 3: /* low then high */
                 if (ch->RwLow) {
                         ch->Reload = (ch->Reload & 0xFF00) | val;
                         ch->RwLow = FALSE;
