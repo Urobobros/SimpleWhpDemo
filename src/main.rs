@@ -973,15 +973,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = SYS_CTRL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_SYS_PORTC {
-                let base = MEM_NIBBLE;
-                let mut val: u8 = if SYS_CTRL & 0x04 != 0 {
-                    base & 0xF
-                } else {
-                    (base >> 4) & 0xF
-                };
-                if SYS_CTRL & 0x02 != 0 {
-                    val |= 0x20;
-                }
+                let val: u8 = 0x01; // PCem always returns 0x01
                 (*io_access).Data = val as u32;
                 println!(
                     "IN  port 0x{:04X} ({}) , size {}, value 0x{:02X}",

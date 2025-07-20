@@ -775,9 +775,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_SYS_PORTC)
                {
-                       UCHAR val = (SysCtrl & 0x04) ? (Port62MemNibble & 0x0F) : ((Port62MemNibble >> 4) & 0x0F);
-                       if (SysCtrl & 0x02)
-                               val |= 0x20;
+                       UCHAR val = 0x01; /* PCem always returns 0x01 here */
                        IoAccess->Data = val;
                        printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
                        PortLog("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);

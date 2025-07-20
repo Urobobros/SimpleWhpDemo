@@ -56,3 +56,4 @@ Následující úpravy pomáhají sladit chování emulátoru s projektem PCem a
 - Asynchronní generování pípnutí na pozadí, aby host neváhal při zápisech na port 0x61.
 - Výchozí hodnota registru CGA režimu `0x29` stejně jako v PCem.
 - Inicializace CRTC registrů na hodnoty zachycené z PCem.
+- Vyšetřit a omezit mnohonásobné opakování sekvence `OUT port 0x0043, size 1, value 0x40` následované `IN  port 0x0041, size 1`, které je oproti PCem výrazně častější.
