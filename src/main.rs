@@ -310,19 +310,19 @@ fn update_pit() {
             if ticks > 0 {
                 PIT_LAST_UPDATE = Some(now);
                 for ch in &mut PIT_CHANNELS {
-                    if ch.reload == 0 {
-                        continue;
-                    }
+                    let reload = if ch.reload == 0 { 0x10000u32 } else { ch.reload as u32 };
+                    let mut count = if ch.count == 0 { 0x10000u32 } else { ch.count as u32 };
                     let mut remaining = ticks as i64;
                     while remaining > 0 {
-                        if remaining as u16 >= ch.count {
-                            remaining -= ch.count as i64;
-                            ch.count = ch.reload;
+                        if remaining as u32 >= count {
+                            remaining -= count as i64;
+                            count = reload;
                         } else {
-                            ch.count -= remaining as u16;
+                            count -= remaining as u32;
                             remaining = 0;
                         }
                     }
+                    ch.count = if count == 0x10000 { 0 } else { count as u16 };
                 }
             }
         } else {
@@ -334,7 +334,10 @@ fn update_pit() {
 fn pit_read(idx: usize) -> u8 {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
-        let val = if ch.latched { ch.latch } else { ch.count };
+        let mut val: u32 = if ch.latched { ch.latch as u32 } else { ch.count as u32 };
+        if val == 0 {
+            val = 0x10000;
+        }
         let byte = if ch.access == 2 {
             (val >> 8) as u8
         } else if ch.access == 3 {
@@ -1133,12 +1136,12 @@ unsafe extern "system" fn emu_io_port_callback(
                 SYS_CTRL = (*io_access).Data as u8;
                 let new_state = SYS_CTRL & 0x03 == 0x03;
                 if new_state && !SPEAKER_ON {
-                    let count = PIT_CHANNELS[2].reload;
-                    let freq = if count != 0 {
-                        1_193_182 / count as u32
+                    let count = if PIT_CHANNELS[2].reload != 0 {
+                        PIT_CHANNELS[2].reload as u32
                     } else {
-                        750
+                        65536
                     };
+                    let freq = 1_193_182 / count;
                     let _ = Beep(freq, BEEP_DURATION_MS);
                     openal_beep(freq, BEEP_DURATION_MS);
                 }
@@ -1165,6 +1168,8 @@ unsafe extern "system" fn emu_io_port_callback(
                         let ch = &mut PIT_CHANNELS[chan as usize];
                         ch.latch = ch.count;
                         ch.latched = true;
+                        ch.access = 3;
+                        ch.rw_low = true;
                     }
                 } else if chan < 3 {
                     let ch = &mut PIT_CHANNELS[chan as usize];
