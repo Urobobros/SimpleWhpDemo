@@ -1010,13 +1010,34 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                (*io_access).Data = pit_read(0) as u32;
+                let byte = pit_read(0);
+                (*io_access).Data = byte as u32;
+                port_log!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    byte
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                (*io_access).Data = pit_read(1) as u32;
+                let byte = pit_read(1);
+                (*io_access).Data = byte as u32;
+                port_log!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    byte
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                (*io_access).Data = pit_read(2) as u32;
+                let byte = pit_read(2);
+                (*io_access).Data = byte as u32;
+                port_log!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    byte
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;

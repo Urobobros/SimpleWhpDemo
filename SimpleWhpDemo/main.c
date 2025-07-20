@@ -773,17 +773,26 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
                {
-                       IoAccess->Data = PitRead(0);
+                       UCHAR val = PitRead(0);
+                       IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
+                               IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
-                       IoAccess->Data = PitRead(1);
+                       UCHAR val = PitRead(1);
+                       IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
+                               IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
-                       IoAccess->Data = PitRead(2);
+                       UCHAR val = PitRead(2);
+                       IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
+                               IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
