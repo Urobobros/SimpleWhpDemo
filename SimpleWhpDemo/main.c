@@ -1,5 +1,6 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <Windows.h>
 #include <WinHvPlatform.h>
@@ -514,7 +515,9 @@ static ULONGLONG CgaLastToggleMs = 0;
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
-static UCHAR DmaChan[8] = {0};
+static USHORT DmaAddr[4] = {0};
+static USHORT DmaCount[4] = {0};
+static BOOL   DmaFlipFlop = FALSE;
 /* Value returned when reading port 0x62 to report RAM size. */
 static const UCHAR Port62MemNibble = ((GuestRamKB - 64) / 32);
 
@@ -606,7 +609,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 }
                 else if (IoAccess->Port <= 0x0007)
                 {
-                        IoAccess->Data = DmaChan[IoAccess->Port];
+                        int chan = (IoAccess->Port >> 1) & 3;
+                        USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
+                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
+                        DmaFlipFlop = !DmaFlipFlop;
+                        IoAccess->Data = byte;
                         return S_OK;
                 }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -705,7 +712,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port <= 0x0007)
                {
-                       IoAccess->Data = DmaChan[IoAccess->Port];
+                       int chan = (IoAccess->Port >> 1) & 3;
+                       USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
+                       UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
+                       DmaFlipFlop = !DmaFlipFlop;
+                       IoAccess->Data = byte;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -827,8 +838,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         PortLog("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port <= 0x0007)
         {
+                int chan = (IoAccess->Port >> 1) & 3;
+                USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                        DmaChan[IoAccess->Port] = ((PUCHAR)&IoAccess->Data)[i];
+                {
+                        UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
+                        if (!DmaFlipFlop)
+                                *reg = (*reg & 0xFF00) | val;
+                        else
+                                *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
+                        DmaFlipFlop = !DmaFlipFlop;
+                }
                 return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -905,12 +925,23 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
        {
+               DmaFlipFlop = FALSE;
                DmaClear = (UCHAR)IoAccess->Data;
                return S_OK;
        }
        else if (IoAccess->Port <= 0x0007)
        {
-               DmaChan[IoAccess->Port] = (UCHAR)IoAccess->Data;
+               int chan = (IoAccess->Port >> 1) & 3;
+               USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
+               for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+               {
+                       UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
+                       if (!DmaFlipFlop)
+                               *reg = (*reg & 0xFF00) | val;
+                       else
+                               *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
+                       DmaFlipFlop = !DmaFlipFlop;
+               }
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -1200,15 +1231,40 @@ int main(int argc, char* argv[], char* envp[])
                        SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_ACCELERATED);
        }
 #endif
-       PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
-       PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
+    PSTR ProgramFileName = "hello.com";
+    PSTR BiosFileName = DEFAULT_BIOS;
+    if (argc >= 2)
+    {
+            if (argc >= 3)
+            {
+                    ProgramFileName = argv[1];
+                    BiosFileName = argv[2];
+            }
+            else
+            {
+                    PSTR arg = argv[1];
+                    size_t len = strlen(arg);
+                    if (len > 3 && (_stricmp(arg + len - 4, ".bin") == 0 ||
+                                     _stricmp(arg + len - 3, ".fw") == 0))
+                    {
+                            ProgramFileName = NULL;
+                            BiosFileName = arg;
+                    }
+                    else
+                    {
+                            ProgramFileName = arg;
+                    }
+            }
+    }
 	SwCheckSystemHypervisor();
 	if (ExtExitFeat.X64CpuidExit && ExtExitFeat.X64MsrExit)
 	{
 		HRESULT hr = SwInitializeVirtualMachine();
 		if (hr == S_OK)
 		{
-                        BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
+                        BOOL LoadProgramResult = TRUE;
+                        if (ProgramFileName)
+                                LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
                         DWORD BiosSize = 0;
                         BOOL LoadIvtFwResult = LoadVirtualMachineProgramEx(BiosFileName, 0xF0000, &BiosSize);
                         if (!LoadIvtFwResult && strcmp(BiosFileName, DEFAULT_BIOS) == 0)
@@ -1263,21 +1319,22 @@ int main(int argc, char* argv[], char* envp[])
                                 MirrorBiosRegion(0xF0000, BiosSize);
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
                         puts("Virtual Machine is initialized successfully!");
-                        if (LoadProgramResult)
+                        if (ProgramFileName)
                         {
-                                puts("Program is loaded successfully!");
-                                if (!LoadIvtFwResult)
-                                        puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
-                                if (!LoadDiskResult)
-                                        puts("Warning: disk image not loaded, disk reads will return zeros.");
-                                puts("============ Program Start ============");
-                                ClearCgaBuffer();
-                               SwExecuteProgram();
-                                puts("============= Program End =============");
-                                PrintCgaBuffer();
-			}
-			else
-				puts("Failed to load the program!");
+                                if (LoadProgramResult)
+                                        puts("Program is loaded successfully!");
+                                else
+                                        puts("Failed to load the program!");
+                        }
+                        if (!LoadIvtFwResult)
+                                puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
+                        if (!LoadDiskResult)
+                                puts("Warning: disk image not loaded, disk reads will return zeros.");
+                        puts("============ Program Start ============");
+                        ClearCgaBuffer();
+                        SwExecuteProgram();
+                        puts("============= Program End =============");
+                        PrintCgaBuffer();
                        SwTerminateVirtualMachine();
                }
        }
