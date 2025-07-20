@@ -157,18 +157,19 @@ static void UpdatePit(void)
                         PitLastUpdate = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
-                                if (!ch->Reload)
-                                        continue;
+                                ULONG reload = ch->Reload ? ch->Reload : 0x10000;
+                                ULONG count = ch->Count ? ch->Count : 0x10000;
                                 ULONGLONG rem = ticks;
                                 while (rem > 0) {
-                                        if (rem >= ch->Count) {
-                                                rem -= ch->Count;
-                                                ch->Count = ch->Reload;
+                                        if (rem >= count) {
+                                                rem -= count;
+                                                count = reload;
                                         } else {
-                                                ch->Count -= (USHORT)rem;
+                                                count -= (ULONG)rem;
                                                 rem = 0;
                                         }
                                 }
+                                ch->Count = (USHORT)(count == 0x10000 ? 0 : count);
                         }
                 }
         } else {
@@ -179,7 +180,9 @@ static void UpdatePit(void)
 static UCHAR PitRead(int idx)
 {
         PIT_CHANNEL* ch = &PitChannels[idx];
-        USHORT val = ch->Latched ? ch->Latch : ch->Count;
+        ULONG val = ch->Latched ? ch->Latch : ch->Count;
+        if (val == 0)
+                val = 0x10000;
         UCHAR byte;
         if (ch->Access == 2) {
                 byte = (UCHAR)(val >> 8);
@@ -957,8 +960,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
                {
-                       DWORD count = PitChannels[2].Reload;
-                       DWORD freq = count ? 1193182 / count : 750;
+                       DWORD count = PitChannels[2].Reload ? PitChannels[2].Reload : 65536;
+                       DWORD freq = 1193182 / count;
                       Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
@@ -996,6 +999,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                PIT_CHANNEL* ch = &PitChannels[chan];
                                ch->Latch = ch->Count;
                                ch->Latched = TRUE;
+                               ch->Access = 3;
+                               ch->RwLow = TRUE;
                        }
                } else if (chan < 3) {
                        PIT_CHANNEL* ch = &PitChannels[chan];
