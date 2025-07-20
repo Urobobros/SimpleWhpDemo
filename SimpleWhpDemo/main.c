@@ -698,15 +698,20 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                else if (IoAccess->Port <= 0x0007)
-                {
-                        int chan = (IoAccess->Port >> 1) & 3;
-                        USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
-                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
-                        DmaFlipFlop = !DmaFlipFlop;
-                        IoAccess->Data = byte;
-                        return S_OK;
-                }
+               else if (IoAccess->Port <= 0x0007)
+               {
+                       int chan = (IoAccess->Port >> 1) & 3;
+                       USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
+                       UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
+                       DmaFlipFlop = !DmaFlipFlop;
+                       IoAccess->Data = byte;
+                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n",
+                               IoAccess->Port, GetPortName(IoAccess->Port),
+                               IoAccess->AccessSize, byte);
+                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n",
+                               IoAccess->Port, IoAccess->AccessSize, byte);
+                       return S_OK;
+               }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
                {
                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -803,6 +808,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
+                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n",
+                               IoAccess->Port, GetPortName(IoAccess->Port),
+                               IoAccess->AccessSize, byte);
+                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n",
+                               IoAccess->Port, IoAccess->AccessSize, byte);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)

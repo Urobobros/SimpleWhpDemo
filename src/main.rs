@@ -1021,7 +1021,21 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port <= 0x0007 {
                 let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
-                (*io_access).Data = DMA_CHAN[idx] as u32;
+                let byte = DMA_CHAN[idx];
+                (*io_access).Data = byte as u32;
+                println!(
+                    "IN  port 0x{:04X} ({}) , size {}, value 0x{:02X}",
+                    (*io_access).Port,
+                    port_name((*io_access).Port),
+                    (*io_access).AccessSize,
+                    byte
+                );
+                portlog::port_log(&format!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    byte
+                ));
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
                 (*io_access).Data = DMA_PAGE1 as u32;
