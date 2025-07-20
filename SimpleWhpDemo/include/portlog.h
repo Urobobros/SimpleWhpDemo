@@ -9,6 +9,12 @@ void PortLogStart(void);
 void PortLog(const char *fmt, ...);
 void PortLogEnd(void);
 
+#if defined(_DEBUG) || defined(PORT_DEBUG)
+#define PORT_LOG(fmt, ...) PortLog(fmt, __VA_ARGS__)
+#else
+#define PORT_LOG(fmt, ...)
+#endif
+
 #ifdef __cplusplus
 }
 #endif

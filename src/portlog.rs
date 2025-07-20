@@ -24,3 +24,13 @@ pub fn port_log(msg: &str) {
         let _ = file.flush();
     }
 }
+
+#[macro_export]
+macro_rules! port_log {
+    ($fmt:expr $(, $args:expr)* $(,)?) => {
+        #[cfg(debug_assertions)]
+        {
+            $crate::portlog::port_log(&format!($fmt $(, $args)*));
+        }
+    };
+}
