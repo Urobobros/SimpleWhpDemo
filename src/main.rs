@@ -1210,8 +1210,6 @@ unsafe extern "system" fn emu_io_port_callback(
                         let ch = &mut PIT_CHANNELS[chan as usize];
                         ch.latch = ch.count;
                         ch.latched = true;
-                        ch.access = 3;
-                        ch.rw_low = true;
                     }
                 } else if chan < 3 {
                     let ch = &mut PIT_CHANNELS[chan as usize];

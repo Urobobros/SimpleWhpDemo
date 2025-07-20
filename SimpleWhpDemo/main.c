@@ -735,8 +735,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -805,24 +803,18 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(0);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
                        UCHAR val = PitRead(1);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
                        UCHAR val = PitRead(2);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
@@ -842,8 +834,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -1039,8 +1029,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                PIT_CHANNEL* ch = &PitChannels[chan];
                                ch->Latch = ch->Count;
                                ch->Latched = TRUE;
-                               ch->Access = 3;
-                               ch->RwLow = TRUE;
                        }
                } else if (chan < 3) {
                        PIT_CHANNEL* ch = &PitChannels[chan];
