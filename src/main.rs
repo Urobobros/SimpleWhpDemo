@@ -244,6 +244,7 @@ static mut PIT_CONTROL: u8 = 0;
 static mut PIT_CHANNELS: [PitChannel; 3] =
     [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
+static mut PIT_FRACTIONAL_TICKS: f64 = 0.0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
@@ -308,9 +309,10 @@ fn update_pit() {
         let now = Instant::now();
         if let Some(last) = PIT_LAST_UPDATE {
             let elapsed = now.duration_since(last);
-            let ticks = (elapsed.as_secs_f64() * PIT_FREQUENCY as f64) as u64;
+            let mut ticks_f = elapsed.as_secs_f64() * PIT_FREQUENCY as f64 + PIT_FRACTIONAL_TICKS;
+            let ticks = ticks_f.floor() as u64;
+            PIT_FRACTIONAL_TICKS = ticks_f - ticks as f64;
             if ticks > 0 {
-                PIT_LAST_UPDATE = Some(now);
                 for ch in &mut PIT_CHANNELS {
                     let reload = if ch.reload == 0 {
                         0x10000u32
@@ -335,6 +337,7 @@ fn update_pit() {
                     ch.count = if count == 0x10000 { 0 } else { count as u16 };
                 }
             }
+            PIT_LAST_UPDATE = Some(now);
         } else {
             PIT_LAST_UPDATE = Some(now);
         }
@@ -1194,6 +1197,8 @@ unsafe extern "system" fn emu_io_port_callback(
                         let ch = &mut PIT_CHANNELS[chan as usize];
                         ch.latch = ch.count;
                         ch.latched = true;
+                        ch.access = 3;
+                        ch.rw_low = true;
                     }
                 } else if chan < 3 {
                     let ch = &mut PIT_CHANNELS[chan as usize];

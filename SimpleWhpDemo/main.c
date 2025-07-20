@@ -163,15 +163,17 @@ typedef struct {
 } PIT_CHANNEL;
 static PIT_CHANNEL PitChannels[3] = {0};
 static ULONGLONG PitLastUpdate = 0;
+static double PitFractionalTicks = 0.0;
 
 static void UpdatePit(void)
 {
         ULONGLONG now = GetTickCount64();
         if (PitLastUpdate) {
                 ULONGLONG elapsed = now - PitLastUpdate;
-                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
+                double ticks_f = ((double)elapsed / 1000.0) * (double)PIT_FREQUENCY + PitFractionalTicks;
+                ULONGLONG ticks = (ULONGLONG)floor(ticks_f);
+                PitFractionalTicks = ticks_f - (double)ticks;
                 if (ticks) {
-                        PitLastUpdate = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
                                 ULONG reload = ch->Reload ? ch->Reload : 0x10000;
@@ -189,6 +191,7 @@ static void UpdatePit(void)
                                 ch->Count = (USHORT)(count == 0x10000 ? 0 : count);
                         }
                 }
+                PitLastUpdate = now;
         } else {
                 PitLastUpdate = now;
         }
@@ -1022,6 +1025,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                PIT_CHANNEL* ch = &PitChannels[chan];
                                ch->Latch = ch->Count;
                                ch->Latched = TRUE;
+                               ch->Access = 3;
+                               ch->RwLow = TRUE;
                        }
                } else if (chan < 3) {
                        PIT_CHANNEL* ch = &PitChannels[chan];
