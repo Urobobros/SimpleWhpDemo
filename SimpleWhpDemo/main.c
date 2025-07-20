@@ -718,6 +718,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
@@ -787,6 +788,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(0);
                        IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
@@ -794,6 +796,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(1);
                        IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
@@ -801,6 +804,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(2);
                        IoAccess->Data = val;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
@@ -821,6 +825,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
