@@ -132,6 +132,81 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
+static void UpdatePit(void)
+{
+        ULONGLONG now = GetTickCount64();
+        if (PitLastUpdate) {
+                ULONGLONG elapsed = now - PitLastUpdate;
+                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
+                if (ticks) {
+                        PitLastUpdate = now;
+                        for (int i = 0; i < 3; ++i) {
+                                PIT_CHANNEL* ch = &PitChannels[i];
+                                if (!ch->Reload)
+                                        continue;
+                                ULONGLONG rem = ticks;
+                                while (rem > 0) {
+                                        if (rem >= ch->Count) {
+                                                rem -= ch->Count;
+                                                ch->Count = ch->Reload;
+                                        } else {
+                                                ch->Count -= (USHORT)rem;
+                                                rem = 0;
+                                        }
+                                }
+                        }
+                }
+        } else {
+                PitLastUpdate = now;
+        }
+}
+
+static UCHAR PitRead(int idx)
+{
+        PIT_CHANNEL* ch = &PitChannels[idx];
+        USHORT val = ch->Latched ? ch->Latch : ch->Count;
+        UCHAR byte;
+        if (ch->Access == 2) {
+                byte = (UCHAR)(val >> 8);
+        } else if (ch->Access == 3) {
+                byte = ch->RwLow ? (UCHAR)(val & 0xFF) : (UCHAR)(val >> 8);
+                ch->RwLow = !ch->RwLow;
+                if (ch->RwLow)
+                        ch->Latched = FALSE;
+        } else {
+                byte = (UCHAR)(val & 0xFF);
+                ch->Latched = FALSE;
+        }
+        if (ch->Access != 3)
+                ch->Latched = FALSE;
+        return byte;
+}
+
+static void PitWrite(int idx, UCHAR val)
+{
+        PIT_CHANNEL* ch = &PitChannels[idx];
+        switch (ch->Access) {
+        case 2:
+                ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+                ch->Count = ch->Reload;
+                break;
+        case 3:
+                if (ch->RwLow) {
+                        ch->Reload = (ch->Reload & 0xFF00) | val;
+                        ch->RwLow = FALSE;
+                } else {
+                        ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+                        ch->Count = ch->Reload;
+                        ch->RwLow = TRUE;
+                }
+                break;
+        default:
+                ch->Reload = (ch->Reload & 0xFF00) | val;
+                ch->Count = ch->Reload;
+                break;
+        }
+}
+
 static void CgaPutChar(char ch)
 {
         if(ch=='\r')
@@ -485,8 +560,19 @@ static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
-static UCHAR PitCounter0 = 0;
-static UCHAR PitCounter1 = 0;
+#define PIT_FREQUENCY 1193182ULL
+typedef struct {
+        USHORT Count;
+        USHORT Reload;
+        UCHAR  Mode;
+        UCHAR  Access;
+        BOOLEAN Bcd;
+        BOOLEAN Latched;
+        USHORT Latch;
+        BOOLEAN RwLow;
+} PIT_CHANNEL;
+static PIT_CHANNEL PitChannels[3] = {0};
+static ULONGLONG PitLastUpdate = 0;
 static UCHAR DmaTemp = 0;
 static UCHAR DmaMode = 0;
 static UCHAR DmaMask = 0;
@@ -499,7 +585,6 @@ static UCHAR Port0378Val = 0;
 static UCHAR Port03bcVal = 0;
 static UCHAR Port03faVal = 0;
 static UCHAR Port0201Val = 0;
-static UCHAR PitCounter2 = 0;
 static BOOL  SpeakerOn = FALSE;
 static UCHAR CrtcMdaIndex = 0;
 static UCHAR CrtcMdaData = 0;
@@ -587,6 +672,7 @@ static const char* GetPortName(USHORT port)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
+        UpdatePit();
         if (IoAccess->Direction == 0)
         {
                if (IoAccess->Port != IO_PORT_SYS_PORTC) {
@@ -682,22 +768,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
                {
-                       /* Simulate PIT channel 0 ticking */
-                       PitCounter0--;
-                       IoAccess->Data = PitCounter0;
+                       IoAccess->Data = PitRead(0);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
-                       /* Simulate PIT channel 1 ticking so BIOS progress isn't stalled */
-                       PitCounter1--;
-                       IoAccess->Data = PitCounter1;
+                       IoAccess->Data = PitRead(1);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
-                       PitCounter2--;
-                       IoAccess->Data = PitCounter2;
+                       IoAccess->Data = PitRead(2);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
@@ -874,7 +955,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
                {
-                       DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
+                       DWORD count = PitChannels[2].Reload;
+                       DWORD freq = count ? 1193182 / count : 750;
                       Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
@@ -904,18 +986,32 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
        {
                PitControl = (UCHAR)IoAccess->Data;
+               UCHAR cmd = PitControl;
+               UCHAR chan = (cmd >> 6) & 3;
+               UCHAR access = (cmd >> 4) & 3;
+               if (access == 0) {
+                       if (chan < 3) {
+                               PIT_CHANNEL* ch = &PitChannels[chan];
+                               ch->Latch = ch->Count;
+                               ch->Latched = TRUE;
+                       }
+               } else if (chan < 3) {
+                       PIT_CHANNEL* ch = &PitChannels[chan];
+                       ch->Access = access;
+                       ch->Mode = (cmd >> 1) & 0x7;
+                       ch->Bcd = (cmd & 1) != 0;
+                       ch->RwLow = TRUE;
+               }
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
        {
-               /* Reload channel 0 with a new counter start value */
-               PitCounter0 = (UCHAR)IoAccess->Data;
+               PitWrite(0, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
-               /* Reload channel 1 with a new counter start value */
-               PitCounter1 = (UCHAR)IoAccess->Data;
+               PitWrite(1, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
@@ -986,7 +1082,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
        {
-               PitCounter2 = (UCHAR)IoAccess->Data;
+               PitWrite(2, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
