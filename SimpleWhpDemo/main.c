@@ -132,6 +132,21 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
+/* Programmable Interval Timer (PIT) definitions */
+#define PIT_FREQUENCY 1193182ULL
+typedef struct {
+        USHORT Count;
+        USHORT Reload;
+        UCHAR  Mode;
+        UCHAR  Access;
+        BOOLEAN Bcd;
+        BOOLEAN Latched;
+        USHORT Latch;
+        BOOLEAN RwLow;
+} PIT_CHANNEL;
+static PIT_CHANNEL PitChannels[3] = {0};
+static ULONGLONG PitLastUpdate = 0;
+
 static void UpdatePit(void)
 {
         ULONGLONG now = GetTickCount64();
@@ -560,19 +575,6 @@ static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
-#define PIT_FREQUENCY 1193182ULL
-typedef struct {
-        USHORT Count;
-        USHORT Reload;
-        UCHAR  Mode;
-        UCHAR  Access;
-        BOOLEAN Bcd;
-        BOOLEAN Latched;
-        USHORT Latch;
-        BOOLEAN RwLow;
-} PIT_CHANNEL;
-static PIT_CHANNEL PitChannels[3] = {0};
-static ULONGLONG PitLastUpdate = 0;
 static UCHAR DmaTemp = 0;
 static UCHAR DmaMode = 0;
 static UCHAR DmaMask = 0;
