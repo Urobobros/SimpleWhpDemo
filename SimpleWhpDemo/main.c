@@ -680,10 +680,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         UpdatePit();
         if (IoAccess->Direction == 0)
         {
-               if (IoAccess->Port != IO_PORT_SYS_PORTC) {
-                        printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
-                        PortLog("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
-               }
+       if (IoAccess->Port != IO_PORT_SYS_PORTC) {
+                       PORT_LOG("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
+       }
                 if (IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -705,10 +704,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n",
-                               IoAccess->Port, GetPortName(IoAccess->Port),
-                               IoAccess->AccessSize, byte);
-                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n",
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
                        return S_OK;
                }
@@ -737,8 +733,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        if (SysCtrl & 0x02)
                                val |= 0x20;
                        IoAccess->Data = val;
-                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
-                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
@@ -808,10 +803,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n",
-                               IoAccess->Port, GetPortName(IoAccess->Port),
-                               IoAccess->AccessSize, byte);
-                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n",
+                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
                                IoAccess->Port, IoAccess->AccessSize, byte);
                        return S_OK;
                }
@@ -930,8 +922,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
        }
-        printf("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
-        PortLog("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+       PORT_LOG("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port <= 0x0007)
         {
                 int chan = (IoAccess->Port >> 1) & 3;
