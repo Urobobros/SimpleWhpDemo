@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <Windows.h>
+#include <windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
 
@@ -161,7 +161,8 @@ typedef struct {
         BOOLEAN RwLow;
 } PIT_CHANNEL;
 static PIT_CHANNEL PitChannels[3] = {0};
-static ULONGLONG PitLastUpdate = 0;
+static LARGE_INTEGER PitFreq = {0};
+static LARGE_INTEGER PitLastCounter = {0};
 static double PitPartialTicks = 0.0;
 
 static void PitInit(void)
@@ -172,20 +173,22 @@ static void PitInit(void)
                 PitChannels[i].RwLow = TRUE;
                 PitChannels[i].Access = 3;
         }
-        PitLastUpdate = GetTickCount64();
+        QueryPerformanceFrequency(&PitFreq);
+        QueryPerformanceCounter(&PitLastCounter);
         PitPartialTicks = 0.0;
 }
 
 static void UpdatePit(void)
 {
-        ULONGLONG now = GetTickCount64();
-        if (PitLastUpdate) {
-                ULONGLONG elapsed = now - PitLastUpdate;
-                PitPartialTicks += ((double)elapsed * (double)PIT_FREQUENCY) / 1000.0;
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        if (PitLastCounter.QuadPart) {
+                LONGLONG diff = now.QuadPart - PitLastCounter.QuadPart;
+                PitPartialTicks += ((double)diff / (double)PitFreq.QuadPart) * (double)PIT_FREQUENCY;
                 ULONGLONG ticks = (ULONGLONG)PitPartialTicks;
                 if (ticks) {
                         PitPartialTicks -= (double)ticks;
-                        PitLastUpdate = now;
+                        PitLastCounter = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
                                 ULONG reload = ch->Reload ? ch->Reload : 0x10000;
@@ -204,7 +207,7 @@ static void UpdatePit(void)
                         }
                 }
         } else {
-                PitLastUpdate = now;
+                PitLastCounter = now;
         }
 }
 
