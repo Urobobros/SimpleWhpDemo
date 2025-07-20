@@ -49,9 +49,10 @@ nasm -f bin (source assembly file name) -o (output executable file name) -l (out
 Note that the listing file could serve as the means of disassembly of the program. You will find it very helpful to debug your program.
 
 Two example programs reside in the `tests` directory. `hello_dos.asm` prints a
-string using DOS interrupts, while `keyboard.asm` reads a byte from port
-`0x0060` (`IO_PORT_KBD_DATA`) and echoes it through port `0x0000`
-(`IO_PORT_STRING_PRINT`).
+string using DOS interrupts, while `keyboard.asm` reads a byte from the
+keyboard data port (`0x0060`). Earlier versions of this demo echoed the byte
+through port `0x0000`, but that port now emulates the 8237 DMA controller so the
+sample no longer produces visible output.
 The firmware exposes a simple disk interface on port `0x00FF`
 (`IO_PORT_DISK_DATA`). When the emulator starts, it attempts to load a 512-byte
 `disk.img` file and make its contents available through this port. Reads and
@@ -63,9 +64,9 @@ emulator logs each I/O access so you can observe the guest's behavior.
 
 | Port | Purpose |
 |------|---------|
-| `0x0000` | Characters written here are printed to the host console and stored in the CGA text buffer. |
+| `0x0000` | DMA channel 0 address register. |
 | `0x0060` | Keyboard data port. The emulator reads a byte from `stdin` for each access. |
-| `0x0001` | (legacy) Same as `0x0060` for compatibility. |
+| `0x0001` | DMA channel 0 count register. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
 | `0x0061` | System control port used for speaker and NMI masking. Setting bits 0 and 1 plays a short beep. |
