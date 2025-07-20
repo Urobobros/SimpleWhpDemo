@@ -244,6 +244,7 @@ static mut PIT_CONTROL: u8 = 0;
 static mut PIT_CHANNELS: [PitChannel; 3] =
     [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
+static mut PIT_PARTIAL_TICKS: f64 = 0.0;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
@@ -303,13 +304,28 @@ static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 
+fn pit_init() {
+    unsafe {
+        for ch in &mut PIT_CHANNELS {
+            ch.count = 0xFFFF;
+            ch.reload = 0xFFFF;
+            ch.rw_low = true;
+            ch.access = 3;
+        }
+        PIT_LAST_UPDATE = Some(Instant::now());
+        PIT_PARTIAL_TICKS = 0.0;
+    }
+}
+
 fn update_pit() {
     unsafe {
         let now = Instant::now();
         if let Some(last) = PIT_LAST_UPDATE {
             let elapsed = now.duration_since(last);
-            let ticks = (elapsed.as_secs_f64() * PIT_FREQUENCY as f64) as u64;
+            PIT_PARTIAL_TICKS += elapsed.as_secs_f64() * PIT_FREQUENCY as f64;
+            let ticks = PIT_PARTIAL_TICKS as u64;
             if ticks > 0 {
+                PIT_PARTIAL_TICKS -= ticks as f64;
                 PIT_LAST_UPDATE = Some(now);
                 for ch in &mut PIT_CHANNELS {
                     let reload = if ch.reload == 0 {
@@ -1449,6 +1465,7 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
+    pit_init();
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.

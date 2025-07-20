@@ -162,14 +162,29 @@ typedef struct {
 } PIT_CHANNEL;
 static PIT_CHANNEL PitChannels[3] = {0};
 static ULONGLONG PitLastUpdate = 0;
+static double PitPartialTicks = 0.0;
+
+static void PitInit(void)
+{
+        for (int i = 0; i < 3; ++i) {
+                PitChannels[i].Count = 0xFFFF;
+                PitChannels[i].Reload = 0xFFFF;
+                PitChannels[i].RwLow = TRUE;
+                PitChannels[i].Access = 3;
+        }
+        PitLastUpdate = GetTickCount64();
+        PitPartialTicks = 0.0;
+}
 
 static void UpdatePit(void)
 {
         ULONGLONG now = GetTickCount64();
         if (PitLastUpdate) {
                 ULONGLONG elapsed = now - PitLastUpdate;
-                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
+                PitPartialTicks += ((double)elapsed * (double)PIT_FREQUENCY) / 1000.0;
+                ULONGLONG ticks = (ULONGLONG)PitPartialTicks;
                 if (ticks) {
+                        PitPartialTicks -= (double)ticks;
                         PitLastUpdate = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
@@ -1334,6 +1349,7 @@ int main(int argc, char* argv[], char* envp[])
        puts("IVT firmware version 0.1.0");
        PortLogStart();
        atexit(PortLogEnd);
+       PitInit();
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio
