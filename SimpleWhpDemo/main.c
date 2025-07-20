@@ -160,6 +160,22 @@ static void BeepAsync(DWORD freq, DWORD dur_ms)
         if (h) CloseHandle(h); else free(bp);
 }
 
+static DWORD WINAPI CgaVsyncThread(LPVOID param)
+{
+        UNREFERENCED_PARAMETER(param);
+        while (TRUE) {
+                Sleep(CGA_TOGGLE_PERIOD_MS);
+                CgaStatus ^= 0x08;
+        }
+        return 0;
+}
+
+static void StartCgaVsync(void)
+{
+        HANDLE h = CreateThread(NULL, 0, CgaVsyncThread, NULL, 0, NULL);
+        if (h) CloseHandle(h);
+}
+
 /* Programmable Interval Timer (PIT) definitions */
 #define PIT_FREQUENCY 1193182ULL
 typedef struct {
@@ -632,7 +648,6 @@ static UCHAR CrtcCgaRegs[32] = {
 };
 static UCHAR AttrCga = 0;
 static UCHAR CgaStatus = 0;
-static ULONGLONG CgaLastToggleMs = 0;
 #define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
@@ -907,16 +922,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = AttrCga;
                        return S_OK;
                }
-               else if (IoAccess->Port == IO_PORT_CGA_STATUS)
-               {
-                       ULONGLONG now = GetTickCount64();
-                       if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS) {
-                               CgaStatus ^= 0x08; /* toggle vertical retrace bit */
-                               CgaLastToggleMs = now;
-                       }
+              else if (IoAccess->Port == IO_PORT_CGA_STATUS)
+              {
                        IoAccess->Data = CgaStatus;
                        return S_OK;
-               }
+              }
                else if (IoAccess->Port == IO_PORT_FDC_DOR)
                {
                        IoAccess->Data = FdcDor;
@@ -1350,7 +1360,7 @@ int main(int argc, char* argv[], char* envp[])
         * before any other emulation happens.
         */
        BeepAsync(1000, BEEP_DURATION_MS);
-       CgaLastToggleMs = GetTickCount64();
+       StartCgaVsync();
 #endif
 #if SW_HAVE_SDL2
        if (SDL_Init(SDL_INIT_VIDEO) == 0)

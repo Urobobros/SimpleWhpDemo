@@ -94,6 +94,13 @@ fn openal_beep_async(freq: u32, dur_ms: u32) {
     spawn(move || openal_beep(freq, dur_ms));
 }
 
+fn start_cga_vsync() {
+    spawn(|| loop {
+        sleep(CGA_TOGGLE_PERIOD);
+        unsafe { CGA_STATUS ^= 0x08; }
+    });
+}
+
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
 static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACKS {
     Size: size_of::<WHV_EMULATOR_CALLBACKS>() as u32,
@@ -274,7 +281,6 @@ static mut CRTC_CGA_REGS: [u8; 32] = [
 ];
 static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
-static mut CGA_LAST_TOGGLE: Option<Instant> = None;
 const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
@@ -1074,15 +1080,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = ATTR_CGA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
-                let now = Instant::now();
-                if let Some(last) = CGA_LAST_TOGGLE {
-                    if now.duration_since(last) >= CGA_TOGGLE_PERIOD {
-                        CGA_STATUS ^= 0x08; // toggle vertical retrace bit
-                        CGA_LAST_TOGGLE = Some(now);
-                    }
-                } else {
-                    CGA_LAST_TOGGLE = Some(now);
-                }
                 (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
@@ -1434,9 +1431,7 @@ fn main() {
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep_async(1000, BEEP_DURATION_MS);
-    unsafe {
-        CGA_LAST_TOGGLE = Some(Instant::now());
-    }
+    start_cga_vsync();
     unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {
