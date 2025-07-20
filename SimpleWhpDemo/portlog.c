@@ -7,7 +7,12 @@ static FILE *g_portlog = NULL;
 void PortLogStart(void)
 {
     if (!g_portlog) {
+#ifdef _MSC_VER
+        if (fopen_s(&g_portlog, "port.log", "wt") != 0)
+            g_portlog = NULL;
+#else
         g_portlog = fopen("port.log", "wt");
+#endif
     }
 }
 
