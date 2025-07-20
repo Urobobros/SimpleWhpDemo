@@ -132,50 +132,6 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
-typedef struct {
-        DWORD Freq;
-        DWORD Dur;
-} BEEP_PARAMS;
-
-static DWORD WINAPI BeepThread(LPVOID param)
-{
-        BEEP_PARAMS* bp = (BEEP_PARAMS*)param;
-#if SW_HAVE_OPENAL
-        OpenalBeep(bp->Freq, bp->Dur);
-#else
-        UNREFERENCED_PARAMETER(bp);
-#endif
-        Beep(bp->Freq, bp->Dur);
-        free(bp);
-        return 0;
-}
-
-static void BeepAsync(DWORD freq, DWORD dur_ms)
-{
-        BEEP_PARAMS* bp = (BEEP_PARAMS*)malloc(sizeof(BEEP_PARAMS));
-        if (!bp) return;
-        bp->Freq = freq;
-        bp->Dur = dur_ms;
-        HANDLE h = CreateThread(NULL, 0, BeepThread, bp, 0, NULL);
-        if (h) CloseHandle(h); else free(bp);
-}
-
-static DWORD WINAPI CgaVsyncThread(LPVOID param)
-{
-        UNREFERENCED_PARAMETER(param);
-        while (TRUE) {
-                Sleep(CGA_TOGGLE_PERIOD_MS);
-                CgaStatus ^= 0x08;
-        }
-        return 0;
-}
-
-static void StartCgaVsync(void)
-{
-        HANDLE h = CreateThread(NULL, 0, CgaVsyncThread, NULL, 0, NULL);
-        if (h) CloseHandle(h);
-}
-
 /* Programmable Interval Timer (PIT) definitions */
 #define PIT_FREQUENCY 1193182ULL
 typedef struct {
@@ -619,7 +575,7 @@ static UINT32 UnknownPortCount = 0;
 static UCHAR PicMasterImr = 0;
 static UCHAR PicSlaveImr = 0;
 static UCHAR SysCtrl = 0;
-static UCHAR CgaMode = 0x29;
+static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
 static UCHAR DmaTemp = 0;
@@ -641,13 +597,10 @@ static UCHAR CrtcMdaRegs[32] = {0};
 static UCHAR AttrMda = 0;
 static UCHAR CrtcCgaIndex = 0;
 static UCHAR CrtcCgaData = 0;
-static UCHAR CrtcCgaRegs[32] = {
-        0x71, 0x50, 0x5A, 0x0A, 0x1F, 0x06, 0x19, 0x1C,
-        0x02, 0x07, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-};
+static UCHAR CrtcCgaRegs[32] = {0};
 static UCHAR AttrCga = 0;
 static UCHAR CgaStatus = 0;
+static ULONGLONG CgaLastToggleMs = 0;
 #define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
@@ -775,7 +728,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_SYS_PORTC)
                {
-                       UCHAR val = 0x01; /* PCem always returns 0x01 here */
+                       UCHAR val = (SysCtrl & 0x04) ? (Port62MemNibble & 0x0F) : ((Port62MemNibble >> 4) & 0x0F);
+                       if (SysCtrl & 0x02)
+                               val |= 0x20;
                        IoAccess->Data = val;
                        printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
                        PortLog("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
@@ -920,11 +875,16 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = AttrCga;
                        return S_OK;
                }
-              else if (IoAccess->Port == IO_PORT_CGA_STATUS)
-              {
+               else if (IoAccess->Port == IO_PORT_CGA_STATUS)
+               {
+                       ULONGLONG now = GetTickCount64();
+                       if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS) {
+                               CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                               CgaLastToggleMs = now;
+                       }
                        IoAccess->Data = CgaStatus;
                        return S_OK;
-              }
+               }
                else if (IoAccess->Port == IO_PORT_FDC_DOR)
                {
                        IoAccess->Data = FdcDor;
@@ -1002,7 +962,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        DWORD count = PitChannels[2].Reload ? PitChannels[2].Reload : 65536;
                        DWORD freq = 1193182 / count;
-                      BeepAsync(freq, BEEP_DURATION_MS);
+                      Beep(freq, BEEP_DURATION_MS);
+                      OpenalBeep(freq, BEEP_DURATION_MS);
                }
                SpeakerOn = new_state;
                return S_OK;
@@ -1038,8 +999,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                PIT_CHANNEL* ch = &PitChannels[chan];
                                ch->Latch = ch->Count;
                                ch->Latched = TRUE;
-                               ch->Access = 3;
-                               ch->RwLow = TRUE;
                        }
                } else if (chan < 3) {
                        PIT_CHANNEL* ch = &PitChannels[chan];
@@ -1357,8 +1316,8 @@ int main(int argc, char* argv[], char* envp[])
         * initialization. This helps confirm that OpenAL output works
         * before any other emulation happens.
         */
-       BeepAsync(1000, BEEP_DURATION_MS);
-       StartCgaVsync();
+       OpenalBeep(1000, BEEP_DURATION_MS);
+       CgaLastToggleMs = GetTickCount64();
 #endif
 #if SW_HAVE_SDL2
        if (SDL_Init(SDL_INIT_VIDEO) == 0)

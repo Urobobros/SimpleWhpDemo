@@ -2,7 +2,7 @@
 use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
-use std::thread::{sleep, spawn};
+use std::thread::sleep;
 use std::time::{Duration, Instant};
 use std::{
     ffi::c_void,
@@ -88,17 +88,6 @@ fn openal_beep(freq: u32, dur_ms: u32) {
         al::alcDestroyContext(context);
         al::alcCloseDevice(device);
     }
-}
-
-fn openal_beep_async(freq: u32, dur_ms: u32) {
-    spawn(move || openal_beep(freq, dur_ms));
-}
-
-fn start_cga_vsync() {
-    spawn(|| loop {
-        sleep(CGA_TOGGLE_PERIOD);
-        unsafe { CGA_STATUS ^= 0x08; }
-    });
 }
 
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
@@ -253,7 +242,7 @@ impl PitChannel {
 static mut PIT_CONTROL: u8 = 0;
 static mut PIT_CHANNELS: [PitChannel; 3] = [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
-static mut CGA_MODE: u8 = 0x29;
+static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
 static mut DMA_MODE: u8 = 0;
@@ -274,13 +263,10 @@ static mut CRTC_MDA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_MDA: u8 = 0;
 static mut CRTC_CGA_INDEX: u8 = 0;
 static mut CRTC_CGA_DATA: u8 = 0;
-static mut CRTC_CGA_REGS: [u8; 32] = [
-    0x71, 0x50, 0x5A, 0x0A, 0x1F, 0x06, 0x19, 0x1C,
-    0x02, 0x07, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-];
+static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
+static mut CGA_LAST_TOGGLE: Option<Instant> = None;
 const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
@@ -973,7 +959,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = SYS_CTRL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_SYS_PORTC {
-                let val: u8 = 0x01; // PCem always returns 0x01
+                let base = MEM_NIBBLE;
+                let mut val: u8 = if SYS_CTRL & 0x04 != 0 {
+                    base & 0xF
+                } else {
+                    (base >> 4) & 0xF
+                };
+                if SYS_CTRL & 0x02 != 0 {
+                    val |= 0x20;
+                }
                 (*io_access).Data = val as u32;
                 println!(
                     "IN  port 0x{:04X} ({}) , size {}, value 0x{:02X}",
@@ -1072,6 +1066,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = ATTR_CGA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
+                let now = Instant::now();
+                if let Some(last) = CGA_LAST_TOGGLE {
+                    if now.duration_since(last) >= CGA_TOGGLE_PERIOD {
+                        CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                        CGA_LAST_TOGGLE = Some(now);
+                    }
+                } else {
+                    CGA_LAST_TOGGLE = Some(now);
+                }
                 (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
@@ -1139,7 +1142,8 @@ unsafe extern "system" fn emu_io_port_callback(
                         65536
                     };
                     let freq = 1_193_182 / count;
-                    openal_beep_async(freq, BEEP_DURATION_MS);
+                    let _ = Beep(freq, BEEP_DURATION_MS);
+                    openal_beep(freq, BEEP_DURATION_MS);
                 }
                 SPEAKER_ON = new_state;
                 S_OK
@@ -1164,8 +1168,6 @@ unsafe extern "system" fn emu_io_port_callback(
                         let ch = &mut PIT_CHANNELS[chan as usize];
                         ch.latch = ch.count;
                         ch.latched = true;
-                        ch.access = 3;
-                        ch.rw_low = true;
                     }
                 } else if chan < 3 {
                     let ch = &mut PIT_CHANNELS[chan as usize];
@@ -1422,8 +1424,10 @@ fn main() {
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
-    openal_beep_async(1000, BEEP_DURATION_MS);
-    start_cga_vsync();
+    openal_beep(1000, BEEP_DURATION_MS);
+    unsafe {
+        CGA_LAST_TOGGLE = Some(Instant::now());
+    }
     unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {
