@@ -26,6 +26,7 @@
 #endif
 #include "vmdef.h"
 #include "font8x8_basic.h"
+#include "include/portlog.h"
 
 #define CGA_COLS 80
 #define CGA_ROWS 25
@@ -583,8 +584,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
 {
         if (IoAccess->Direction == 0)
         {
-                if (IoAccess->Port != IO_PORT_SYS_PORTC)
+               if (IoAccess->Port != IO_PORT_SYS_PORTC) {
                         printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
+                        PortLog("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
+               }
                 if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT || IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -630,6 +633,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                                val |= 0x20;
                        IoAccess->Data = val;
                        printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
+                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
@@ -815,6 +819,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                return E_NOTIMPL;
        }
         printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
+        PortLog("OUT port 0x%04X, size %u, value 0x%X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port == IO_PORT_STRING_PRINT)
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -1171,6 +1176,8 @@ int main(int argc, char* argv[], char* envp[])
 {
        puts("SimpleWhpDemo version 1.1.1");
        puts("IVT firmware version 0.1.0");
+       PortLogStart();
+       atexit(PortLogEnd);
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio

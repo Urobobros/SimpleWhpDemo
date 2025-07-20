@@ -165,6 +165,11 @@ honors the 16 CGA text colors so attributes set by the program appear with the
 proper foreground and background shades. At shutdown the buffer is still printed
 on the host console so you can inspect the final screen contents.
 
+### Port logging
+All port I/O performed by the guest is also written to `port.log` in the
+current directory. This mirrors PCem’s simple log format so you can compare the
+startup sequence or debug device accesses.
+
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
 

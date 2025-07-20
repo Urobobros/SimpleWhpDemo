@@ -17,6 +17,7 @@ use sdl2::render::WindowCanvas;
 use sdl2::{EventPump, Sdl, pixels::Color, rect::Rect};
 
 use aligned::*;
+mod portlog;
 use windows::{
     Win32::{
         Foundation::*,
@@ -812,6 +813,7 @@ unsafe extern "system" fn emu_io_port_callback(
                     port_name((*io_access).Port),
                     (*io_access).AccessSize
                 );
+                portlog::port_log(&format!("IN  port 0x{:04X}, size {}\n", (*io_access).Port, (*io_access).AccessSize));
             }
             if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
             {
@@ -860,6 +862,7 @@ unsafe extern "system" fn emu_io_port_callback(
                     (*io_access).AccessSize,
                     val
                 );
+                portlog::port_log(&format!("IN  port 0x{:04X}, size {}, value 0x{:02X}\n", (*io_access).Port, (*io_access).AccessSize, val));
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 (*io_access).Data = CGA_MODE as u32;
@@ -993,6 +996,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).AccessSize,
                 (*io_access).Data
             );
+            portlog::port_log(&format!("OUT port 0x{:04X}, size {}, value 0x{:X}\n", (*io_access).Port, (*io_access).AccessSize, (*io_access).Data));
             if (*io_access).Port == IO_PORT_STRING_PRINT {
                 for i in 0..(*io_access).AccessSize {
                     let ch = (((*io_access).Data >> (i * 8)) as u8);

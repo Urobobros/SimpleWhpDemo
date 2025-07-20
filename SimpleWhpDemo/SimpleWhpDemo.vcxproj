@@ -86,10 +86,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="portlog.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vmdef.h" />
     <ClInclude Include="font8x8_basic.h" />
+    <ClInclude Include="include\portlog.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
