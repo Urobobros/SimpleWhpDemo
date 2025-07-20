@@ -210,9 +210,38 @@ static mut UNKNOWN_PORT_COUNT: u32 = 0;
 static mut PIC_MASTER_IMR: u8 = 0;
 static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
+const PIT_FREQUENCY: u64 = 1_193_182;
+
+#[derive(Copy, Clone)]
+struct PitChannel {
+    count: u16,
+    reload: u16,
+    mode: u8,
+    access: u8,
+    bcd: bool,
+    latched: bool,
+    latch: u16,
+    rw_low: bool,
+}
+
+impl PitChannel {
+    const fn new() -> Self {
+        Self {
+            count: 0,
+            reload: 0,
+            mode: 0,
+            access: 0,
+            bcd: false,
+            latched: false,
+            latch: 0,
+            rw_low: true,
+        }
+    }
+}
+
 static mut PIT_CONTROL: u8 = 0;
-static mut PIT_COUNTER0: u8 = 0;
-static mut PIT_COUNTER1: u8 = 0;
+static mut PIT_CHANNELS: [PitChannel; 3] = [PitChannel::new(), PitChannel::new(), PitChannel::new()];
+static mut PIT_LAST_UPDATE: Option<Instant> = None;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
@@ -227,7 +256,6 @@ static mut PORT_0378_VAL: u8 = 0;
 static mut PORT_03BC_VAL: u8 = 0;
 static mut PORT_03FA_VAL: u8 = 0;
 static mut PORT_0201_VAL: u8 = 0;
-static mut PIT_COUNTER2: u8 = 0;
 static mut SPEAKER_ON: bool = false;
 static mut CRTC_MDA_INDEX: u8 = 0;
 static mut CRTC_MDA_DATA: u8 = 0;
@@ -272,6 +300,86 @@ const CGA_COLORS: [(u8, u8, u8); 16] = [
 static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
+
+fn update_pit() {
+    unsafe {
+        let now = Instant::now();
+        if let Some(last) = PIT_LAST_UPDATE {
+            let elapsed = now.duration_since(last);
+            let ticks = (elapsed.as_secs_f64() * PIT_FREQUENCY as f64) as u64;
+            if ticks > 0 {
+                PIT_LAST_UPDATE = Some(now);
+                for ch in &mut PIT_CHANNELS {
+                    if ch.reload == 0 {
+                        continue;
+                    }
+                    let mut remaining = ticks as i64;
+                    while remaining > 0 {
+                        if remaining as u16 >= ch.count {
+                            remaining -= ch.count as i64;
+                            ch.count = ch.reload;
+                        } else {
+                            ch.count -= remaining as u16;
+                            remaining = 0;
+                        }
+                    }
+                }
+            }
+        } else {
+            PIT_LAST_UPDATE = Some(now);
+        }
+    }
+}
+
+fn pit_read(idx: usize) -> u8 {
+    unsafe {
+        let ch = &mut PIT_CHANNELS[idx];
+        let val = if ch.latched { ch.latch } else { ch.count };
+        let byte = if ch.access == 2 {
+            (val >> 8) as u8
+        } else if ch.access == 3 {
+            let out = if ch.rw_low { (val & 0xFF) as u8 } else { (val >> 8) as u8 };
+            ch.rw_low = !ch.rw_low;
+            if !ch.rw_low {
+                ch.latched = false;
+            }
+            out
+        } else {
+            ch.latched = false;
+            (val & 0xFF) as u8
+        };
+        if ch.access != 3 {
+            ch.latched = false;
+        }
+        byte
+    }
+}
+
+fn pit_write(idx: usize, val: u8) {
+    unsafe {
+        let ch = &mut PIT_CHANNELS[idx];
+        match ch.access {
+            2 => {
+                ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
+                ch.count = ch.reload;
+            }
+            3 => {
+                if ch.rw_low {
+                    ch.reload = (ch.reload & 0xFF00) | val as u16;
+                    ch.rw_low = false;
+                } else {
+                    ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
+                    ch.count = ch.reload;
+                    ch.rw_low = true;
+                }
+            }
+            _ => {
+                ch.reload = (ch.reload & 0xFF00) | val as u16;
+                ch.count = ch.reload;
+            }
+        }
+    }
+}
 
 fn cga_put_char(ch: u8) {
     unsafe {
@@ -807,6 +915,7 @@ unsafe extern "system" fn emu_io_port_callback(
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
 ) -> HRESULT {
     unsafe {
+        update_pit();
         if (*io_access).Direction == 0 {
             if (*io_access).Port != IO_PORT_SYS_PORTC {
                 println!(
@@ -893,18 +1002,13 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                // Simulate ticking for channel 0
-                PIT_COUNTER0 = PIT_COUNTER0.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER0 as u32;
+                (*io_access).Data = pit_read(0) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                // Simulate ticking so BIOS doesn't loop forever
-                PIT_COUNTER1 = PIT_COUNTER1.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER1 as u32;
+                (*io_access).Data = pit_read(1) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                PIT_COUNTER2 = PIT_COUNTER2.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER2 as u32;
+                (*io_access).Data = pit_read(2) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;
@@ -1029,8 +1133,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 SYS_CTRL = (*io_access).Data as u8;
                 let new_state = SYS_CTRL & 0x03 == 0x03;
                 if new_state && !SPEAKER_ON {
-                    let freq = if PIT_COUNTER2 != 0 {
-                        1_193_182 / PIT_COUNTER2 as u32
+                    let count = PIT_CHANNELS[2].reload;
+                    let freq = if count != 0 {
+                        1_193_182 / count as u32
                     } else {
                         750
                     };
@@ -1052,17 +1157,31 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
+                let cmd = PIT_CONTROL;
+                let chan = (cmd >> 6) & 3;
+                let access = (cmd >> 4) & 3;
+                if access == 0 {
+                    if chan < 3 {
+                        let ch = &mut PIT_CHANNELS[chan as usize];
+                        ch.latch = ch.count;
+                        ch.latched = true;
+                    }
+                } else if chan < 3 {
+                    let ch = &mut PIT_CHANNELS[chan as usize];
+                    ch.access = access;
+                    ch.mode = (cmd >> 1) & 0x7;
+                    ch.bcd = cmd & 1 != 0;
+                    ch.rw_low = true;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                // Reload start value for channel 0
-                PIT_COUNTER0 = (*io_access).Data as u8;
+                pit_write(0, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                // Reload start value for channel 1
-                PIT_COUNTER1 = (*io_access).Data as u8;
+                pit_write(1, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                PIT_COUNTER2 = (*io_access).Data as u8;
+                pit_write(2, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
                 DMA_MODE = (*io_access).Data as u8;
