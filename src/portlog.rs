@@ -28,6 +28,9 @@ pub fn port_log(msg: &str) {
 #[macro_export]
 macro_rules! port_log {
     ($fmt:expr $(, $args:expr)* $(,)?) => {
-        $crate::portlog::port_log(&format!($fmt $(, $args)*));
+        #[cfg(debug_assertions)]
+        {
+            $crate::portlog::port_log(&format!($fmt $(, $args)*));
+        }
     };
 }
