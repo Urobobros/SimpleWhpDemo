@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <Windows.h>
+#include <windows.h>
 #include <WinHvPlatform.h>
 #include <WinHvEmulation.h>
 
@@ -95,7 +95,6 @@ HRESULT WINAPI WHvEmulatorTryIoEmulation(
     const WHV_X64_IO_PORT_ACCESS_CONTEXT* IoContext,
     WHV_EMULATOR_STATUS* EmulatorReturnStatus
     );
-
 #endif
 
 #if SW_HAVE_OPENAL
@@ -162,16 +161,34 @@ typedef struct {
         BOOLEAN RwLow;
 } PIT_CHANNEL;
 static PIT_CHANNEL PitChannels[3] = {0};
-static ULONGLONG PitLastUpdate = 0;
+static LARGE_INTEGER PitFreq = {0};
+static LARGE_INTEGER PitLastCounter = {0};
+static double PitPartialTicks = 0.0;
+
+static void PitInit(void)
+{
+        for (int i = 0; i < 3; ++i) {
+                PitChannels[i].Count = 0xFFFF;
+                PitChannels[i].Reload = 0xFFFF;
+                PitChannels[i].RwLow = TRUE;
+                PitChannels[i].Access = 3;
+        }
+        QueryPerformanceFrequency(&PitFreq);
+        QueryPerformanceCounter(&PitLastCounter);
+        PitPartialTicks = 0.0;
+}
 
 static void UpdatePit(void)
 {
-        ULONGLONG now = GetTickCount64();
-        if (PitLastUpdate) {
-                ULONGLONG elapsed = now - PitLastUpdate;
-                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
+        LARGE_INTEGER now;
+        QueryPerformanceCounter(&now);
+        if (PitLastCounter.QuadPart) {
+                LONGLONG diff = now.QuadPart - PitLastCounter.QuadPart;
+                PitPartialTicks += ((double)diff / (double)PitFreq.QuadPart) * (double)PIT_FREQUENCY;
+                ULONGLONG ticks = (ULONGLONG)PitPartialTicks;
                 if (ticks) {
-                        PitLastUpdate = now;
+                        PitPartialTicks -= (double)ticks;
+                        PitLastCounter = now;
                         for (int i = 0; i < 3; ++i) {
                                 PIT_CHANNEL* ch = &PitChannels[i];
                                 ULONG reload = ch->Reload ? ch->Reload : 0x10000;
@@ -190,7 +207,7 @@ static void UpdatePit(void)
                         }
                 }
         } else {
-                PitLastUpdate = now;
+                PitLastCounter = now;
         }
 }
 
@@ -221,23 +238,27 @@ static void PitWrite(int idx, UCHAR val)
 {
         PIT_CHANNEL* ch = &PitChannels[idx];
         switch (ch->Access) {
-        case 2:
-                ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-                ch->Count = ch->Reload;
+        case 1: /* low byte */
+                ch->Reload = val;
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
                 break;
-        case 3:
+        case 2: /* high byte */
+                ch->Reload = ((USHORT)val << 8);
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
+                break;
+        case 3: /* low then high */
                 if (ch->RwLow) {
                         ch->Reload = (ch->Reload & 0xFF00) | val;
                         ch->RwLow = FALSE;
                 } else {
                         ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-                        ch->Count = ch->Reload;
+                        ch->Count = ch->Reload ? ch->Reload : 0x10000;
                         ch->RwLow = TRUE;
                 }
                 break;
         default:
                 ch->Reload = (ch->Reload & 0xFF00) | val;
-                ch->Count = ch->Reload;
+                ch->Count = ch->Reload ? ch->Reload : 0x10000;
                 break;
         }
 }
@@ -718,8 +739,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -788,24 +807,18 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(0);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
                        UCHAR val = PitRead(1);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
                        UCHAR val = PitRead(2);
                        IoAccess->Data = val;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, val);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
@@ -825,8 +838,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
                        DmaFlipFlop = !DmaFlipFlop;
                        IoAccess->Data = byte;
-                       PORT_LOG("IN  port 0x%04X, size %u, value 0x%02X\n",
-                               IoAccess->Port, IoAccess->AccessSize, byte);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -1333,6 +1344,7 @@ int main(int argc, char* argv[], char* envp[])
        puts("IVT firmware version 0.1.0");
        PortLogStart();
        atexit(PortLogEnd);
+       PitInit();
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio
