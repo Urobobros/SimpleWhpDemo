@@ -1,5 +1,6 @@
 ﻿#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <Windows.h>
 #include <WinHvPlatform.h>
@@ -26,6 +27,7 @@
 #endif
 #include "vmdef.h"
 #include "font8x8_basic.h"
+#include "include/portlog.h"
 
 #define CGA_COLS 80
 #define CGA_ROWS 25
@@ -40,6 +42,24 @@ static USHORT CgaShadow[CGA_COLS*CGA_ROWS];
 static SDL_Window* SdlWindow = NULL;
 static SDL_Renderer* SdlRenderer = NULL;
 static void RenderCgaWindow(void);
+static const SDL_Color CgaPalette[16] = {
+        {0, 0, 0, 255},
+        {0, 0, 170, 255},
+        {0, 170, 0, 255},
+        {0, 170, 170, 255},
+        {170, 0, 0, 255},
+        {170, 0, 170, 255},
+        {170, 85, 0, 255},
+        {170, 170, 170, 255},
+        {85, 85, 85, 255},
+        {85, 85, 255, 255},
+        {85, 255, 85, 255},
+        {85, 255, 255, 255},
+        {255, 85, 85, 255},
+        {255, 85, 255, 255},
+        {255, 255, 85, 255},
+        {255, 255, 255, 255}
+};
 #endif
 
 /* Older Windows SDKs may not declare the Emulator API */
@@ -112,6 +132,99 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
+/* Programmable Interval Timer (PIT) definitions */
+#define PIT_FREQUENCY 1193182ULL
+typedef struct {
+        USHORT Count;
+        USHORT Reload;
+        UCHAR  Mode;
+        UCHAR  Access;
+        BOOLEAN Bcd;
+        BOOLEAN Latched;
+        USHORT Latch;
+        BOOLEAN RwLow;
+} PIT_CHANNEL;
+static PIT_CHANNEL PitChannels[3] = {0};
+static ULONGLONG PitLastUpdate = 0;
+
+static void UpdatePit(void)
+{
+        ULONGLONG now = GetTickCount64();
+        if (PitLastUpdate) {
+                ULONGLONG elapsed = now - PitLastUpdate;
+                ULONGLONG ticks = (elapsed * PIT_FREQUENCY) / 1000ULL;
+                if (ticks) {
+                        PitLastUpdate = now;
+                        for (int i = 0; i < 3; ++i) {
+                                PIT_CHANNEL* ch = &PitChannels[i];
+                                ULONG reload = ch->Reload ? ch->Reload : 0x10000;
+                                ULONG count = ch->Count ? ch->Count : 0x10000;
+                                ULONGLONG rem = ticks;
+                                while (rem > 0) {
+                                        if (rem >= count) {
+                                                rem -= count;
+                                                count = reload;
+                                        } else {
+                                                count -= (ULONG)rem;
+                                                rem = 0;
+                                        }
+                                }
+                                ch->Count = (USHORT)(count == 0x10000 ? 0 : count);
+                        }
+                }
+        } else {
+                PitLastUpdate = now;
+        }
+}
+
+static UCHAR PitRead(int idx)
+{
+        PIT_CHANNEL* ch = &PitChannels[idx];
+        ULONG val = ch->Latched ? ch->Latch : ch->Count;
+        if (val == 0)
+                val = 0x10000;
+        UCHAR byte;
+        if (ch->Access == 2) {
+                byte = (UCHAR)(val >> 8);
+        } else if (ch->Access == 3) {
+                byte = ch->RwLow ? (UCHAR)(val & 0xFF) : (UCHAR)(val >> 8);
+                ch->RwLow = !ch->RwLow;
+                if (ch->RwLow)
+                        ch->Latched = FALSE;
+        } else {
+                byte = (UCHAR)(val & 0xFF);
+                ch->Latched = FALSE;
+        }
+        if (ch->Access != 3)
+                ch->Latched = FALSE;
+        return byte;
+}
+
+static void PitWrite(int idx, UCHAR val)
+{
+        PIT_CHANNEL* ch = &PitChannels[idx];
+        switch (ch->Access) {
+        case 2:
+                ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+                ch->Count = ch->Reload;
+                break;
+        case 3:
+                if (ch->RwLow) {
+                        ch->Reload = (ch->Reload & 0xFF00) | val;
+                        ch->RwLow = FALSE;
+                } else {
+                        ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+                        ch->Count = ch->Reload;
+                        ch->RwLow = TRUE;
+                }
+                break;
+        default:
+                ch->Reload = (ch->Reload & 0xFF00) | val;
+                ch->Count = ch->Reload;
+                break;
+        }
+}
+
 static void CgaPutChar(char ch)
 {
         if(ch=='\r')
@@ -162,6 +275,24 @@ static void PrintCgaBuffer()
         }
 }
 
+static void ClearCgaBuffer(void)
+{
+        CgaCursor = 0;
+        USHORT* vram = NULL;
+        if (VirtualMemory)
+                vram = (USHORT*)((PUCHAR)VirtualMemory + 0xB8000);
+        for (UINT32 i = 0; i < CGA_COLS * CGA_ROWS; ++i)
+        {
+                CgaBuffer[i] = 0x0720;
+                CgaShadow[i] = 0x0720;
+                if (vram)
+                        vram[i] = 0x0720;
+        }
+#if SW_HAVE_SDL2
+        RenderCgaWindow();
+#endif
+}
+
 static void SyncCgaFromMemory(void)
 {
         if (!VirtualMemory) return;
@@ -202,13 +333,25 @@ static void RenderCgaWindow()
                 {
                         USHORT cell = CgaBuffer[r * CGA_COLS + c];
                         unsigned char ch = (unsigned char)(cell & 0xFF);
-                        for (int y = 0; y < 8; ++y)
+                        unsigned char attr = (unsigned char)(cell >> 8);
+                        unsigned fg = attr & 0x0F;
+                        unsigned bg = (attr >> 4) & 0x07;
+                        SDL_Rect bgrect = { (int)(c * 8), (int)(r * 8), 8, 8 };
+                        SDL_Color bgc = CgaPalette[bg];
+                        SDL_SetRenderDrawColor(SdlRenderer, bgc.r, bgc.g, bgc.b, SDL_ALPHA_OPAQUE);
+                        SDL_RenderFillRect(SdlRenderer, &bgrect);
+                        if (!(attr & 0x80))
                         {
-                                unsigned char bits = font8x8_basic[ch][y];
-                                for (int x = 0; x < 8; ++x)
+                                SDL_Color fgc = CgaPalette[fg];
+                                SDL_SetRenderDrawColor(SdlRenderer, fgc.r, fgc.g, fgc.b, SDL_ALPHA_OPAQUE);
+                                for (int y = 0; y < 8; ++y)
                                 {
-                                        if (bits & (1 << x))
-                                                SDL_RenderDrawPoint(SdlRenderer, c * 8 + x, r * 8 + y);
+                                        unsigned char bits = font8x8_basic[ch][y];
+                                        for (int x = 0; x < 8; ++x)
+                                        {
+                                                if (bits & (1 << x))
+                                                        SDL_RenderDrawPoint(SdlRenderer, c * 8 + x, r * 8 + y);
+                                        }
                                 }
                         }
                 }
@@ -435,8 +578,6 @@ static UCHAR SysCtrl = 0;
 static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
-static UCHAR PitCounter0 = 0;
-static UCHAR PitCounter1 = 0;
 static UCHAR DmaTemp = 0;
 static UCHAR DmaMode = 0;
 static UCHAR DmaMask = 0;
@@ -449,7 +590,6 @@ static UCHAR Port0378Val = 0;
 static UCHAR Port03bcVal = 0;
 static UCHAR Port03faVal = 0;
 static UCHAR Port0201Val = 0;
-static UCHAR PitCounter2 = 0;
 static BOOL  SpeakerOn = FALSE;
 static UCHAR CrtcMdaIndex = 0;
 static UCHAR CrtcMdaData = 0;
@@ -460,11 +600,16 @@ static UCHAR CrtcCgaData = 0;
 static UCHAR CrtcCgaRegs[32] = {0};
 static UCHAR AttrCga = 0;
 static UCHAR CgaStatus = 0;
+static ULONGLONG CgaLastToggleMs = 0;
+#define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
-static UCHAR DmaChan[6] = {0};
-static const UCHAR Port62MemNibble = ((GuestMemorySize / 1024 - 64) / 32);
+static USHORT DmaAddr[4] = {0};
+static USHORT DmaCount[4] = {0};
+static BOOL   DmaFlipFlop = FALSE;
+/* Value returned when reading port 0x62 to report RAM size. */
+static const UCHAR Port62MemNibble = ((GuestRamKB - 64) / 32);
 
 BOOL LoadDiskImage(PCSTR FileName)
 {
@@ -481,8 +626,8 @@ static const char* GetPortName(USHORT port)
 {
         switch (port)
         {
-        case IO_PORT_STRING_PRINT:    return "STRING_PRINT";
-        case IO_PORT_KEYBOARD_INPUT:  return "KEYBOARD_INPUT";
+        case IO_PORT_DMA_ADDR0:       return "DMA_ADDR0";
+        case IO_PORT_DMA_COUNT0:      return "DMA_CNT0";
         case IO_PORT_KBD_DATA:        return "KBD_DATA";
         case IO_PORT_KBD_STATUS:      return "KBD_STATUS";
         case IO_PORT_DISK_DATA:       return "DISK_DATA";
@@ -532,10 +677,14 @@ static const char* GetPortName(USHORT port)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
+        UpdatePit();
         if (IoAccess->Direction == 0)
         {
-                printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
-                if (IoAccess->Port == IO_PORT_KEYBOARD_INPUT || IoAccess->Port == IO_PORT_KBD_DATA)
+               if (IoAccess->Port != IO_PORT_SYS_PORTC) {
+                        printf("IN  port 0x%04X (%s), size %u\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize);
+                        PortLog("IN  port 0x%04X, size %u\n", IoAccess->Port, IoAccess->AccessSize);
+               }
+                if (IoAccess->Port == IO_PORT_KBD_DATA)
                 {
                         for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         {
@@ -549,9 +698,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         IoAccess->Data = 0;
                         return S_OK;
                 }
-                else if (IoAccess->Port == IO_PORT_STRING_PRINT)
+                else if (IoAccess->Port <= 0x0007)
                 {
-                        IoAccess->Data = 0;
+                        int chan = (IoAccess->Port >> 1) & 3;
+                        USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
+                        UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
+                        DmaFlipFlop = !DmaFlipFlop;
+                        IoAccess->Data = byte;
                         return S_OK;
                 }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -579,6 +732,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        if (SysCtrl & 0x02)
                                val |= 0x20;
                        IoAccess->Data = val;
+                       printf("IN  port 0x%04X (%s), size %u, value 0x%02X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, val);
+                       PortLog("IN  port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, val);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_MDA_MODE)
@@ -618,22 +773,17 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
                {
-                       /* Simulate PIT channel 0 ticking */
-                       PitCounter0--;
-                       IoAccess->Data = PitCounter0;
+                       IoAccess->Data = PitRead(0);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
-                       /* Simulate PIT channel 1 ticking so BIOS progress isn't stalled */
-                       PitCounter1--;
-                       IoAccess->Data = PitCounter1;
+                       IoAccess->Data = PitRead(1);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
-                       PitCounter2--;
-                       IoAccess->Data = PitCounter2;
+                       IoAccess->Data = PitRead(2);
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
@@ -646,10 +796,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = PicSlaveImr;
                        return S_OK;
                }
-               else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+               else if (IoAccess->Port <= 0x0007)
                {
-                       UINT32 idx = IoAccess->Port - 0x0002;
-                       IoAccess->Data = DmaChan[idx];
+                       int chan = (IoAccess->Port >> 1) & 3;
+                       USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
+                       UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
+                       DmaFlipFlop = !DmaFlipFlop;
+                       IoAccess->Data = byte;
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -724,7 +877,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_CGA_STATUS)
                {
-                       CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                       ULONGLONG now = GetTickCount64();
+                       if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS) {
+                               CgaStatus ^= 0x08; /* toggle vertical retrace bit */
+                               CgaLastToggleMs = now;
+                       }
                        IoAccess->Data = CgaStatus;
                        return S_OK;
                }
@@ -763,14 +920,20 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
        }
-        printf("OUT port 0x%04X (%s), size %u, value 0x%X\n", IoAccess->Port, GetPortName(IoAccess->Port), IoAccess->AccessSize, IoAccess->Data);
-        if (IoAccess->Port == IO_PORT_STRING_PRINT)
+        printf("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+        PortLog("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
+        if (IoAccess->Port <= 0x0007)
         {
+                int chan = (IoAccess->Port >> 1) & 3;
+                USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                 {
-                        char ch = ((PUCHAR)&IoAccess->Data)[i];
-                        putc(ch, stdout);
-                        CgaPutChar(ch);
+                        UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
+                        if (!DmaFlipFlop)
+                                *reg = (*reg & 0xFF00) | val;
+                        else
+                                *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
+                        DmaFlipFlop = !DmaFlipFlop;
                 }
                 return S_OK;
         }
@@ -797,7 +960,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
                {
-                       DWORD freq = PitCounter2 ? 1193182 / PitCounter2 : 750;
+                       DWORD count = PitChannels[2].Reload ? PitChannels[2].Reload : 65536;
+                       DWORD freq = 1193182 / count;
                       Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
@@ -827,18 +991,34 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
        {
                PitControl = (UCHAR)IoAccess->Data;
+               UCHAR cmd = PitControl;
+               UCHAR chan = (cmd >> 6) & 3;
+               UCHAR access = (cmd >> 4) & 3;
+               if (access == 0) {
+                       if (chan < 3) {
+                               PIT_CHANNEL* ch = &PitChannels[chan];
+                               ch->Latch = ch->Count;
+                               ch->Latched = TRUE;
+                               ch->Access = 3;
+                               ch->RwLow = TRUE;
+                       }
+               } else if (chan < 3) {
+                       PIT_CHANNEL* ch = &PitChannels[chan];
+                       ch->Access = access;
+                       ch->Mode = (cmd >> 1) & 0x7;
+                       ch->Bcd = (cmd & 1) != 0;
+                       ch->RwLow = TRUE;
+               }
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
        {
-               /* Reload channel 0 with a new counter start value */
-               PitCounter0 = (UCHAR)IoAccess->Data;
+               PitWrite(0, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
-               /* Reload channel 1 with a new counter start value */
-               PitCounter1 = (UCHAR)IoAccess->Data;
+               PitWrite(1, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
@@ -848,13 +1028,23 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_DMA_CLEAR)
        {
+               DmaFlipFlop = FALSE;
                DmaClear = (UCHAR)IoAccess->Data;
                return S_OK;
        }
-       else if (IoAccess->Port >= 0x0002 && IoAccess->Port <= 0x0007)
+       else if (IoAccess->Port <= 0x0007)
        {
-               UINT32 idx = IoAccess->Port - 0x0002;
-               DmaChan[idx] = (UCHAR)IoAccess->Data;
+               int chan = (IoAccess->Port >> 1) & 3;
+               USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
+               for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+               {
+                       UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
+                       if (!DmaFlipFlop)
+                               *reg = (*reg & 0xFF00) | val;
+                       else
+                               *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
+                       DmaFlipFlop = !DmaFlipFlop;
+               }
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -899,7 +1089,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
        {
-               PitCounter2 = (UCHAR)IoAccess->Data;
+               PitWrite(2, (UCHAR)IoAccess->Data);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
@@ -974,7 +1164,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 PicSlaveImr = (UCHAR)IoAccess->Data;
                 return S_OK;
         }
-        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS || IoAccess->Port == IO_PORT_KEYBOARD_INPUT)
+        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS)
         {
                 return S_OK;
         }
@@ -1120,6 +1310,8 @@ int main(int argc, char* argv[], char* envp[])
 {
        puts("SimpleWhpDemo version 1.1.1");
        puts("IVT firmware version 0.1.0");
+       PortLogStart();
+       atexit(PortLogEnd);
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio
@@ -1127,6 +1319,7 @@ int main(int argc, char* argv[], char* envp[])
         * before any other emulation happens.
         */
        OpenalBeep(1000, BEEP_DURATION_MS);
+       CgaLastToggleMs = GetTickCount64();
 #endif
 #if SW_HAVE_SDL2
        if (SDL_Init(SDL_INIT_VIDEO) == 0)
@@ -1138,18 +1331,43 @@ int main(int argc, char* argv[], char* envp[])
                                             CGA_ROWS * 8,
                                             0);
                if (SdlWindow)
-                       SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_PRESENTVSYNC);
+                       SdlRenderer = SDL_CreateRenderer(SdlWindow, -1, SDL_RENDERER_ACCELERATED);
        }
 #endif
-       PSTR ProgramFileName = argc >= 2 ? argv[1] : "hello.com";
-       PSTR BiosFileName = argc >= 3 ? argv[2] : DEFAULT_BIOS;
+    PSTR ProgramFileName = "hello.com";
+    PSTR BiosFileName = DEFAULT_BIOS;
+    if (argc >= 2)
+    {
+            if (argc >= 3)
+            {
+                    ProgramFileName = argv[1];
+                    BiosFileName = argv[2];
+            }
+            else
+            {
+                    PSTR arg = argv[1];
+                    size_t len = strlen(arg);
+                    if (len > 3 && (_stricmp(arg + len - 4, ".bin") == 0 ||
+                                     _stricmp(arg + len - 3, ".fw") == 0))
+                    {
+                            ProgramFileName = NULL;
+                            BiosFileName = arg;
+                    }
+                    else
+                    {
+                            ProgramFileName = arg;
+                    }
+            }
+    }
 	SwCheckSystemHypervisor();
 	if (ExtExitFeat.X64CpuidExit && ExtExitFeat.X64MsrExit)
 	{
 		HRESULT hr = SwInitializeVirtualMachine();
 		if (hr == S_OK)
 		{
-                        BOOL LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
+                        BOOL LoadProgramResult = TRUE;
+                        if (ProgramFileName)
+                                LoadProgramResult = LoadVirtualMachineProgram(ProgramFileName, 0x10100);
                         DWORD BiosSize = 0;
                         BOOL LoadIvtFwResult = LoadVirtualMachineProgramEx(BiosFileName, 0xF0000, &BiosSize);
                         if (!LoadIvtFwResult && strcmp(BiosFileName, DEFAULT_BIOS) == 0)
@@ -1204,20 +1422,22 @@ int main(int argc, char* argv[], char* envp[])
                                 MirrorBiosRegion(0xF0000, BiosSize);
                         BOOL LoadDiskResult = LoadDiskImage("disk.img");
                         puts("Virtual Machine is initialized successfully!");
-                        if (LoadProgramResult)
+                        if (ProgramFileName)
                         {
-                                puts("Program is loaded successfully!");
-                                if (!LoadIvtFwResult)
-                                        puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
-                                if (!LoadDiskResult)
-                                        puts("Warning: disk image not loaded, disk reads will return zeros.");
-                                puts("============ Program Start ============");
-                               SwExecuteProgram();
-                                puts("============= Program End =============");
-                                PrintCgaBuffer();
-			}
-			else
-				puts("Failed to load the program!");
+                                if (LoadProgramResult)
+                                        puts("Program is loaded successfully!");
+                                else
+                                        puts("Failed to load the program!");
+                        }
+                        if (!LoadIvtFwResult)
+                                puts("Warning: Firmware is not loaded successfully. Your program might not function properly if it invokes BIOS interrupts.");
+                        if (!LoadDiskResult)
+                                puts("Warning: disk image not loaded, disk reads will return zeros.");
+                        puts("============ Program Start ============");
+                        ClearCgaBuffer();
+                        SwExecuteProgram();
+                        puts("============= Program End =============");
+                        PrintCgaBuffer();
                        SwTerminateVirtualMachine();
                }
        }

@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use std::fs::File;
 use std::io::Read;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{
     ffi::c_void,
     ptr::null_mut,
@@ -17,6 +17,7 @@ use sdl2::render::WindowCanvas;
 use sdl2::{EventPump, Sdl, pixels::Color, rect::Rect};
 
 use aligned::*;
+mod portlog;
 use windows::{
     Win32::{
         Foundation::*,
@@ -33,7 +34,10 @@ unsafe extern "system" {
 
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
+/// Total address space mapped for the guest (1 MiB).
 const GUEST_MEM_SIZE: usize = 0x100000;
+/// Conventional RAM size reported through port 0x62.
+const GUEST_RAM_KB: usize = 640;
 
 /// Duration for the startup beep and speaker output in milliseconds.
 const BEEP_DURATION_MS: u32 = 300;
@@ -101,8 +105,8 @@ static mut SDL_CANVAS: Option<WindowCanvas> = None;
 static mut SDL_PUMP: Option<EventPump> = None;
 static mut SDL_CONTEXT: Option<Sdl> = None;
 
-const IO_PORT_STRING_PRINT: u16 = 0x0000;
-const IO_PORT_KEYBOARD_INPUT: u16 = 0x0001; // legacy
+const IO_PORT_DMA_ADDR0: u16 = 0x0000;
+const IO_PORT_DMA_COUNT0: u16 = 0x0001;
 const IO_PORT_KBD_DATA: u16 = 0x0060;
 const IO_PORT_KBD_STATUS: u16 = 0x0064;
 const IO_PORT_DISK_DATA: u16 = 0x00FF;
@@ -149,8 +153,8 @@ const IO_PORT_FDC_DATA: u16 = 0x03F5;
 
 fn port_name(port: u16) -> &'static str {
     match port {
-        IO_PORT_STRING_PRINT => "STRING_PRINT",
-        IO_PORT_KEYBOARD_INPUT => "KEYBOARD_INPUT",
+        IO_PORT_DMA_ADDR0 => "DMA_ADDR0",
+        IO_PORT_DMA_COUNT0 => "DMA_CNT0",
         IO_PORT_KBD_DATA => "KBD_DATA",
         IO_PORT_KBD_STATUS => "KBD_STATUS",
         IO_PORT_DISK_DATA => "DISK_DATA",
@@ -206,9 +210,38 @@ static mut UNKNOWN_PORT_COUNT: u32 = 0;
 static mut PIC_MASTER_IMR: u8 = 0;
 static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
+const PIT_FREQUENCY: u64 = 1_193_182;
+
+#[derive(Copy, Clone)]
+struct PitChannel {
+    count: u16,
+    reload: u16,
+    mode: u8,
+    access: u8,
+    bcd: bool,
+    latched: bool,
+    latch: u16,
+    rw_low: bool,
+}
+
+impl PitChannel {
+    const fn new() -> Self {
+        Self {
+            count: 0,
+            reload: 0,
+            mode: 0,
+            access: 0,
+            bcd: false,
+            latched: false,
+            latch: 0,
+            rw_low: true,
+        }
+    }
+}
+
 static mut PIT_CONTROL: u8 = 0;
-static mut PIT_COUNTER0: u8 = 0;
-static mut PIT_COUNTER1: u8 = 0;
+static mut PIT_CHANNELS: [PitChannel; 3] = [PitChannel::new(), PitChannel::new(), PitChannel::new()];
+static mut PIT_LAST_UPDATE: Option<Instant> = None;
 static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
@@ -223,7 +256,6 @@ static mut PORT_0378_VAL: u8 = 0;
 static mut PORT_03BC_VAL: u8 = 0;
 static mut PORT_03FA_VAL: u8 = 0;
 static mut PORT_0201_VAL: u8 = 0;
-static mut PIT_COUNTER2: u8 = 0;
 static mut SPEAKER_ON: bool = false;
 static mut CRTC_MDA_INDEX: u8 = 0;
 static mut CRTC_MDA_DATA: u8 = 0;
@@ -234,18 +266,123 @@ static mut CRTC_CGA_DATA: u8 = 0;
 static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
+static mut CGA_LAST_TOGGLE: Option<Instant> = None;
+const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
-static mut DMA_CHAN: [u8; 6] = [0; 6];
-const MEM_SIZE_KB: usize = GUEST_MEM_SIZE / 1024;
+static mut DMA_CHAN: [u8; 8] = [0; 8];
+/// Memory size reported by the BIOS (in KB).
+const MEM_SIZE_KB: usize = GUEST_RAM_KB;
+/// Value returned by reading port 0x62.
 const MEM_NIBBLE: u8 = ((MEM_SIZE_KB - 64) / 32) as u8;
 
 const CGA_COLS: usize = 80;
 const CGA_ROWS: usize = 25;
+const CGA_COLORS: [(u8, u8, u8); 16] = [
+    (0, 0, 0),
+    (0, 0, 170),
+    (0, 170, 0),
+    (0, 170, 170),
+    (170, 0, 0),
+    (170, 0, 170),
+    (170, 85, 0),
+    (170, 170, 170),
+    (85, 85, 85),
+    (85, 85, 255),
+    (85, 255, 85),
+    (85, 255, 255),
+    (255, 85, 85),
+    (255, 85, 255),
+    (255, 255, 85),
+    (255, 255, 255),
+];
 static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
+
+fn update_pit() {
+    unsafe {
+        let now = Instant::now();
+        if let Some(last) = PIT_LAST_UPDATE {
+            let elapsed = now.duration_since(last);
+            let ticks = (elapsed.as_secs_f64() * PIT_FREQUENCY as f64) as u64;
+            if ticks > 0 {
+                PIT_LAST_UPDATE = Some(now);
+                for ch in &mut PIT_CHANNELS {
+                    let reload = if ch.reload == 0 { 0x10000u32 } else { ch.reload as u32 };
+                    let mut count = if ch.count == 0 { 0x10000u32 } else { ch.count as u32 };
+                    let mut remaining = ticks as i64;
+                    while remaining > 0 {
+                        if remaining as u32 >= count {
+                            remaining -= count as i64;
+                            count = reload;
+                        } else {
+                            count -= remaining as u32;
+                            remaining = 0;
+                        }
+                    }
+                    ch.count = if count == 0x10000 { 0 } else { count as u16 };
+                }
+            }
+        } else {
+            PIT_LAST_UPDATE = Some(now);
+        }
+    }
+}
+
+fn pit_read(idx: usize) -> u8 {
+    unsafe {
+        let ch = &mut PIT_CHANNELS[idx];
+        let mut val: u32 = if ch.latched { ch.latch as u32 } else { ch.count as u32 };
+        if val == 0 {
+            val = 0x10000;
+        }
+        let byte = if ch.access == 2 {
+            (val >> 8) as u8
+        } else if ch.access == 3 {
+            let out = if ch.rw_low { (val & 0xFF) as u8 } else { (val >> 8) as u8 };
+            ch.rw_low = !ch.rw_low;
+            if !ch.rw_low {
+                ch.latched = false;
+            }
+            out
+        } else {
+            ch.latched = false;
+            (val & 0xFF) as u8
+        };
+        if ch.access != 3 {
+            ch.latched = false;
+        }
+        byte
+    }
+}
+
+fn pit_write(idx: usize, val: u8) {
+    unsafe {
+        let ch = &mut PIT_CHANNELS[idx];
+        match ch.access {
+            2 => {
+                ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
+                ch.count = ch.reload;
+            }
+            3 => {
+                if ch.rw_low {
+                    ch.reload = (ch.reload & 0xFF00) | val as u16;
+                    ch.rw_low = false;
+                } else {
+                    ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
+                    ch.count = ch.reload;
+                    ch.rw_low = true;
+                }
+            }
+            _ => {
+                ch.reload = (ch.reload & 0xFF00) | val as u16;
+                ch.count = ch.reload;
+            }
+        }
+    }
+}
 
 fn cga_put_char(ch: u8) {
     unsafe {
@@ -293,6 +430,20 @@ fn print_cga_buffer(mem: *const u8) {
     }
 }
 
+fn clear_cga_buffer(mem: *mut u8) {
+    unsafe {
+        CGA_CURSOR = 0;
+        for i in 0..CGA_COLS * CGA_ROWS {
+            CGA_BUFFER[i] = 0x0720;
+            CGA_SHADOW[i] = 0x0720;
+            if !mem.is_null() {
+                *(mem.add(0xB8000 + 2 * i) as *mut u16) = 0x0720;
+            }
+        }
+        render_cga_window();
+    }
+}
+
 fn sync_cga_from_memory(mem: *const u8) {
     unsafe {
         let mut dirty = false;
@@ -322,13 +473,24 @@ fn render_cga_window() {
                 for c in 0..CGA_COLS {
                     let cell = CGA_BUFFER[r * CGA_COLS + c];
                     let ch = (cell & 0xFF) as usize;
-                    let glyph = BASIC_LEGACY[ch];
-                    for (y, row_bits) in glyph.iter().enumerate() {
-                        for x in 0..8 {
-                            if (row_bits >> x) & 1 != 0 {
-                                let px = (c * 8 + (7 - x)) as i32;
-                                let py = (r * 8 + y) as i32;
-                                let _ = canvas.fill_rect(Rect::new(px, py, 1, 1));
+                    let attr = ((cell >> 8) & 0xFF) as usize;
+                    let fg = attr & 0x0F;
+                    let bg = (attr >> 4) & 0x07;
+                    let blink = attr & 0x80 != 0;
+                    let bgc = CGA_COLORS[bg];
+                    canvas.set_draw_color(Color::RGB(bgc.0, bgc.1, bgc.2));
+                    let _ = canvas.fill_rect(Rect::new((c * 8) as i32, (r * 8) as i32, 8, 8));
+                    if !blink {
+                        let fgc = CGA_COLORS[fg];
+                        canvas.set_draw_color(Color::RGB(fgc.0, fgc.1, fgc.2));
+                        let glyph = BASIC_LEGACY[ch];
+                        for (y, row_bits) in glyph.iter().enumerate() {
+                            for x in 0..8 {
+                                if (row_bits >> x) & 1 != 0 {
+                                    let px = (c * 8 + (7 - x)) as i32;
+                                    let py = (r * 8 + y) as i32;
+                                    let _ = canvas.fill_rect(Rect::new(px, py, 1, 1));
+                                }
                             }
                         }
                     }
@@ -756,15 +918,22 @@ unsafe extern "system" fn emu_io_port_callback(
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
 ) -> HRESULT {
     unsafe {
+        update_pit();
         if (*io_access).Direction == 0 {
-            println!(
-                "IN  port 0x{:04X} ({}) , size {}",
-                (*io_access).Port,
-                port_name((*io_access).Port),
-                (*io_access).AccessSize
-            );
-            if (*io_access).Port == IO_PORT_KEYBOARD_INPUT || (*io_access).Port == IO_PORT_KBD_DATA
-            {
+            if (*io_access).Port != IO_PORT_SYS_PORTC {
+                println!(
+                    "IN  port 0x{:04X} ({}) , size {}",
+                    (*io_access).Port,
+                    port_name((*io_access).Port),
+                    (*io_access).AccessSize
+                );
+                portlog::port_log(&format!(
+                    "IN  port 0x{:04X}, size {}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize
+                ));
+            }
+            if (*io_access).Port == IO_PORT_KBD_DATA {
                 for i in 0..(*io_access).AccessSize {
                     let mut buf = [0u8; 1];
                     if std::io::stdin().read_exact(&mut buf).is_ok() {
@@ -775,9 +944,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 }
                 S_OK
             } else if (*io_access).Port == IO_PORT_KBD_STATUS {
-                (*io_access).Data = 0;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_STRING_PRINT {
                 (*io_access).Data = 0;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DISK_DATA {
@@ -803,6 +969,19 @@ unsafe extern "system" fn emu_io_port_callback(
                     val |= 0x20;
                 }
                 (*io_access).Data = val as u32;
+                println!(
+                    "IN  port 0x{:04X} ({}) , size {}, value 0x{:02X}",
+                    (*io_access).Port,
+                    port_name((*io_access).Port),
+                    (*io_access).AccessSize,
+                    val
+                );
+                portlog::port_log(&format!(
+                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
+                    (*io_access).Port,
+                    (*io_access).AccessSize,
+                    val
+                ));
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 (*io_access).Data = CGA_MODE as u32;
@@ -826,18 +1005,13 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                // Simulate ticking for channel 0
-                PIT_COUNTER0 = PIT_COUNTER0.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER0 as u32;
+                (*io_access).Data = pit_read(0) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                // Simulate ticking so BIOS doesn't loop forever
-                PIT_COUNTER1 = PIT_COUNTER1.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER1 as u32;
+                (*io_access).Data = pit_read(1) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                PIT_COUNTER2 = PIT_COUNTER2.wrapping_sub(1);
-                (*io_access).Data = PIT_COUNTER2 as u32;
+                (*io_access).Data = pit_read(2) as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 (*io_access).Data = PIC_MASTER_IMR as u32;
@@ -845,8 +1019,8 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
                 (*io_access).Data = PIC_SLAVE_IMR as u32;
                 S_OK
-            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - 0x0002) as usize;
+            } else if (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
                 (*io_access).Data = DMA_CHAN[idx] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
@@ -892,7 +1066,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = ATTR_CGA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
-                CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                let now = Instant::now();
+                if let Some(last) = CGA_LAST_TOGGLE {
+                    if now.duration_since(last) >= CGA_TOGGLE_PERIOD {
+                        CGA_STATUS ^= 0x08; // toggle vertical retrace bit
+                        CGA_LAST_TOGGLE = Some(now);
+                    }
+                } else {
+                    CGA_LAST_TOGGLE = Some(now);
+                }
                 (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
@@ -936,14 +1118,13 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).AccessSize,
                 (*io_access).Data
             );
-            if (*io_access).Port == IO_PORT_STRING_PRINT {
-                for i in 0..(*io_access).AccessSize {
-                    let ch = (((*io_access).Data >> (i * 8)) as u8);
-                    print!("{}", ch as char);
-                    cga_put_char(ch);
-                }
-                S_OK
-            } else if (*io_access).Port == IO_PORT_DISK_DATA {
+            portlog::port_log(&format!(
+                "OUT port 0x{:04X}, size {}, value 0x{:X}\n",
+                (*io_access).Port,
+                (*io_access).AccessSize,
+                (*io_access).Data
+            ));
+            if (*io_access).Port == IO_PORT_DISK_DATA {
                 for i in 0..(*io_access).AccessSize as usize {
                     DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i * 8)) as u8;
                     DISK_OFFSET = (DISK_OFFSET + 1) % DISK_IMAGE_SIZE;
@@ -955,11 +1136,12 @@ unsafe extern "system" fn emu_io_port_callback(
                 SYS_CTRL = (*io_access).Data as u8;
                 let new_state = SYS_CTRL & 0x03 == 0x03;
                 if new_state && !SPEAKER_ON {
-                    let freq = if PIT_COUNTER2 != 0 {
-                        1_193_182 / PIT_COUNTER2 as u32
+                    let count = if PIT_CHANNELS[2].reload != 0 {
+                        PIT_CHANNELS[2].reload as u32
                     } else {
-                        750
+                        65536
                     };
+                    let freq = 1_193_182 / count;
                     let _ = Beep(freq, BEEP_DURATION_MS);
                     openal_beep(freq, BEEP_DURATION_MS);
                 }
@@ -978,17 +1160,33 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
+                let cmd = PIT_CONTROL;
+                let chan = (cmd >> 6) & 3;
+                let access = (cmd >> 4) & 3;
+                if access == 0 {
+                    if chan < 3 {
+                        let ch = &mut PIT_CHANNELS[chan as usize];
+                        ch.latch = ch.count;
+                        ch.latched = true;
+                        ch.access = 3;
+                        ch.rw_low = true;
+                    }
+                } else if chan < 3 {
+                    let ch = &mut PIT_CHANNELS[chan as usize];
+                    ch.access = access;
+                    ch.mode = (cmd >> 1) & 0x7;
+                    ch.bcd = cmd & 1 != 0;
+                    ch.rw_low = true;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                // Reload start value for channel 0
-                PIT_COUNTER0 = (*io_access).Data as u8;
+                pit_write(0, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                // Reload start value for channel 1
-                PIT_COUNTER1 = (*io_access).Data as u8;
+                pit_write(1, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                PIT_COUNTER2 = (*io_access).Data as u8;
+                pit_write(2, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
                 DMA_MODE = (*io_access).Data as u8;
@@ -999,8 +1197,8 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_DMA_CLEAR {
                 DMA_CLEAR = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port >= 0x0002 && (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - 0x0002) as usize;
+            } else if (*io_access).Port <= 0x0007 {
+                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
                 DMA_CHAN[idx] = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
@@ -1073,7 +1271,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_KBD_DATA
                 || (*io_access).Port == IO_PORT_KBD_STATUS
-                || (*io_access).Port == IO_PORT_KEYBOARD_INPUT
             {
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
@@ -1231,6 +1428,9 @@ fn main() {
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, BEEP_DURATION_MS);
     unsafe {
+        CGA_LAST_TOGGLE = Some(Instant::now());
+    }
+    unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {
                 if let Ok(window) = video
@@ -1242,7 +1442,7 @@ fn main() {
                     .position_centered()
                     .build()
                 {
-                    if let Ok(canvas) = window.into_canvas().present_vsync().build() {
+                    if let Ok(canvas) = window.into_canvas().accelerated().build() {
                         if let Ok(pump) = sdl.event_pump() {
                             SDL_CONTEXT = Some(sdl);
                             SDL_CANVAS = Some(canvas);
@@ -1254,8 +1454,22 @@ fn main() {
         }
     }
     let args: Vec<String> = std::env::args().collect();
-    let program = args.get(1).map(String::as_str).unwrap_or("hello.com");
-    let bios = args.get(2).map(String::as_str).unwrap_or(DEFAULT_BIOS);
+    let mut program: Option<&str> = Some("hello.com");
+    let mut bios: &str = DEFAULT_BIOS;
+    if args.len() >= 2 {
+        if args.len() >= 3 {
+            program = Some(&args[1]);
+            bios = &args[2];
+        } else {
+            let arg = &args[1];
+            if arg.ends_with(".bin") || arg.ends_with(".fw") {
+                program = None;
+                bios = arg;
+            } else {
+                program = Some(arg);
+            }
+        }
+    }
     if init_whpx() == S_OK {
         println!("WHPX is present and initalized!");
         if let Ok(vm) = SimpleVirtualMachine::new(GUEST_MEM_SIZE) {
@@ -1281,13 +1495,16 @@ fn main() {
             if bios_size < 0x10000 {
                 vm.mirror_region(0xF0000, bios_size, 0x10000);
             }
-            if let Err(e) = vm.load_program(program, 0x10100) {
-                panic!("Failed to load program! Reason: {e}");
+            if let Some(p) = program {
+                if let Err(e) = vm.load_program(p, 0x10100) {
+                    panic!("Failed to load program! Reason: {e}");
+                }
             }
             if !load_disk_image("disk.img\0") {
                 println!("Warning: disk image not loaded, disk reads will return zeros.");
             }
             println!("============ Program Start ============");
+            clear_cga_buffer(vm.vmem as *mut u8);
             vm.run();
             println!("============= Program End =============");
             print_cga_buffer(vm.vmem as *const u8);

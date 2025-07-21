@@ -51,6 +51,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
+name = "once_cell"
+version = "1.21.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+
+[[package]]
 name = "openal-sys"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -106,6 +112,7 @@ version = "1.1.1"
 dependencies = [
  "aligned",
  "font8x8",
+ "once_cell",
  "openal-sys",
  "sdl2",
  "windows",

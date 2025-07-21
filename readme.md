@@ -5,6 +5,10 @@ Current version: **1.1.1**. The bundled firmware (`ivt.fw`) is version **0.1.0**
 The emulator can also boot the real AMI BIOS `ami_8088_bios_31jan89.bin` when present.
 On launch it plays a short OpenAL tone so you can confirm that sound output works before the guest boots.
 
+By default the virtual machine exposes 640 KiB of conventional RAM, matching a
+typical IBM XT configuration. The rest of the 1 MiB address space is used for
+ROM and device memory.
+
 ## Showcase
 With a minimal analog firmware, SimpleWhpDemo is running a hello world program which is also capable to be running in a real DOS system. (The screenshot demonstrates the comparison to DOSBox)
 ![Hello DOS](HelloDOS.png)
@@ -45,9 +49,10 @@ nasm -f bin (source assembly file name) -o (output executable file name) -l (out
 Note that the listing file could serve as the means of disassembly of the program. You will find it very helpful to debug your program.
 
 Two example programs reside in the `tests` directory. `hello_dos.asm` prints a
-string using DOS interrupts, while `keyboard.asm` reads a byte from port
-`0x0060` (`IO_PORT_KBD_DATA`) and echoes it through port `0x0000`
-(`IO_PORT_STRING_PRINT`).
+string using DOS interrupts, while `keyboard.asm` reads a byte from the
+keyboard data port (`0x0060`). Earlier versions of this demo echoed the byte
+through port `0x0000`, but that port now emulates the 8237 DMA controller so the
+sample no longer produces visible output.
 The firmware exposes a simple disk interface on port `0x00FF`
 (`IO_PORT_DISK_DATA`). When the emulator starts, it attempts to load a 512-byte
 `disk.img` file and make its contents available through this port. Reads and
@@ -59,9 +64,9 @@ emulator logs each I/O access so you can observe the guest's behavior.
 
 | Port | Purpose |
 |------|---------|
-| `0x0000` | Characters written here are printed to the host console and stored in the CGA text buffer. |
+| `0x0000` | DMA channel 0 address register. |
 | `0x0060` | Keyboard data port. The emulator reads a byte from `stdin` for each access. |
-| `0x0001` | (legacy) Same as `0x0060` for compatibility. |
+| `0x0001` | DMA channel 0 count register. |
 | `0x00FF` | Disk data port backed by `disk.img`. Reads/writes stream sequential bytes. |
 | `0x0080` | POST/IO‑delay port. Writes are ignored but recorded in the log. |
 | `0x0061` | System control port used for speaker and NMI masking. Setting bits 0 and 1 plays a short beep. |
@@ -117,6 +122,11 @@ If you own the original AMI BIOS image `ami_8088_bios_31jan89.bin`, you can load
 SimpleWhpDemo.exe hello.com ami_8088_bios_31jan89.bin
 ```
 When the file is missing the emulator falls back to `ivt.fw` automatically.
+To boot the firmware without a test program simply pass only the BIOS file:
+
+```bat
+SimpleWhpDemo.exe ami_8088_bios_31jan89.bin
+```
 
 To emulate the 8088's 20‑bit address wrap‑around, the guest's first megabyte of
 memory is mirrored at `0x100000`. This prevents crashes when the BIOS executes
@@ -156,9 +166,15 @@ the emulated CGA device.
 
 While the program runs, characters sent through INT 10h are stored in an
 80×25 text buffer. The CGA text memory at `0xB8000` is mirrored live so
-direct writes by the guest immediately update the SDL window. At shutdown the
-buffer is still printed on the host console so you can see the final screen
-contents.
+direct writes by the guest immediately update the SDL window. The emulator now
+honors the 16 CGA text colors so attributes set by the program appear with the
+proper foreground and background shades. At shutdown the buffer is still printed
+on the host console so you can inspect the final screen contents.
+
+### Port logging
+All port I/O performed by the guest is also written to `port.log` in the
+current directory. This mirrors PCem’s simple log format so you can compare the
+startup sequence or debug device accesses.
 
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
