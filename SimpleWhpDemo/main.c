@@ -719,11 +719,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port <= 0x0007)
                {
-                       int chan = (IoAccess->Port >> 1) & 3;
-                       USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
-                       UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
-                       DmaFlipFlop = !DmaFlipFlop;
-                       IoAccess->Data = byte;
+                       IoAccess->Data = DmaRead(IoAccess->Port);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -818,11 +814,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port <= 0x0007)
                {
-                       int chan = (IoAccess->Port >> 1) & 3;
-                       USHORT val = (IoAccess->Port & 1) ? DmaCount[chan] : DmaAddr[chan];
-                       UCHAR byte = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
-                       DmaFlipFlop = !DmaFlipFlop;
-                       IoAccess->Data = byte;
+                       IoAccess->Data = DmaRead(IoAccess->Port);
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
@@ -1041,17 +1033,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port <= 0x0007)
        {
-               int chan = (IoAccess->Port >> 1) & 3;
-               USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
-               for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-               {
-                       UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
-                       if (!DmaFlipFlop)
-                               *reg = (*reg & 0xFF00) | val;
-                       else
-                               *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
-                       DmaFlipFlop = !DmaFlipFlop;
-               }
+               DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
