@@ -15,7 +15,7 @@
 #define IO_PORT_PIC_MASTER_DATA 0x0021
 #define IO_PORT_SYS_CTRL        0x0061
 #define IO_PORT_SYS_PORTC       0x0062
-#define IO_PORT_PIC_SLAVE_CMD   0x00A0
+#define IO_PORT_NMI             0x00A0
 #define IO_PORT_PIC_SLAVE_DATA  0x00A1
 #define IO_PORT_MDA_MODE        0x03B8
 #define IO_PORT_CGA_MODE        0x03D8
