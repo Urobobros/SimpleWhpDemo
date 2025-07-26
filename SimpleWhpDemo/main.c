@@ -712,20 +712,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         UpdatePit();
         if (IoAccess->Direction == 0)
         {
-                if (IoAccess->Port == IO_PORT_KBD_DATA)
-                {
-                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                        {
-                                int ch = getchar();
-                                ((PUCHAR)&IoAccess->Data)[i] = (UCHAR)ch;
-                        }
-                        RETURN_OK;
-                }
-                else if (IoAccess->Port == IO_PORT_KBD_STATUS)
-                {
-                        IoAccess->Data = 0;
-                        RETURN_OK;
-                }
+               if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
+               {
+                       IoAccess->Data = KeyboardXtRead(IoAccess->Port);
+                       RETURN_OK;
+               }
                else if (IoAccess->Port <= 0x0007)
                {
                        int chan = (IoAccess->Port >> 1) & 3;
@@ -1169,8 +1160,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
        }
-        else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS)
+        else if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
         {
+                KeyboardXtWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
@@ -1318,6 +1310,7 @@ int main(int argc, char* argv[], char* envp[])
        PortLogStart();
        atexit(PortLogEnd);
        PitInit();
+       KeyboardInit();
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio

@@ -10,9 +10,13 @@ extern "C" {
 void KeyboardWrite(USHORT port, UCHAR val);
 UCHAR KeyboardReadData(void);
 UCHAR KeyboardReadStatus(void);
+UCHAR KeyboardXtRead(USHORT port);
+void KeyboardXtWrite(USHORT port, UCHAR val);
+void KeyboardInit(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* KEYBOARD_H */
+

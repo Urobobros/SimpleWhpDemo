@@ -66,3 +66,13 @@ pub fn keyboard_xt_read_status() -> u8 {
     let kb = KEYBOARD.lock().unwrap();
     kb.read_status_inner()
 }
+
+pub fn keyboard_xt_read(port: u16) -> u8 {
+    let mut kb = KEYBOARD.lock().unwrap();
+    match port {
+        0x60 => kb.read_data_inner(),
+        0x61 => kb.pb,
+        0x62 => 0x2d,
+        _ => 0xff,
+    }
+}
