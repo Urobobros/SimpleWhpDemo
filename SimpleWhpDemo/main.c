@@ -28,6 +28,11 @@
 #include "vmdef.h"
 #include "font8x8_basic.h"
 #include "include/portlog.h"
+#include "nmi.h"
+#include "cga.h"
+#include "dma.h"
+#include "pic.h"
+#include "keyboard.h"
 
 static void PortLogRead(const WHV_EMULATOR_IO_ACCESS_INFO* io)
 {
@@ -262,6 +267,7 @@ static void PitWrite(int idx, UCHAR val)
                 break;
         }
 }
+
 
 static void CgaPutChar(char ch)
 {
@@ -610,17 +616,9 @@ static UCHAR DiskImage[DISK_IMAGE_SIZE];
 static UINT32 DiskOffset = 0;
 static USHORT LastUnknownPort = 0;
 static UINT32 UnknownPortCount = 0;
-static UCHAR PicMasterImr = 0;
-static UCHAR PicSlaveImr = 0;
 static UCHAR SysCtrl = 0;
-static UCHAR CgaMode = 0;
 static UCHAR MdaMode = 0;
 static UCHAR PitControl = 0;
-static UCHAR DmaTemp = 0;
-static UCHAR DmaMode = 0;
-static UCHAR DmaMask = 0;
-static UCHAR DmaClear = 0;
-static UCHAR DmaPage1 = 0;
 static UCHAR Port0210Val = 0;
 static UCHAR Port0278Val = 0;
 static UCHAR Port02faVal = 0;
@@ -636,16 +634,12 @@ static UCHAR AttrMda = 0;
 static UCHAR CrtcCgaIndex = 0;
 static UCHAR CrtcCgaData = 0;
 static UCHAR CrtcCgaRegs[32] = {0};
-static UCHAR AttrCga = 0;
-static UCHAR CgaStatus = 0;
 static ULONGLONG CgaLastToggleMs = 0;
 #define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
-static USHORT DmaAddr[4] = {0};
-static USHORT DmaCount[4] = {0};
-static BOOL   DmaFlipFlop = FALSE;
+
 /* Value returned when reading port 0x62 to report RAM size. */
 static const UCHAR Port62MemNibble = ((GuestRamKB - 64) / 32);
 
@@ -672,7 +666,7 @@ static const char* GetPortName(USHORT port)
         case IO_PORT_POST:            return "POST";
         case IO_PORT_PIC_MASTER_CMD:  return "PIC_MASTER_CMD";
         case IO_PORT_PIC_MASTER_DATA: return "PIC_MASTER_DATA";
-        case IO_PORT_PIC_SLAVE_CMD:   return "PIC_SLAVE_CMD";
+       case IO_PORT_NMI:   return "NMI";
         case IO_PORT_PIC_SLAVE_DATA:  return "PIC_SLAVE_DATA";
         case IO_PORT_SYS_CTRL:        return "SYS_CTRL";
         case IO_PORT_SYS_PORTC:       return "SYS_PORTC";
@@ -935,7 +929,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = FdcData;
                        RETURN_OK;
                }
-               else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
+               else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_NMI)
                {
                        IoAccess->Data = 0;
                        RETURN_OK;
@@ -958,17 +952,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        PORT_LOG("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port <= 0x0007)
         {
-                int chan = (IoAccess->Port >> 1) & 3;
-                USHORT* reg = (IoAccess->Port & 1) ? &DmaCount[chan] : &DmaAddr[chan];
-                for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
-                {
-                        UCHAR val = ((PUCHAR)&IoAccess->Data)[i];
-                        if (!DmaFlipFlop)
-                                *reg = (*reg & 0xFF00) | val;
-                        else
-                                *reg = (*reg & 0x00FF) | ((USHORT)val << 8);
-                        DmaFlipFlop = !DmaFlipFlop;
-                }
+                DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -1019,7 +1003,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_CGA_MODE)
        {
-               CgaMode = (UCHAR)IoAccess->Data;
+               CgaOut(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
@@ -1081,7 +1065,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
        {
-               DmaPage1 = (UCHAR)IoAccess->Data;
+               DmaPageWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0210)
@@ -1145,20 +1129,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                CrtcCgaIndex = (UCHAR)IoAccess->Data & 0x1F;
                RETURN_OK;
        }
-       else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA)
+       else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA || IoAccess->Port == IO_PORT_ATTR_CGA || IoAccess->Port == IO_PORT_CGA_STATUS)
        {
-               CrtcCgaData = (UCHAR)IoAccess->Data;
-               CrtcCgaRegs[CrtcCgaIndex] = CrtcCgaData;
-               RETURN_OK;
-       }
-       else if (IoAccess->Port == IO_PORT_ATTR_CGA)
-       {
-               AttrCga = (UCHAR)IoAccess->Data;
-               RETURN_OK;
-       }
-       else if (IoAccess->Port == IO_PORT_CGA_STATUS)
-       {
-               CgaStatus = (UCHAR)IoAccess->Data;
+               CgaOut(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_DOR)
@@ -1176,26 +1149,31 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                FdcData = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
-       else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
+       else if (IoAccess->Port == IO_PORT_NMI)
        {
-               PicMasterImr = (UCHAR)IoAccess->Data; /* treat command as IMR for simplicity */
+               NmiWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
-        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_CMD)
-        {
-                PicSlaveImr = (UCHAR)IoAccess->Data;
+       else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
+       {
+               PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+               RETURN_OK;
+       }
+       else if (IoAccess->Port == IO_PORT_NMI)
+       {
+                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
-        }
-        else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
-        {
-                PicMasterImr = (UCHAR)IoAccess->Data;
+       }
+       else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
+       {
+                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
-        }
-        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
-        {
-                PicSlaveImr = (UCHAR)IoAccess->Data;
+       }
+       else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
+       {
+                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 RETURN_OK;
-        }
+       }
         else if (IoAccess->Port == IO_PORT_KBD_DATA || IoAccess->Port == IO_PORT_KBD_STATUS)
         {
                 RETURN_OK;
