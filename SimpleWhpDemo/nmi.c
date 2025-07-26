@@ -7,3 +7,4 @@ void NmiWrite(USHORT port, UCHAR val)
     (void)port;
     NmiMask = val & 0x80;
 }
+

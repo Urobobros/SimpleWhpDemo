@@ -727,7 +727,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         UpdatePit();
         if (IoAccess->Direction == 0)
         {
-               if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
+               if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0063)
                {
                        IoAccess->Data = KeyboardXtRead(IoAccess->Port);
                        PortLogIoWithTag(IoAccess, "keyboard_xt_read");
@@ -1175,7 +1175,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 return S_OK;
        }
-        else if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
+        else if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0063)
         {
                 PortLogIoWithTag(IoAccess, "keyboard_xt_write");
                 KeyboardXtWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
