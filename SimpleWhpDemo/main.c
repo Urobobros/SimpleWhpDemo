@@ -49,6 +49,21 @@ static void PortLogRead(const WHV_EMULATOR_IO_ACCESS_INFO* io)
 #endif
 }
 
+static void PortLogIoWithTag(const WHV_EMULATOR_IO_ACCESS_INFO* io, const char* tag)
+{
+#if defined(_DEBUG) || defined(PORT_DEBUG)
+    const char* dir = io->Direction ? "OUT" : "IN ";
+    if (io->AccessSize == 1)
+        PORT_LOG("%s port 0x%04X, size 1, value 0x%02X  # %s\n", dir, io->Port, (unsigned)(io->Data & 0xFF), tag);
+    else if (io->AccessSize == 2)
+        PORT_LOG("%s port 0x%04X, size 2, value 0x%04X  # %s\n", dir, io->Port, (unsigned)(io->Data & 0xFFFF), tag);
+    else
+        PORT_LOG("%s port 0x%04X, size %u, value 0x%08X  # %s\n", dir, io->Port, io->AccessSize, (unsigned)io->Data, tag);
+#else
+    (void)io; (void)tag;
+#endif
+}
+
 #define RETURN_OK do { PortLogRead(IoAccess); return S_OK; } while(0)
 
 #define CGA_COLS 80
@@ -715,12 +730,14 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
                {
                        IoAccess->Data = KeyboardXtRead(IoAccess->Port);
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "keyboard_xt_read");
+                       return S_OK;
                }
                else if (IoAccess->Port <= 0x0007)
                {
                        IoAccess->Data = DmaRead(IoAccess->Port);
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "dma_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
                {
@@ -788,19 +805,22 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        UCHAR val = PitRead(0);
                        IoAccess->Data = val;
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "pit_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
                        UCHAR val = PitRead(1);
                        IoAccess->Data = val;
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "pit_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
                        UCHAR val = PitRead(2);
                        IoAccess->Data = val;
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "pit_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
                {
@@ -815,7 +835,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port <= 0x0007)
                {
                        IoAccess->Data = DmaRead(IoAccess->Port);
-                       RETURN_OK;
+                       PortLogIoWithTag(IoAccess, "dma_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
                {
@@ -935,8 +956,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        PORT_LOG("OUT port 0x%04X, size %u, value 0x%02X\n", IoAccess->Port, IoAccess->AccessSize, IoAccess->Data);
         if (IoAccess->Port <= 0x0007)
         {
+                PortLogIoWithTag(IoAccess, "dma_write");
                 DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-                RETURN_OK;
+                return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
         {
@@ -986,11 +1008,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_CGA_MODE)
        {
+               PortLogIoWithTag(IoAccess, "cga_out");
                CgaOut(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
        {
+               PortLogIoWithTag(IoAccess, "pit_write");
                PitControl = (UCHAR)IoAccess->Data;
                UCHAR cmd = PitControl;
                UCHAR chan = (cmd >> 6) & 3;
@@ -1012,13 +1036,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
        {
+               PortLogIoWithTag(IoAccess, "pit_write");
                PitWrite(0, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
+               PortLogIoWithTag(IoAccess, "pit_write");
                PitWrite(1, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
        {
@@ -1033,13 +1059,15 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port <= 0x0007)
        {
+               PortLogIoWithTag(IoAccess, "dma_write");
                DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_PAGE1)
        {
+               PortLogIoWithTag(IoAccess, "dma_page_write");
                DmaPageWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0210)
        {
@@ -1078,8 +1106,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
        {
+               PortLogIoWithTag(IoAccess, "pit_write");
                PitWrite(2, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
        {
@@ -1104,8 +1133,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_CGA || IoAccess->Port == IO_PORT_ATTR_CGA || IoAccess->Port == IO_PORT_CGA_STATUS)
        {
+               PortLogIoWithTag(IoAccess, "cga_out");
                CgaOut(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_FDC_DOR)
        {
@@ -1124,28 +1154,33 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_NMI)
        {
+               PortLogIoWithTag(IoAccess, "nmi_write");
                NmiWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
        {
+               PortLogIoWithTag(IoAccess, "pic_write");
                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-               RETURN_OK;
+               return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
        {
+                PortLogIoWithTag(IoAccess, "pic_write");
                 PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-                RETURN_OK;
+                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
        {
+                PortLogIoWithTag(IoAccess, "pic_write");
                 PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-                RETURN_OK;
+                return S_OK;
        }
         else if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0062)
         {
+                PortLogIoWithTag(IoAccess, "keyboard_xt_write");
                 KeyboardXtWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-                RETURN_OK;
+                return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
                  IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
@@ -1168,6 +1203,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         LastUnknownPort = IoAccess->Port;
                         UnknownPortCount = 1;
                 }
+                PortLogIoWithTag(IoAccess, "unhandled");
                 printf("Unknown I/O Port: 0x%04X is accessed!\n", IoAccess->Port);
                 if (UnknownPortCount >= 2)
                 {
