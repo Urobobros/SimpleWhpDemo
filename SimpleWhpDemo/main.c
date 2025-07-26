@@ -1159,11 +1159,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                RETURN_OK;
        }
-       else if (IoAccess->Port == IO_PORT_NMI)
-       {
-                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
-                RETURN_OK;
-       }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
        {
                 PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);

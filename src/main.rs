@@ -19,10 +19,10 @@ use sdl2::{EventPump, Sdl, pixels::Color, rect::Rect};
 use aligned::*;
 #[macro_use]
 mod portlog;
-mod keyboard;
-mod nmi;
 mod cga;
 mod dma;
+mod keyboard;
+mod nmi;
 mod pic;
 use windows::{
     Win32::{
@@ -333,11 +333,7 @@ fn update_pit() {
                     } else {
                         ch.reload as u32
                     };
-                    let mut count = if ch.count == 0 {
-                        0x10000u32
-                    } else {
-                        ch.count
-                    };
+                    let mut count = if ch.count == 0 { 0x10000u32 } else { ch.count };
                     let mut remaining = ticks as i64;
                     while remaining > 0 {
                         if remaining as u32 >= count {
@@ -398,11 +394,19 @@ fn pit_write(idx: usize, val: u8) {
         match ch.access {
             1 => {
                 ch.reload = val as u16;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload as u32 };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
             2 => {
                 ch.reload = (val as u16) << 8;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload as u32 };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
             3 => {
                 if ch.rw_low {
@@ -410,13 +414,21 @@ fn pit_write(idx: usize, val: u8) {
                     ch.rw_low = false;
                 } else {
                     ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
-                    ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload as u32 };
+                    ch.count = if ch.reload == 0 {
+                        0x10000
+                    } else {
+                        ch.reload as u32
+                    };
                     ch.rw_low = true;
                 }
             }
             _ => {
                 ch.reload = (ch.reload & 0xFF00) | val as u16;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload as u32 };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
         }
     }
@@ -1006,7 +1018,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 );
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
-                unsafe { (*io_access).Data = cga::MODE as u32; }
+                unsafe {
+                    (*io_access).Data = cga::MODE as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 (*io_access).Data = MDA_MODE as u32;
@@ -1057,10 +1071,14 @@ unsafe extern "system" fn emu_io_port_callback(
                 );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
-                unsafe { (*io_access).Data = pic::MASTER_IMR as u32; }
+                unsafe {
+                    (*io_access).Data = pic::MASTER_IMR as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
-                unsafe { (*io_access).Data = pic::SLAVE_IMR as u32; }
+                unsafe {
+                    (*io_access).Data = pic::SLAVE_IMR as u32;
+                }
                 S_OK
             } else if (*io_access).Port <= 0x0007 {
                 let byte = dma::dma_read((*io_access).Port);
@@ -1073,7 +1091,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
-                unsafe { (*io_access).Data = dma::DMA_PAGE[1] as u32; }
+                unsafe {
+                    (*io_access).Data = dma::DMA_PAGE[1] as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0210 {
                 (*io_access).Data = PORT_0210_VAL as u32;
@@ -1112,7 +1132,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_CGA {
-                unsafe { (*io_access).Data = cga::COLOR as u32; }
+                unsafe {
+                    (*io_access).Data = cga::COLOR as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
                 let now = Instant::now();
@@ -1135,9 +1157,7 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 (*io_access).Data = FDC_DATA as u32;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
-                || (*io_access).Port == IO_PORT_PIC_SLAVE_CMD
-            {
+            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 (*io_access).Data = 0;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
@@ -1296,7 +1316,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 nmi::nmi_write((*io_access).Port, (*io_access).Data as u8);
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
-                || (*io_access).Port == IO_PORT_PIC_SLAVE_CMD
                 || (*io_access).Port == IO_PORT_PIC_MASTER_DATA
                 || (*io_access).Port == IO_PORT_PIC_SLAVE_DATA
             {

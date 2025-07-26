@@ -6,7 +6,7 @@ pub fn pic_write(port: u16, val: u8) {
         match port {
             0x20 | 0x21 => MASTER_IMR = val,
             0xA0 | 0xA1 => SLAVE_IMR = val,
-            _ => {},
+            _ => {}
         }
     }
 }

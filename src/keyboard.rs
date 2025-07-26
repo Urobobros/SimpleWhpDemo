@@ -1,6 +1,6 @@
+use once_cell::sync::Lazy;
 use std::collections::VecDeque;
 use std::io::Read;
-use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
 pub struct Keyboard {
@@ -10,7 +10,10 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new() -> Self {
-        Keyboard { queue: VecDeque::with_capacity(16), pb: 0 }
+        Keyboard {
+            queue: VecDeque::with_capacity(16),
+            pb: 0,
+        }
     }
 
     fn push_scancode(&mut self, code: u8) {

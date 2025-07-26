@@ -30,14 +30,16 @@ pub fn dma_write(port: u16, val: u8) {
                 0x000B => DMA_MODE = val,
                 0x000C => FLIP_FLOP = false,
                 0x000F => DMA_MASK = val,
-                _ => {},
+                _ => {}
             }
         }
     }
 }
 
 pub fn dma_page_write(port: u16, val: u8) {
-    unsafe { DMA_PAGE[(port & 0xF) as usize] = val; }
+    unsafe {
+        DMA_PAGE[(port & 0xF) as usize] = val;
+    }
 }
 pub static mut DMA_CHAN: [u8; 8] = [0; 8];
 

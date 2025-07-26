@@ -6,7 +6,7 @@ pub fn cga_out(port: u16, val: u8) {
         match port {
             0x3D8 => MODE = val,
             0x3D9 => COLOR = val,
-            _ => {},
+            _ => {}
         }
     }
 }
