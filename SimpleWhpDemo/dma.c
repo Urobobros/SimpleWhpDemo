@@ -5,6 +5,7 @@ UCHAR DmaMode = 0;
 UCHAR DmaMask = 0;
 UCHAR DmaClear = 0;
 UCHAR DmaPage1 = 0;
+UCHAR DmaPage3 = 0;
 USHORT DmaAddr[4] = {0};
 USHORT DmaCount[4] = {0};
 BOOL DmaFlipFlop = FALSE;
@@ -47,6 +48,8 @@ void DmaPageWrite(USHORT port, UCHAR val)
 {
     if (port == 0x0081)
         DmaPage1 = val;
+    else if (port == 0x0083)
+        DmaPage3 = val;  
 }
 
 UCHAR DmaRead(USHORT port)
@@ -62,6 +65,10 @@ UCHAR DmaRead(USHORT port)
     else if (port == 0x0081)
     {
         return DmaPage1;
+    }
+    else if (port == 0x0083)
+    {
+        return DmaPage3;
     }
     return 0;
 }

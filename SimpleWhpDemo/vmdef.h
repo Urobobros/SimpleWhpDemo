@@ -208,3 +208,4 @@ PSTR SwSrNameGroup[8] =
 
 // Virtual Machine Property
 UINT32 SwProcessorCount = 1;
+

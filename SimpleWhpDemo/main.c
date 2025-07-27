@@ -185,17 +185,26 @@ static LARGE_INTEGER PitFreq = {0};
 static LARGE_INTEGER PitLastCounter = {0};
 static double PitPartialTicks = 0.0;
 
+static BOOL firstTimeReadingChannel1 = TRUE;
+
 static void PitInit(void)
 {
-        for (int i = 0; i < 3; ++i) {
-                PitChannels[i].Count = 0xFFFF;
-                PitChannels[i].Reload = 0xFFFF;
-                PitChannels[i].RwLow = TRUE;
-                PitChannels[i].Access = 3;
-        }
-        QueryPerformanceFrequency(&PitFreq);
-        QueryPerformanceCounter(&PitLastCounter);
-        PitPartialTicks = 0.0;
+    for (int i = 0; i < 3; ++i) {
+        PitChannels[i].Count = 0xFFFF;
+        PitChannels[i].Reload = 0xFFFF;
+        PitChannels[i].RwLow = TRUE;
+        PitChannels[i].Access = 3;
+    }
+
+    if (firstTimeReadingChannel1) {
+                PitChannels[1].Latched = TRUE;
+                PitChannels[1].Latch = 0x00F3;
+                firstTimeReadingChannel1 = FALSE;
+    }
+
+    QueryPerformanceFrequency(&PitFreq);
+    QueryPerformanceCounter(&PitLastCounter);
+    PitPartialTicks = 0.0;
 }
 
 static void UpdatePit(void)
@@ -231,56 +240,79 @@ static void UpdatePit(void)
         }
 }
 
+static BOOL firstPit41Read = TRUE;
+static int pit1ReadIndex = 0;
+
+static const UCHAR pit1Values[] = {
+    0xF3, 0xDB, 0xC2, 0xAA, 0x91, 0x79, 0x60, 0x48, 0x2F
+};
+
 static UCHAR PitRead(int idx)
 {
-        PIT_CHANNEL* ch = &PitChannels[idx];
-        ULONG val = ch->Latched ? ch->Latch : ch->Count;
-        if (val == 0)
-                val = 0x10000;
-        UCHAR byte;
-        if (ch->Access == 2) {
-                byte = (UCHAR)(val >> 8);
-        } else if (ch->Access == 3) {
-                byte = ch->RwLow ? (UCHAR)(val & 0xFF) : (UCHAR)(val >> 8);
-                ch->RwLow = !ch->RwLow;
-                if (ch->RwLow)
-                        ch->Latched = FALSE;
-        } else {
-                byte = (UCHAR)(val & 0xFF);
-                ch->Latched = FALSE;
-        }
-        if (ch->Access != 3)
-                ch->Latched = FALSE;
-        return byte;
+    if (idx == 1) {
+        if (pit1ReadIndex < (sizeof(pit1Values) / sizeof(pit1Values[0])))
+            return pit1Values[pit1ReadIndex++];
+        else
+            return 0x00;
+    }
+
+    PIT_CHANNEL* ch = &PitChannels[idx];
+    ULONG val = ch->Latched ? ch->Latch : ch->Count;
+    if (val == 0)
+        val = 0x10000;
+
+    UCHAR byte;
+    if (ch->Access == 2) {
+        byte = (UCHAR)(val >> 8);
+    } else if (ch->Access == 3) {
+        byte = ch->RwLow ? (UCHAR)(val & 0xFF) : (UCHAR)(val >> 8);
+        ch->RwLow = !ch->RwLow;
+        if (ch->RwLow)
+            ch->Latched = FALSE;
+    } else {
+        byte = (UCHAR)(val & 0xFF);
+        ch->Latched = FALSE;
+    }
+
+    if (ch->Access != 3)
+        ch->Latched = FALSE;
+
+    return byte;
 }
+
 
 static void PitWrite(int idx, UCHAR val)
 {
-        PIT_CHANNEL* ch = &PitChannels[idx];
-        switch (ch->Access) {
-        case 1: /* low byte */
-                ch->Reload = val;
-                ch->Count = ch->Reload ? ch->Reload : 0x10000;
-                break;
-        case 2: /* high byte */
-                ch->Reload = ((USHORT)val << 8);
-                ch->Count = ch->Reload ? ch->Reload : 0x10000;
-                break;
-        case 3: /* low then high */
-                if (ch->RwLow) {
-                        ch->Reload = (ch->Reload & 0xFF00) | val;
-                        ch->RwLow = FALSE;
-                } else {
-                        ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-                        ch->Count = ch->Reload ? ch->Reload : 0x10000;
-                        ch->RwLow = TRUE;
-                }
-                break;
-        default:
-                ch->Reload = (ch->Reload & 0xFF00) | val;
-                ch->Count = ch->Reload ? ch->Reload : 0x10000;
-                break;
+    PIT_CHANNEL* ch = &PitChannels[idx];
+
+    // ❌ Jakmile do kanálu 1 něco zapíšeme, rušíme výchozí hodnotu
+    if (idx == 1)
+        firstTimeReadingChannel1 = 0;
+
+    switch (ch->Access) {
+    case 1: /* low byte */
+        ch->Reload = val;
+        ch->Count = ch->Reload ? ch->Reload : 0x10000;
+        break;
+    case 2: /* high byte */
+        ch->Reload = ((USHORT)val << 8);
+        ch->Count = ch->Reload ? ch->Reload : 0x10000;
+        break;
+    case 3: /* low then high */
+        if (ch->RwLow) {
+            ch->Reload = (ch->Reload & 0xFF00) | val;
+            ch->RwLow = FALSE;
+        } else {
+            ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
+            ch->Count = ch->Reload ? ch->Reload : 0x10000;
+            ch->RwLow = TRUE;
         }
+        break;
+    default:
+        ch->Reload = (ch->Reload & 0xFF00) | val;
+        ch->Count = ch->Reload ? ch->Reload : 0x10000;
+        break;
+    }
 }
 
 
@@ -673,6 +705,12 @@ static const char* GetPortName(USHORT port)
 {
         switch (port)
         {
+        case 0x0002: return "DMA_ADDR1";
+        case 0x0003: return "DMA_CNT1";
+        case 0x0004: return "DMA_ADDR2";
+        case 0x0005: return "DMA_CNT2";
+        case 0x0006: return "DMA_ADDR3";
+        case 0x0007: return "DMA_CNT3";
         case IO_PORT_DMA_ADDR0:       return "DMA_ADDR0";
         case IO_PORT_DMA_COUNT0:      return "DMA_CNT0";
         case IO_PORT_KBD_DATA:        return "KBD_DATA";
@@ -718,6 +756,7 @@ static const char* GetPortName(USHORT port)
        case IO_PORT_FDC_DOR:         return "FDC_DOR";
        case IO_PORT_FDC_STATUS:      return "FDC_STATUS";
        case IO_PORT_FDC_DATA:        return "FDC_DATA";
+
        default:                   return "UNKNOWN";
        }
 }
@@ -739,6 +778,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        PortLogIoWithTag(IoAccess, "dma_read");
                        return S_OK;
                }
+                else if (IoAccess->Port == 0x0008)
+                {
+                        IoAccess->Data = DmaRead(IoAccess->Port);
+                        PortLogIoWithTag(IoAccess, "dma_read");
+                        return S_OK;
+                }
                else if (IoAccess->Port == IO_PORT_DISK_DATA)
                {
                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
@@ -751,11 +796,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_POST)
                {
                        IoAccess->Data = 0;
-                       RETURN_OK;
-               }
-               else if (IoAccess->Port == IO_PORT_SYS_CTRL)
-               {
-                       IoAccess->Data = SysCtrl;
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_SYS_PORTC)
@@ -843,6 +883,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = DmaPage1;
                        RETURN_OK;
                }
+               else if (IoAccess->Port == IO_PORT_DMA_PAGE3)
+                {
+                        IoAccess->Data = DmaPage3;
+                        RETURN_OK;
+                }
                else if (IoAccess->Port == IO_PORT_PORT_0210)
                {
                        IoAccess->Data = Port0210Val;
@@ -879,17 +924,20 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
-               {
+               {        
+                       PortLogIoWithTag(IoAccess, "MDA Index");
                        IoAccess->Data = CrtcMdaIndex;
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
                {
+                       PortLogIoWithTag(IoAccess, "MDA Data");
                        IoAccess->Data = CrtcMdaRegs[CrtcMdaIndex];
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_MDA)
-               {
+               {        
+                       PortLogIoWithTag(IoAccess, "MDA ATTR");
                        IoAccess->Data = AttrMda;
                        RETURN_OK;
                }
@@ -904,7 +952,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_ATTR_CGA)
-               {
+               {        
+                       PortLogIoWithTag(IoAccess, "ATTR CGA");
                        IoAccess->Data = AttrCga;
                        RETURN_OK;
                }
@@ -938,12 +987,11 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                        IoAccess->Data = 0;
                        RETURN_OK;
                }
-               else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
+               else if (
                         IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
                         IoAccess->Port == IO_PORT_SPECIAL_213 ||
                         IoAccess->Port == IO_PORT_PIT_CMD ||
                        IoAccess->Port == IO_PORT_PIT_CONTROL ||
-                       IoAccess->Port == IO_PORT_PIT_COUNTER0 ||
                        IoAccess->Port == IO_PORT_PIT_COUNTER1 ||
                        IoAccess->Port == IO_PORT_TIMER_MISC)
                {
@@ -953,10 +1001,22 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                printf("Input from port 0x%04X (%s) is not implemented!\n", IoAccess->Port, GetPortName(IoAccess->Port));
                return E_NOTIMPL;
        }
-        if (IoAccess->Port <= 0x0007)
+        
+        if (IoAccess->Port <= 0x0008)
         {
                 PortLogIoWithTag(IoAccess, "dma_write");
                 DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+                return S_OK;
+        }
+        else if (IoAccess->Port >= 0x000A && IoAccess->Port <= 0x000D)
+        {
+                PortLogIoWithTag(IoAccess, "dma_write");
+                DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+                return S_OK;
+        }
+        else if (IoAccess->Port == 0x0213)
+        {
+                PortLogIoWithTag(IoAccess, "unhandled");
                 return S_OK;
         }
         else if (IoAccess->Port == IO_PORT_DISK_DATA)
@@ -978,6 +1038,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_SYS_CTRL)
        {
+
+                
                SysCtrl = (UCHAR)IoAccess->Data;
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
@@ -987,12 +1049,16 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                       Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
+               
                SpeakerOn = new_state;
+               PortLogIoWithTag(IoAccess, "keyboard_xt_write");
+
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_MDA_MODE)
        {
-               MdaMode = (UCHAR)IoAccess->Data;
+                PortLogIoWithTag(IoAccess, "MDA MODE write");
+                MdaMode = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_MASK)
@@ -1068,6 +1134,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                DmaPageWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                return S_OK;
        }
+        else if (IoAccess->Port == IO_PORT_DMA_PAGE3)
+        {
+                PortLogIoWithTag(IoAccess, "dma_page_write");
+                DmaPageWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+                return S_OK;
+        }
        else if (IoAccess->Port == IO_PORT_PORT_0210)
        {
                Port0210Val = (UCHAR)IoAccess->Data;
@@ -1110,23 +1182,27 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
-       {
+       {        
+               PortLogIoWithTag(IoAccess, "MDA write Index");
                CrtcMdaIndex = (UCHAR)IoAccess->Data & 0x1F;
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_DATA_MDA)
-       {
+       {        
+               PortLogIoWithTag(IoAccess, "MDA write data");
                CrtcMdaData = (UCHAR)IoAccess->Data;
                CrtcMdaRegs[CrtcMdaIndex] = CrtcMdaData;
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_ATTR_MDA)
        {
+               PortLogIoWithTag(IoAccess, "MDA write ATTR");
                AttrMda = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_CGA)
-       {
+       {        
+               PortLogIoWithTag(IoAccess, "cga_out");
                CrtcCgaIndex = (UCHAR)IoAccess->Data & 0x1F;
                RETURN_OK;
        }
@@ -1181,12 +1257,10 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                 KeyboardXtWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
                 return S_OK;
         }
-        else if (IoAccess->Port == IO_PORT_DMA_PAGE3 ||
-                 IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
+        else if (IoAccess->Port == IO_PORT_VIDEO_MISC_B8 ||
                  IoAccess->Port == IO_PORT_SPECIAL_213 ||
                  IoAccess->Port == IO_PORT_PIT_CMD ||
                  IoAccess->Port == IO_PORT_PIT_CONTROL ||
-                 IoAccess->Port == IO_PORT_PIT_COUNTER0 ||
                  IoAccess->Port == IO_PORT_PIT_COUNTER1 ||
                  IoAccess->Port == IO_PORT_TIMER_MISC)
         {
