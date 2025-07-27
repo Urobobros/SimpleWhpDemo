@@ -1,12 +1,12 @@
 #include "keyboard.h"
 #include <stdio.h>
 
-static UCHAR pb = 0;
+static UCHAR pb = 0x40; // PC/XT PPI port B initial state
 static UCHAR pa = 0;
 
 void KeyboardInit(void)
 {
-    pb = 0;
+    pb = 0x40; // match PCem's initial PB value
     pa = 0;
 }
 
@@ -31,8 +31,6 @@ UCHAR KeyboardXtRead(USHORT port)
         return pb;
     case 0x62:
         return 0x2D; // typická návratová hodnota XT BIOSu
-    case 0x63:
-        return pb;   // fallback – některé klony používají 0x63 místo 0x61
     default:
         return 0xFF;
     }
@@ -46,7 +44,6 @@ void KeyboardWrite(USHORT port, UCHAR val)
         pa = val;
         break;
     case 0x61:
-    case 0x63: // XT klony často používají 0x63 stejně jako 0x61
         if ((pb & 0x40) == 0 && (val & 0x40))
         {
             // keyboard reset ack – zatím neimplementováno
