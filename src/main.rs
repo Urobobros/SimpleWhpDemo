@@ -19,6 +19,11 @@ use sdl2::{EventPump, Sdl, pixels::Color, rect::Rect};
 use aligned::*;
 #[macro_use]
 mod portlog;
+mod cga;
+mod dma;
+mod keyboard;
+mod nmi;
+mod pic;
 use windows::{
     Win32::{
         Foundation::*,
@@ -114,7 +119,7 @@ const IO_PORT_DISK_DATA: u16 = 0x00FF;
 const IO_PORT_POST: u16 = 0x0080;
 const IO_PORT_PIC_MASTER_CMD: u16 = 0x0020;
 const IO_PORT_PIC_MASTER_DATA: u16 = 0x0021;
-const IO_PORT_PIC_SLAVE_CMD: u16 = 0x00A0;
+const IO_PORT_NMI: u16 = 0x00A0;
 const IO_PORT_PIC_SLAVE_DATA: u16 = 0x00A1;
 const IO_PORT_SYS_CTRL: u16 = 0x0061;
 const IO_PORT_SYS_PORTC: u16 = 0x0062;
@@ -162,7 +167,7 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_POST => "POST",
         IO_PORT_PIC_MASTER_CMD => "PIC_MASTER_CMD",
         IO_PORT_PIC_MASTER_DATA => "PIC_MASTER_DATA",
-        IO_PORT_PIC_SLAVE_CMD => "PIC_SLAVE_CMD",
+        IO_PORT_NMI => "NMI",
         IO_PORT_PIC_SLAVE_DATA => "PIC_SLAVE_DATA",
         IO_PORT_SYS_CTRL => "SYS_CTRL",
         IO_PORT_SYS_PORTC => "SYS_PORTC",
@@ -208,14 +213,12 @@ static mut DISK_IMAGE: [u8; DISK_IMAGE_SIZE] = [0; DISK_IMAGE_SIZE];
 static mut DISK_OFFSET: usize = 0;
 static mut LAST_UNKNOWN_PORT: u16 = 0;
 static mut UNKNOWN_PORT_COUNT: u32 = 0;
-static mut PIC_MASTER_IMR: u8 = 0;
-static mut PIC_SLAVE_IMR: u8 = 0;
 static mut SYS_CTRL: u8 = 0;
 const PIT_FREQUENCY: u64 = 1_193_182;
 
 #[derive(Copy, Clone)]
 struct PitChannel {
-    count: u16,
+    count: u32,
     reload: u16,
     mode: u8,
     access: u8,
@@ -245,13 +248,11 @@ static mut PIT_CHANNELS: [PitChannel; 3] =
     [PitChannel::new(), PitChannel::new(), PitChannel::new()];
 static mut PIT_LAST_UPDATE: Option<Instant> = None;
 static mut PIT_PARTIAL_TICKS: f64 = 0.0;
-static mut CGA_MODE: u8 = 0;
 static mut MDA_MODE: u8 = 0;
 static mut DMA_TEMP: u8 = 0;
 static mut DMA_MODE: u8 = 0;
 static mut DMA_MASK: u8 = 0;
 static mut DMA_CLEAR: u8 = 0;
-static mut DMA_PAGE1: u8 = 0;
 static mut PORT_0210_VAL: u8 = 0;
 static mut PORT_0278_VAL: u8 = 0;
 static mut PORT_02FA_VAL: u8 = 0;
@@ -267,7 +268,6 @@ static mut ATTR_MDA: u8 = 0;
 static mut CRTC_CGA_INDEX: u8 = 0;
 static mut CRTC_CGA_DATA: u8 = 0;
 static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
-static mut ATTR_CGA: u8 = 0;
 static mut CGA_STATUS: u8 = 0;
 static mut CGA_LAST_TOGGLE: Option<Instant> = None;
 const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
@@ -333,11 +333,7 @@ fn update_pit() {
                     } else {
                         ch.reload as u32
                     };
-                    let mut count = if ch.count == 0 {
-                        0x10000u32
-                    } else {
-                        ch.count as u32
-                    };
+                    let mut count = if ch.count == 0 { 0x10000u32 } else { ch.count };
                     let mut remaining = ticks as i64;
                     while remaining > 0 {
                         if remaining as u32 >= count {
@@ -348,7 +344,7 @@ fn update_pit() {
                             remaining = 0;
                         }
                     }
-                    ch.count = if count == 0x10000 { 0 } else { count as u16 };
+                    ch.count = if count == 0x10000 { 0 } else { count };
                 }
             }
         } else {
@@ -363,7 +359,7 @@ fn pit_read(idx: usize) -> u8 {
         let mut val: u32 = if ch.latched {
             ch.latch as u32
         } else {
-            ch.count as u32
+            ch.count
         };
         if val == 0 {
             val = 0x10000;
@@ -398,11 +394,19 @@ fn pit_write(idx: usize, val: u8) {
         match ch.access {
             1 => {
                 ch.reload = val as u16;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
             2 => {
                 ch.reload = (val as u16) << 8;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
             3 => {
                 if ch.rw_low {
@@ -410,13 +414,21 @@ fn pit_write(idx: usize, val: u8) {
                     ch.rw_low = false;
                 } else {
                     ch.reload = (ch.reload & 0x00FF) | ((val as u16) << 8);
-                    ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
+                    ch.count = if ch.reload == 0 {
+                        0x10000
+                    } else {
+                        ch.reload as u32
+                    };
                     ch.rw_low = true;
                 }
             }
             _ => {
                 ch.reload = (ch.reload & 0xFF00) | val as u16;
-                ch.count = if ch.reload == 0 { 0x10000 } else { ch.reload };
+                ch.count = if ch.reload == 0 {
+                    0x10000
+                } else {
+                    ch.reload as u32
+                };
             }
         }
     }
@@ -958,25 +970,10 @@ unsafe extern "system" fn emu_io_port_callback(
     unsafe {
         update_pit();
         if (*io_access).Direction == 0 {
-            if (*io_access).Port != IO_PORT_SYS_PORTC {
-                port_log!(
-                    "IN  port 0x{:04X}, size {}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize
-                );
-            }
-            if (*io_access).Port == IO_PORT_KBD_DATA {
-                for i in 0..(*io_access).AccessSize {
-                    let mut buf = [0u8; 1];
-                    if std::io::stdin().read_exact(&mut buf).is_ok() {
-                        (*io_access).Data |= (buf[0] as u32) << (i * 8);
-                    } else {
-                        return E_FAIL;
-                    }
-                }
-                S_OK
-            } else if (*io_access).Port == IO_PORT_KBD_STATUS {
-                (*io_access).Data = 0;
+            if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
+                let val = keyboard::keyboard_xt_read((*io_access).Port);
+                (*io_access).Data = val as u32;
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, val as u32, "keyboard_xt_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DISK_DATA {
                 for i in 0..(*io_access).AccessSize as usize {
@@ -990,6 +987,9 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_SYS_CTRL {
                 (*io_access).Data = SYS_CTRL as u32;
                 S_OK
+            } else if (*io_access).Port == IO_PORT_NMI {
+                (*io_access).Data = nmi::NMI_MASK as u32;
+                S_OK
             } else if (*io_access).Port == IO_PORT_SYS_PORTC {
                 let base = MEM_NIBBLE;
                 let mut val: u8 = if SYS_CTRL & 0x04 != 0 {
@@ -1001,15 +1001,12 @@ unsafe extern "system" fn emu_io_port_callback(
                     val |= 0x20;
                 }
                 (*io_access).Data = val as u32;
-                port_log!(
-                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize,
-                    val
-                );
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, val as u32, "keyboard_xt_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
-                (*io_access).Data = CGA_MODE as u32;
+                unsafe {
+                    (*io_access).Data = cga::MODE as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 (*io_access).Data = MDA_MODE as u32;
@@ -1032,52 +1029,37 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
                 let byte = pit_read(0);
                 (*io_access).Data = byte as u32;
-                port_log!(
-                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize,
-                    byte
-                );
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 let byte = pit_read(1);
                 (*io_access).Data = byte as u32;
-                port_log!(
-                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize,
-                    byte
-                );
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
                 let byte = pit_read(2);
                 (*io_access).Data = byte as u32;
-                port_log!(
-                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize,
-                    byte
-                );
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
-                (*io_access).Data = PIC_MASTER_IMR as u32;
+                unsafe {
+                    (*io_access).Data = pic::MASTER_IMR as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
-                (*io_access).Data = PIC_SLAVE_IMR as u32;
+                unsafe {
+                    (*io_access).Data = pic::SLAVE_IMR as u32;
+                }
                 S_OK
             } else if (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
-                let byte = DMA_CHAN[idx];
+                let byte = dma::dma_read((*io_access).Port);
                 (*io_access).Data = byte as u32;
-                port_log!(
-                    "IN  port 0x{:04X}, size {}, value 0x{:02X}\n",
-                    (*io_access).Port,
-                    (*io_access).AccessSize,
-                    byte
-                );
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "dma_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
-                (*io_access).Data = DMA_PAGE1 as u32;
+                unsafe {
+                    (*io_access).Data = dma::DMA_PAGE[1] as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0210 {
                 (*io_access).Data = PORT_0210_VAL as u32;
@@ -1116,7 +1098,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_CGA {
-                (*io_access).Data = ATTR_CGA as u32;
+                unsafe {
+                    (*io_access).Data = cga::COLOR as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
                 let now = Instant::now();
@@ -1139,9 +1123,7 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 (*io_access).Data = FDC_DATA as u32;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
-                || (*io_access).Port == IO_PORT_PIC_SLAVE_CMD
-            {
+            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 (*io_access).Data = 0;
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
@@ -1164,12 +1146,7 @@ unsafe extern "system" fn emu_io_port_callback(
                 E_NOTIMPL
             }
         } else {
-            port_log!(
-                "OUT port 0x{:04X}, size {}, value 0x{:X}\n",
-                (*io_access).Port,
-                (*io_access).AccessSize,
-                (*io_access).Data
-            );
+            // log handled below with specific tags
             if (*io_access).Port == IO_PORT_DISK_DATA {
                 for i in 0..(*io_access).AccessSize as usize {
                     DISK_IMAGE[DISK_OFFSET] = ((*io_access).Data >> (i * 8)) as u8;
@@ -1196,7 +1173,8 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_SYS_PORTC {
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
-                CGA_MODE = (*io_access).Data as u8;
+                cga::cga_out((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
                 S_OK
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 MDA_MODE = (*io_access).Data as u8;
@@ -1206,13 +1184,14 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 let cmd = PIT_CONTROL;
                 let chan = (cmd >> 6) & 3;
                 let access = (cmd >> 4) & 3;
                 if access == 0 {
                     if chan < 3 {
                         let ch = &mut PIT_CHANNELS[chan as usize];
-                        ch.latch = ch.count;
+                        ch.latch = ch.count as u16;
                         ch.latched = true;
                     }
                 } else if chan < 3 {
@@ -1225,12 +1204,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
                 pit_write(0, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 pit_write(1, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
                 pit_write(2, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
                 DMA_MODE = (*io_access).Data as u8;
@@ -1242,11 +1224,12 @@ unsafe extern "system" fn emu_io_port_callback(
                 DMA_CLEAR = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port <= 0x0007 {
-                let idx = ((*io_access).Port - IO_PORT_DMA_ADDR0) as usize;
-                DMA_CHAN[idx] = (*io_access).Data as u8;
+                dma::dma_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "dma_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
-                DMA_PAGE1 = (*io_access).Data as u8;
+                dma::dma_page_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "dma_page_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0210 {
                 PORT_0210_VAL = (*io_access).Data as u8;
@@ -1279,18 +1262,16 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_ATTR_MDA {
                 ATTR_MDA = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA {
-                CRTC_CGA_INDEX = (*io_access).Data as u8 & 0x1F;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
-                CRTC_CGA_DATA = (*io_access).Data as u8;
-                CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] = CRTC_CGA_DATA;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_ATTR_CGA {
-                ATTR_CGA = (*io_access).Data as u8;
+            } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA
+                || (*io_access).Port == IO_PORT_CRTC_DATA_CGA
+                || (*io_access).Port == IO_PORT_ATTR_CGA
+            {
+                cga::cga_out((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
-                CGA_STATUS = (*io_access).Data as u8;
+                cga::cga_out((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
                 FDC_DOR = (*io_access).Data as u8;
@@ -1301,21 +1282,20 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 FDC_DATA = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
-                PIC_MASTER_IMR = (*io_access).Data as u8; // treat command as IMR for simplicity
+            } else if (*io_access).Port == IO_PORT_NMI {
+                nmi::nmi_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "nmi_write");
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_SLAVE_CMD {
-                PIC_SLAVE_IMR = (*io_access).Data as u8;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
-                PIC_MASTER_IMR = (*io_access).Data as u8;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_PIC_SLAVE_DATA {
-                PIC_SLAVE_IMR = (*io_access).Data as u8;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_KBD_DATA
-                || (*io_access).Port == IO_PORT_KBD_STATUS
+            } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
+                || (*io_access).Port == IO_PORT_PIC_MASTER_DATA
+                || (*io_access).Port == IO_PORT_PIC_SLAVE_DATA
             {
+                pic::pic_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pic_write");
+                S_OK
+            } else if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
+                keyboard::keyboard_xt_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "keyboard_xt_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
                 || (*io_access).Port == IO_PORT_VIDEO_MISC_B8
@@ -1336,6 +1316,7 @@ unsafe extern "system" fn emu_io_port_callback(
                     LAST_UNKNOWN_PORT = (*io_access).Port;
                     UNKNOWN_PORT_COUNT = 1;
                 }
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "unhandled");
                 println!(
                     "Unknown I/O Port (0x{:04X}) is accessed!",
                     (*io_access).Port

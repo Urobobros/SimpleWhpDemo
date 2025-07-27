@@ -18,12 +18,42 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="nmi.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cga.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dma.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="keyboard.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vmdef.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="font8x8_basic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nmi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cga.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dma.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="keyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
