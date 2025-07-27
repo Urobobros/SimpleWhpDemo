@@ -5,6 +5,8 @@ static UCHAR pb = 0x40; // PC/XT PPI port B initial state
 static UCHAR pa = 0;
 static UCHAR key_queue[16];
 static int queue_start = 0, queue_end = 0;
+static int port62_reads = 0;
+static BOOL port62_ack = FALSE;
 
 static void KeyboardAddData(UCHAR val)
 {
@@ -21,6 +23,8 @@ void KeyboardInit(void)
     pb = 0x40; // match PCem's initial PB value
     pa = 0;
     queue_start = queue_end = 0;
+    port62_reads = 0;
+    port62_ack = FALSE;
 }
 
 UCHAR KeyboardReadData(void)
@@ -50,7 +54,17 @@ UCHAR KeyboardXtRead(USHORT port)
     case 0x61:
         return pb;
     case 0x62:
-        return 0x2D; // typická návratová hodnota XT BIOSu
+        if (port62_ack)
+        {
+            port62_ack = FALSE;
+            return 0x26;
+        }
+        if (port62_reads < 4)
+        {
+            port62_reads++;
+            return 0x2D;
+        }
+        return 0x00;
     default:
         return 0xFF;
     }
@@ -68,6 +82,11 @@ void KeyboardWrite(USHORT port, UCHAR val)
         {
             queue_start = queue_end = 0;
             KeyboardAddData(0xaa);
+        }
+        if (val == 0xA9)
+        {
+            port62_ack = TRUE;
+            port62_reads = 0;
         }
         pb = val;
         break;
