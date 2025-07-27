@@ -75,9 +75,9 @@ OUT port 0x000A, size 1, value 0x00  # dma_write
 OUT port 0x000B, size 1, value 0x41  # dma_write
 OUT port 0x000B, size 1, value 0x42  # dma_write
 OUT port 0x000B, size 1, value 0x43  # dma_write
-IN  port 0x0061, size 1, value 0x99  # keyboard_xt_read
-OUT port 0x0061, size 1, value 0xB9  # keyboard_xt_write
-OUT port 0x0061, size 1, value 0x89  # keyboard_xt_write
+IN  port 0x0061, size 1, value 0xA1  # keyboard_xt_read
+OUT port 0x0061, size 1, value 0xB1  # keyboard_xt_write
+OUT port 0x0061, size 1, value 0x81  # keyboard_xt_write
 IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
 IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
 IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
@@ -153,14 +153,14 @@ OUT port 0x03D8, size 1, value 0x28  # cga_out
 OUT port 0x03D9, size 1, value 0x30  # cga_out
 IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
 OUT port 0x0061, size 1, value 0xA9  # keyboard_xt_write
-IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
+IN  port 0x0062, size 1, value 0x26  # keyboard_xt_read
 OUT port 0x03D8, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x00  # cga_out
-OUT port 0x03D5, size 1, value 0x38  # cga_out
+OUT port 0x03D5, size 1, value 0x71  # cga_out
 OUT port 0x03D4, size 1, value 0x01  # cga_out
-OUT port 0x03D5, size 1, value 0x28  # cga_out
+OUT port 0x03D5, size 1, value 0x50  # cga_out
 OUT port 0x03D4, size 1, value 0x02  # cga_out
-OUT port 0x03D5, size 1, value 0x2D  # cga_out
+OUT port 0x03D5, size 1, value 0x5A  # cga_out
 OUT port 0x03D4, size 1, value 0x03  # cga_out
 OUT port 0x03D5, size 1, value 0x0A  # cga_out
 OUT port 0x03D4, size 1, value 0x04  # cga_out
@@ -187,836 +187,910 @@ OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D8, size 1, value 0x28  # cga_out
+OUT port 0x03D8, size 1, value 0x29  # cga_out
 OUT port 0x03D9, size 1, value 0x30  # cga_out
 OUT port 0x03D8, size 1, value 0x00  # cga_out
-IN  port 0x0061, size 1, value 0x99  # keyboard_xt_read
+IN  port 0x0061, size 1, value 0xA9  # keyboard_xt_read
 OUT port 0x0061, size 1, value 0xB9  # keyboard_xt_write
 OUT port 0x0061, size 1, value 0x89  # keyboard_xt_write
-IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
-IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
-IN  port 0x0062, size 1, value 0x2D  # keyboard_xt_read
+IN  port 0x0062, size 1, value 0x26  # keyboard_xt_read
+IN  port 0x0062, size 1, value 0x26  # keyboard_xt_read
+IN  port 0x0062, size 1, value 0x26  # keyboard_xt_read
 OUT port 0x03D8, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x00  # cga_out
-OUT port 0x03D5, size 1, value 0x38  # cga_out
-OUT port 0x03D4, size 1, value 0x01  # cga_out
-OUT port 0x03D5, size 1, value 0x28  # cga_out
-OUT port 0x03D4, size 1, value 0x02  # cga_out
-OUT port 0x03D5, size 1, value 0x2D  # cga_out
-OUT port 0x03D4, size 1, value 0x03  # cga_out
-OUT port 0x03D5, size 1, value 0x0A  # cga_out
-OUT port 0x03D4, size 1, value 0x04  # cga_out
-OUT port 0x03D5, size 1, value 0x1F  # cga_out
-OUT port 0x03D4, size 1, value 0x05  # cga_out
-OUT port 0x03D5, size 1, value 0x06  # cga_out
-OUT port 0x03D4, size 1, value 0x06  # cga_out
-OUT port 0x03D5, size 1, value 0x19  # cga_out
-OUT port 0x03D4, size 1, value 0x07  # cga_out
-OUT port 0x03D5, size 1, value 0x1C  # cga_out
-OUT port 0x03D4, size 1, value 0x08  # cga_out
-OUT port 0x03D5, size 1, value 0x02  # cga_out
-OUT port 0x03D4, size 1, value 0x09  # cga_out
-OUT port 0x03D5, size 1, value 0x07  # cga_out
-OUT port 0x03D4, size 1, value 0x0A  # cga_out
-OUT port 0x03D5, size 1, value 0x06  # cga_out
-OUT port 0x03D4, size 1, value 0x0B  # cga_out
-OUT port 0x03D5, size 1, value 0x07  # cga_out
-OUT port 0x03D4, size 1, value 0x0C  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0D  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D8, size 1, value 0x28  # cga_out
-OUT port 0x03D9, size 1, value 0x30  # cga_out
-IN  port 0x03DA, size 1, value 0x01
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-IN  port 0x03DA, size 1, value 0x00
-OUT port 0x03D8, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x00  # cga_out
-OUT port 0x03D5, size 1, value 0x38  # cga_out
-OUT port 0x03D4, size 1, value 0x01  # cga_out
-OUT port 0x03D5, size 1, value 0x28  # cga_out
-OUT port 0x03D4, size 1, value 0x02  # cga_out
-OUT port 0x03D5, size 1, value 0x2D  # cga_out
-OUT port 0x03D4, size 1, value 0x03  # cga_out
-OUT port 0x03D5, size 1, value 0x0A  # cga_out
-OUT port 0x03D4, size 1, value 0x04  # cga_out
-OUT port 0x03D5, size 1, value 0x1F  # cga_out
-OUT port 0x03D4, size 1, value 0x05  # cga_out
-OUT port 0x03D5, size 1, value 0x06  # cga_out
-OUT port 0x03D4, size 1, value 0x06  # cga_out
-OUT port 0x03D5, size 1, value 0x19  # cga_out
-OUT port 0x03D4, size 1, value 0x07  # cga_out
-OUT port 0x03D5, size 1, value 0x1C  # cga_out
-OUT port 0x03D4, size 1, value 0x08  # cga_out
-OUT port 0x03D5, size 1, value 0x02  # cga_out
-OUT port 0x03D4, size 1, value 0x09  # cga_out
-OUT port 0x03D5, size 1, value 0x07  # cga_out
-OUT port 0x03D4, size 1, value 0x0A  # cga_out
-OUT port 0x03D5, size 1, value 0x06  # cga_out
-OUT port 0x03D4, size 1, value 0x0B  # cga_out
-OUT port 0x03D5, size 1, value 0x07  # cga_out
-OUT port 0x03D4, size 1, value 0x0C  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0D  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D8, size 1, value 0x28  # cga_out
-OUT port 0x03D9, size 1, value 0x30  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x70  # cga_out
-IN  port 0x03DA, size 1, value 0x01
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x71  # cga_out
+OUT port 0x03D4, size 1, value 0x01  # cga_out
+OUT port 0x03D5, size 1, value 0x50  # cga_out
+OUT port 0x03D4, size 1, value 0x02  # cga_out
+OUT port 0x03D5, size 1, value 0x5A  # cga_out
+OUT port 0x03D4, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x0A  # cga_out
+OUT port 0x03D4, size 1, value 0x04  # cga_out
+OUT port 0x03D5, size 1, value 0x1F  # cga_out
+OUT port 0x03D4, size 1, value 0x05  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x06  # cga_out
+OUT port 0x03D5, size 1, value 0x19  # cga_out
+OUT port 0x03D4, size 1, value 0x07  # cga_out
+OUT port 0x03D5, size 1, value 0x1C  # cga_out
+OUT port 0x03D4, size 1, value 0x08  # cga_out
+OUT port 0x03D5, size 1, value 0x02  # cga_out
+OUT port 0x03D4, size 1, value 0x09  # cga_out
+OUT port 0x03D5, size 1, value 0x07  # cga_out
+OUT port 0x03D4, size 1, value 0x0A  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0B  # cga_out
+OUT port 0x03D5, size 1, value 0x07  # cga_out
+OUT port 0x03D4, size 1, value 0x0C  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0D  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D8, size 1, value 0x29  # cga_out
+OUT port 0x03D9, size 1, value 0x30  # cga_out
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x00
+OUT port 0x03D8, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x71  # cga_out
+OUT port 0x03D4, size 1, value 0x01  # cga_out
+OUT port 0x03D5, size 1, value 0x50  # cga_out
+OUT port 0x03D4, size 1, value 0x02  # cga_out
+OUT port 0x03D5, size 1, value 0x5A  # cga_out
+OUT port 0x03D4, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x0A  # cga_out
+OUT port 0x03D4, size 1, value 0x04  # cga_out
+OUT port 0x03D5, size 1, value 0x1F  # cga_out
+OUT port 0x03D4, size 1, value 0x05  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x06  # cga_out
+OUT port 0x03D5, size 1, value 0x19  # cga_out
+OUT port 0x03D4, size 1, value 0x07  # cga_out
+OUT port 0x03D5, size 1, value 0x1C  # cga_out
+OUT port 0x03D4, size 1, value 0x08  # cga_out
+OUT port 0x03D5, size 1, value 0x02  # cga_out
+OUT port 0x03D4, size 1, value 0x09  # cga_out
+OUT port 0x03D5, size 1, value 0x07  # cga_out
+OUT port 0x03D4, size 1, value 0x0A  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0B  # cga_out
+OUT port 0x03D5, size 1, value 0x07  # cga_out
+OUT port 0x03D4, size 1, value 0x0C  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0D  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D8, size 1, value 0x29  # cga_out
+OUT port 0x03D9, size 1, value 0x30  # cga_out
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xE0  # cga_out
+IN  port 0x03DA, size 1, value 0x01
 IN  port 0x03DA, size 1, value 0x00
 IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x72  # cga_out
+OUT port 0x03D5, size 1, value 0xE1  # cga_out
 IN  port 0x03DA, size 1, value 0x00
 IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x73  # cga_out
+OUT port 0x03D5, size 1, value 0xE2  # cga_out
 IN  port 0x03DA, size 1, value 0x00
 IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x74  # cga_out
+OUT port 0x03D5, size 1, value 0xE3  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xE4  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x75  # cga_out
+OUT port 0x03D5, size 1, value 0xE5  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x76  # cga_out
+OUT port 0x03D5, size 1, value 0xE6  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x77  # cga_out
+OUT port 0x03D5, size 1, value 0xE7  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x78  # cga_out
+OUT port 0x03D5, size 1, value 0xE8  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x79  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7A  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7B  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7C  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7D  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7E  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x7F  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x80  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x81  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x82  # cga_out
+OUT port 0x03D5, size 1, value 0xE9  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x83  # cga_out
+OUT port 0x03D5, size 1, value 0xEA  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xEB  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xEC  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xED  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xEE  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x03  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x84  # cga_out
+OUT port 0x03D5, size 1, value 0xEF  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x28  # cga_out
+OUT port 0x03D5, size 1, value 0xF0  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x29  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2A  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2B  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2C  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2D  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2E  # cga_out
+OUT port 0x03D5, size 1, value 0xF1  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x2F  # cga_out
+OUT port 0x03D5, size 1, value 0xF2  # cga_out
 IN  port 0x03DA, size 1, value 0x08
 IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x30  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D5, size 1, value 0xF3  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D5, size 1, value 0x06  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x31  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x32  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x33  # cga_out
+OUT port 0x03D5, size 1, value 0xF4  # cga_out
 IN  port 0x03DA, size 1, value 0x00
 IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x34  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x35  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x36  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x37  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x38  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x39  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3A  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3B  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3C  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3D  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3E  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x3F  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x40  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x41  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x42  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x43  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x44  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x45  # cga_out
-OUT port 0x03D4, size 1, value 0x0E  # cga_out
-OUT port 0x03D5, size 1, value 0x00  # cga_out
-OUT port 0x03D4, size 1, value 0x0F  # cga_out
-OUT port 0x03D5, size 1, value 0x28  # cga_out
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x50  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x51  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x52  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x53  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x54  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x55  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x56  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x57  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x58  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x59  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5A  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5B  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5C  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5D  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5E  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x5F  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x60  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x61  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x62  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x63  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x64  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x65  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x66  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x67  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x68  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x69  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x6A  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x6B  # cga_out
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x6C  # cga_out
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x6D  # cga_out
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0x50  # cga_out
+OUT port 0x03D4, size 1, value 0x0E  # cga_out
+OUT port 0x03D5, size 1, value 0x00  # cga_out
+OUT port 0x03D4, size 1, value 0x0F  # cga_out
+OUT port 0x03D5, size 1, value 0xA0  # cga_out
 OUT port 0x0021, size 1, value 0xAA  # pic_write
 IN  port 0x0021, size 1, value 0xAA
 OUT port 0x0021, size 1, value 0x55  # pic_write
@@ -1081,7 +1155,7 @@ OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x2A  # cga_out
 IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
@@ -1152,8 +1226,8 @@ OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x36  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
@@ -1196,8 +1270,8 @@ OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x54  # cga_out
-IN  port 0x03DA, size 1, value 0x08
-IN  port 0x03DA, size 1, value 0x09
+IN  port 0x03DA, size 1, value 0x00
+IN  port 0x03DA, size 1, value 0x01
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
@@ -1226,14 +1300,14 @@ OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x59  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
 OUT port 0x03D5, size 1, value 0x5A  # cga_out
-IN  port 0x03DA, size 1, value 0x00
-IN  port 0x03DA, size 1, value 0x01
+IN  port 0x03DA, size 1, value 0x08
+IN  port 0x03DA, size 1, value 0x09
 OUT port 0x03D4, size 1, value 0x0E  # cga_out
 OUT port 0x03D5, size 1, value 0x00  # cga_out
 OUT port 0x03D4, size 1, value 0x0F  # cga_out
@@ -1253,83 +1327,9 @@ OUT port 0x03D5, size 1, value 0x5D  # cga_out
 OUT port 0x0043, size 1, value 0xB6  # pit_write
 OUT port 0x0042, size 1, value 0x05  # pit_write
 OUT port 0x0042, size 1, value 0x05  # pit_write
-IN  port 0x0061, size 1, value 0x99  # keyboard_xt_read
-OUT port 0x0061, size 1, value 0x9B  # keyboard_xt_write
-OUT port 0x0061, size 1, value 0x99  # keyboard_xt_write
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
-OUT port 0x0020, size 1, value 0x0B  # pic_write
-IN  port 0x0020, size 1, value 0x00
+IN  port 0x0061, size 1, value 0x89  # keyboard_xt_read
+OUT port 0x0061, size 1, value 0x8B  # keyboard_xt_write
+OUT port 0x0061, size 1, value 0x89  # keyboard_xt_write
 OUT port 0x0020, size 1, value 0x0B  # pic_write
 IN  port 0x0020, size 1, value 0x00
 OUT port 0x0020, size 1, value 0x0B  # pic_write
