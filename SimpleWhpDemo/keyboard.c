@@ -52,6 +52,7 @@ UCHAR KeyboardXtRead(USHORT port)
     case 0x60:
         return KeyboardReadData();
     case 0x61:
+    case 0x63:
         return pb;
     case 0x62:
         if (port62_ack)
@@ -78,6 +79,7 @@ void KeyboardWrite(USHORT port, UCHAR val)
         pa = val;
         break;
     case 0x61:
+    case 0x63:
         if ((pb & 0x40) == 0 && (val & 0x40))
         {
             queue_start = queue_end = 0;

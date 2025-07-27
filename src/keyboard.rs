@@ -6,6 +6,8 @@ use std::sync::Mutex;
 pub struct Keyboard {
     queue: VecDeque<u8>,
     pb: u8,
+    port62_reads: u8,
+    port62_ack: bool,
 }
 
 impl Keyboard {
@@ -13,6 +15,8 @@ impl Keyboard {
         Keyboard {
             queue: VecDeque::with_capacity(16),
             pb: 0x40,
+            port62_reads: 0,
+            port62_ack: false,
         }
     }
 
@@ -40,10 +44,14 @@ impl Keyboard {
     }
 
     fn write_inner(&mut self, port: u16, val: u8) {
-        if port == 0x61 {
+        if port == 0x61 || port == 0x63 {
             if (self.pb & 0x40) == 0 && (val & 0x40) != 0 {
                 self.queue.clear();
                 self.push_scancode(0xaa);
+            }
+            if val == 0xA9 {
+                self.port62_ack = true;
+                self.port62_reads = 0;
             }
             self.pb = val;
         }
@@ -71,8 +79,18 @@ pub fn keyboard_xt_read(port: u16) -> u8 {
     let mut kb = KEYBOARD.lock().unwrap();
     match port {
         0x60 => kb.read_data_inner(),
-        0x61 => kb.pb,
-        0x62 => 0x2d,
+        0x61 | 0x63 => kb.pb,
+        0x62 => {
+            if kb.port62_ack {
+                kb.port62_ack = false;
+                0x26
+            } else if kb.port62_reads < 4 {
+                kb.port62_reads += 1;
+                0x2d
+            } else {
+                0x00
+            }
+        }
         _ => 0xff,
     }
 }
