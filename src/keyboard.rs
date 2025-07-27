@@ -12,7 +12,7 @@ impl Keyboard {
     pub fn new() -> Self {
         Keyboard {
             queue: VecDeque::with_capacity(16),
-            pb: 0,
+            pb: 0x40,
         }
     }
 
@@ -40,7 +40,7 @@ impl Keyboard {
     }
 
     fn write_inner(&mut self, port: u16, val: u8) {
-        if port == 0x61 {
+        if port == 0x61 || port == 0x63 {
             if (self.pb & 0x40) == 0 && (val & 0x40) != 0 {
                 self.queue.clear();
                 self.push_scancode(0xaa);
@@ -71,7 +71,7 @@ pub fn keyboard_xt_read(port: u16) -> u8 {
     let mut kb = KEYBOARD.lock().unwrap();
     match port {
         0x60 => kb.read_data_inner(),
-        0x61 => kb.pb,
+        0x61 | 0x63 => kb.pb,
         0x62 => 0x2d,
         _ => 0xff,
     }
