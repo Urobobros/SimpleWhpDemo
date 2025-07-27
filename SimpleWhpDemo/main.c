@@ -407,6 +407,19 @@ static void SyncCgaFromMemory(void)
 #endif
 }
 
+static void UpdateCgaStatus(void)
+{
+        ULONGLONG now = GetTickCount64();
+        if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS)
+        {
+                /* toggle vertical retrace bit roughly every frame */
+                CgaStatus ^= 0x08;
+                CgaLastToggleMs = now;
+        }
+        /* toggle display enable bit each poll to avoid hangs */
+        CgaStatus ^= 0x01;
+}
+
 #if SW_HAVE_SDL2
 static void RenderCgaWindow()
 {
@@ -959,11 +972,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_CGA_STATUS)
                {
-                       ULONGLONG now = GetTickCount64();
-                       if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS) {
-                               CgaStatus ^= 0x08; /* toggle vertical retrace bit */
-                               CgaLastToggleMs = now;
-                       }
+                       UpdateCgaStatus();
                        IoAccess->Data = CgaStatus;
                        RETURN_OK;
                }
