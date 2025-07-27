@@ -3,6 +3,23 @@ use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::sync::Mutex;
 
+#[macro_export]
+macro_rules! port_log_tag {
+    ($dir:expr, $port:expr, $size:expr, $val:expr, $tag:expr $(,)?) => {
+        $crate::portlog::port_log_io_with_tag($dir, $port, $size, $val, $tag);
+    };
+}
+
+#[macro_export]
+macro_rules! port_log {
+    ($fmt:expr $(, $args:expr)* $(,)?) => {
+        #[cfg(debug_assertions)]
+        {
+            $crate::portlog::port_log(&format!($fmt $(, $args)*));
+        }
+    };
+}
+
 static PORT_LOG: Lazy<Mutex<Option<File>>> = Lazy::new(|| Mutex::new(None));
 
 pub fn port_log(msg: &str) {
@@ -46,20 +63,3 @@ pub fn port_log_io_with_tag(direction_out: bool, port: u16, size: u8, value: u32
 
 #[cfg(not(debug_assertions))]
 pub fn port_log_io_with_tag(_direction_out: bool, _port: u16, _size: u8, _value: u32, _tag: &str) {}
-
-#[macro_export]
-macro_rules! port_log_tag {
-    ($dir:expr, $port:expr, $size:expr, $val:expr, $tag:expr $(,)?) => {
-        $crate::portlog::port_log_io_with_tag($dir, $port, $size, $val, $tag);
-    };
-}
-
-#[macro_export]
-macro_rules! port_log {
-    ($fmt:expr $(, $args:expr)* $(,)?) => {
-        #[cfg(debug_assertions)]
-        {
-            $crate::portlog::port_log(&format!($fmt $(, $args)*));
-        }
-    };
-}
