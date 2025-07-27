@@ -407,16 +407,19 @@ static void SyncCgaFromMemory(void)
 #endif
 }
 
+#define CGA_TOGGLE_PERIOD_MS 16
+
+
 static void UpdateCgaStatus(void)
 {
         ULONGLONG now = GetTickCount64();
-        if (now - CgaLastToggleMs >= CGA_TOGGLE_PERIOD_MS)
-        {
-                /* toggle vertical retrace bit roughly every frame */
-                CgaStatus ^= 0x08;
-                CgaLastToggleMs = now;
-        }
-        /* toggle display enable bit each poll to avoid hangs */
+        BOOL retrace = ((now / CGA_TOGGLE_PERIOD_MS) & 1) != 0;
+        if (retrace)
+                CgaStatus |= 0x08;
+        else
+                CgaStatus &= ~0x08;
+
+        /* Toggle display enable bit each poll so loops can progress */
         CgaStatus ^= 0x01;
 }
 
