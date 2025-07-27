@@ -1064,6 +1064,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                
                SpeakerOn = new_state;
                PortLogIoWithTag(IoAccess, "keyboard_xt_write");
+               KeyboardXtWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
 
                RETURN_OK;
        }
