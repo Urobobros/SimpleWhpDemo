@@ -6,7 +6,7 @@ static UCHAR pa = 0;
 static UCHAR key_queue[16];
 static int queue_start = 0, queue_end = 0;
 static int port62_reads = 0;
-static BOOL port62_ack = FALSE;
+static int port62_ack_count = 0;
 
 static void KeyboardAddData(UCHAR val)
 {
@@ -24,7 +24,7 @@ void KeyboardInit(void)
     pa = 0;
     queue_start = queue_end = 0;
     port62_reads = 0;
-    port62_ack = FALSE;
+    port62_ack_count = 0;
 }
 
 UCHAR KeyboardReadData(void)
@@ -55,9 +55,9 @@ UCHAR KeyboardXtRead(USHORT port)
     case 0x63:
         return pb;
     case 0x62:
-        if (port62_ack)
+        if (port62_ack_count > 0)
         {
-            port62_ack = FALSE;
+            port62_ack_count--;
             return 0x26;
         }
         if (port62_reads < 4)
@@ -87,7 +87,7 @@ void KeyboardWrite(USHORT port, UCHAR val)
         }
         if (val == 0xA9)
         {
-            port62_ack = TRUE;
+            port62_ack_count = 4;
             port62_reads = 0;
         }
         pb = val;

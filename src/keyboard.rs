@@ -7,7 +7,7 @@ pub struct Keyboard {
     queue: VecDeque<u8>,
     pb: u8,
     port62_reads: u8,
-    port62_ack: bool,
+    port62_ack_count: u8,
 }
 
 impl Keyboard {
@@ -16,7 +16,7 @@ impl Keyboard {
             queue: VecDeque::with_capacity(16),
             pb: 0x40,
             port62_reads: 0,
-            port62_ack: false,
+            port62_ack_count: 0,
         }
     }
 
@@ -50,7 +50,7 @@ impl Keyboard {
                 self.push_scancode(0xaa);
             }
             if val == 0xA9 {
-                self.port62_ack = true;
+                self.port62_ack_count = 4;
                 self.port62_reads = 0;
             }
             self.pb = val;
@@ -81,8 +81,8 @@ pub fn keyboard_xt_read(port: u16) -> u8 {
         0x60 => kb.read_data_inner(),
         0x61 | 0x63 => kb.pb,
         0x62 => {
-            if kb.port62_ack {
-                kb.port62_ack = false;
+            if kb.port62_ack_count > 0 {
+                kb.port62_ack_count -= 1;
                 0x26
             } else if kb.port62_reads < 4 {
                 kb.port62_reads += 1;
