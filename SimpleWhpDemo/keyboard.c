@@ -49,8 +49,6 @@ UCHAR KeyboardXtRead(USHORT port)
         return KeyboardReadData();
     case 0x61:
         return pb;
-    case 0x63:
-        return pb; // some clones use port 0x63
     case 0x62:
         return 0x2D; // typická návratová hodnota XT BIOSu
     default:
@@ -66,7 +64,6 @@ void KeyboardWrite(USHORT port, UCHAR val)
         pa = val;
         break;
     case 0x61:
-    case 0x63: // XT klony často používají 0x63 stejně jako 0x61
         if ((pb & 0x40) == 0 && (val & 0x40))
         {
             queue_start = queue_end = 0;
