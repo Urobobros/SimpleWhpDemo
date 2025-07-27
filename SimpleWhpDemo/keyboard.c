@@ -3,22 +3,42 @@
 
 static UCHAR pb = 0x40; // PC/XT PPI port B initial state
 static UCHAR pa = 0;
+static UCHAR key_queue[16];
+static int queue_start = 0, queue_end = 0;
+
+static void KeyboardAddData(UCHAR val)
+{
+    int next = (queue_end + 1) & 0xF;
+    if (next != queue_start)
+    {
+        key_queue[queue_end] = val;
+        queue_end = next;
+    }
+}
 
 void KeyboardInit(void)
 {
     pb = 0x40; // match PCem's initial PB value
     pa = 0;
+    queue_start = queue_end = 0;
 }
 
 UCHAR KeyboardReadData(void)
 {
+    if (queue_start != queue_end)
+    {
+        UCHAR val = key_queue[queue_start];
+        queue_start = (queue_start + 1) & 0xF;
+        return val;
+    }
+
     int ch = getchar();
     return (UCHAR)ch;
 }
 
 UCHAR KeyboardReadStatus(void)
 {
-    return 0;
+    return (queue_start != queue_end) ? 1 : 0;
 }
 
 UCHAR KeyboardXtRead(USHORT port)
@@ -46,7 +66,8 @@ void KeyboardWrite(USHORT port, UCHAR val)
     case 0x61:
         if ((pb & 0x40) == 0 && (val & 0x40))
         {
-            // keyboard reset ack – zatím neimplementováno
+            queue_start = queue_end = 0;
+            KeyboardAddData(0xaa);
         }
         pb = val;
         break;
