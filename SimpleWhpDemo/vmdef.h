@@ -5,6 +5,10 @@
 
 #define IO_PORT_STRING_PRINT	0x0000
 #define IO_PORT_KEYBOARD_INPUT	0x0001
+#define IO_PORT_PPI_B           0x0061
+
+// Value returned by the 8255 PPI port B on reset
+extern UINT8 PpiPortB;
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;

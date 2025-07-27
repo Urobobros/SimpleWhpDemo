@@ -18,6 +18,51 @@ static GLOBAL_EMULATOR_CALLBACKS:WHV_EMULATOR_CALLBACKS=WHV_EMULATOR_CALLBACKS
 
 const IO_PORT_STRING_PRINT:u16=0x0000;
 const IO_PORT_KEYBOARD_INPUT:u16=0x0001;
+const IO_PORT_PPI_B:u16=0x0061;
+// Value returned by the 8255 PPI port B on reset
+static mut PPI_PORT_B:u8=0xA1;
+const GUEST_MEMORY_SIZE:usize=0x200000;
+
+const DEBUG_GPR_COUNT:usize=0x12;
+const DEBUG_GPR_REG_NAMES:[WHV_REGISTER_NAME;DEBUG_GPR_COUNT]=[
+        WHvX64RegisterRax,
+        WHvX64RegisterRcx,
+        WHvX64RegisterRdx,
+        WHvX64RegisterRbx,
+        WHvX64RegisterRsp,
+        WHvX64RegisterRbp,
+        WHvX64RegisterRsi,
+        WHvX64RegisterRdi,
+        WHvX64RegisterR8,
+        WHvX64RegisterR9,
+        WHvX64RegisterR10,
+        WHvX64RegisterR11,
+        WHvX64RegisterR12,
+        WHvX64RegisterR13,
+        WHvX64RegisterR14,
+        WHvX64RegisterR15,
+        WHvX64RegisterRip,
+        WHvX64RegisterRflags
+];
+const DEBUG_GPR_NAMES:[&str;DEBUG_GPR_COUNT]=[
+        "rax","rcx","rdx","rbx","rsp",
+        "rbp","rsi","rdi","r8","r9",
+        "r10","r11","r12","r13",
+        "r14","r15","rip","rflags"
+];
+
+const DEBUG_SEG_COUNT:usize=8;
+const DEBUG_SEG_REG_NAMES:[WHV_REGISTER_NAME;DEBUG_SEG_COUNT]=[
+        WHvX64RegisterEs,
+        WHvX64RegisterCs,
+        WHvX64RegisterSs,
+        WHvX64RegisterDs,
+        WHvX64RegisterFs,
+        WHvX64RegisterGs,
+        WHvX64RegisterLdtr,
+        WHvX64RegisterTr
+];
+const DEBUG_SEG_NAMES:[&str;DEBUG_SEG_COUNT]=["es","cs","ss","ds","fs","gs","ldtr","tr"];
 
 const INITIAL_VCPU_COUNT:usize=40;
 const INITIAL_VCPU_REGISTER_NAMES:[WHV_REGISTER_NAME;INITIAL_VCPU_COUNT]=
@@ -168,7 +213,7 @@ impl SimpleVirtualMachine
 		}
 	}
 
-	fn load_program(&self,file_name:&str,offset:usize)->Result<()>
+        fn load_program(&self,file_name:&str,offset:usize)->Result<()>
 	{
 		let path=file_name.encode_utf16();
 		let v:Vec<u16>=path.collect();
@@ -196,8 +241,44 @@ impl SimpleVirtualMachine
 				r
 			}
 			Err(e)=>Err(e)
-		}
-	}
+                }
+        }
+
+        fn dump_gpr_state(&self)
+        {
+                let mut values=[WHV_REGISTER_VALUE::default();DEBUG_GPR_COUNT];
+                unsafe
+                {
+                        if WHvGetVirtualProcessorRegisters(self.handle,0,DEBUG_GPR_REG_NAMES.as_ptr(),DEBUG_GPR_COUNT as u32,values.as_mut_ptr()).is_ok()
+                        {
+                                println!("============ Dumping General-Purpose Registers ============");
+                                println!("Name\t Value");
+                                for i in 0..DEBUG_GPR_COUNT
+                                {
+                                        let val=unsafe{values[i].Reg64};
+                                        println!("{}\t 0x{:016X}",DEBUG_GPR_NAMES[i],val);
+                                }
+                        }
+                }
+        }
+
+        fn dump_segment_state(&self)
+        {
+                let mut values=[WHV_REGISTER_VALUE::default();DEBUG_SEG_COUNT];
+                unsafe
+                {
+                        if WHvGetVirtualProcessorRegisters(self.handle,0,DEBUG_SEG_REG_NAMES.as_ptr(),DEBUG_SEG_COUNT as u32,values.as_mut_ptr()).is_ok()
+                        {
+                                println!("============ Dumping Segment Registers ============");
+                                println!("Name\t Selector\t Attributes\t Limit\t\t Base");
+                                for i in 0..DEBUG_SEG_COUNT
+                                {
+                                        let seg=unsafe{values[i].Segment};
+                                        println!("{}\t 0x{:04X}\t\t 0x{:04X}\t\t 0x{:08X}\t 0x{:016X}",DEBUG_SEG_NAMES[i],seg.Selector,unsafe{seg.Anonymous.Attributes},seg.Limit,seg.Base);
+                                }
+                        }
+                }
+        }
 
 	fn run(&self)
 	{
@@ -212,14 +293,33 @@ impl SimpleVirtualMachine
 			}
 			else
 			{
-				#[allow(non_upper_case_globals)]
-				match exit_ctxt.ExitReason
-				{
-					WHvRunVpExitReasonX64IoPortAccess=>
-					{
-						match self.try_emulate_io(&raw const exit_ctxt.VpContext,unsafe{&raw const exit_ctxt.Anonymous.IoPortAccess})
-						{
-							Ok(st)=>
+                                #[allow(non_upper_case_globals)]
+                                match exit_ctxt.ExitReason
+                                {
+                                        WHvRunVpExitReasonMemoryAccess=>
+                                        {
+                                                let access_type=["Read","Write","Execute","Unknown"];
+                                                let info=unsafe{exit_ctxt.Anonymous.MemoryAccess};
+                                                println!("Memory Access Violation occured!");
+                                                println!("Access Context: GVA=0x{:X} GPA=0x{:X}",info.Gva,info.Gpa);
+                                                let ai=unsafe{info.AccessInfo};
+                                                println!("Behavior: {}\tGVA is {} \tGPA is {}",access_type[ai.AccessType as usize],if ai.GvaValid!=0{"Valid"} else {"Invalid"},if ai.GpaUnmapped!=0{"Unmapped"} else {"Mapped"});
+                                                print!("Number of Instruction Bytes: {}\n Instruction Bytes: ",info.InstructionByteCount);
+                                                for i in 0..info.InstructionByteCount
+                                                {
+                                                        let b=info.InstructionBytes[i as usize];
+                                                        print!("{:02X} ",b);
+                                                }
+                                                println!("");
+                                                self.dump_gpr_state();
+                                                self.dump_segment_state();
+                                                cont_exec=false;
+                                        }
+                                        WHvRunVpExitReasonX64IoPortAccess=>
+                                        {
+                                                match self.try_emulate_io(&raw const exit_ctxt.VpContext,unsafe{&raw const exit_ctxt.Anonymous.IoPortAccess})
+                                                {
+                                                        Ok(st)=>
 							{
 								let s=unsafe{st.AsUINT32};
 								if s!=1
@@ -234,10 +334,24 @@ impl SimpleVirtualMachine
 							}
 						}
 					}
-					WHvRunVpExitReasonX64Halt=>
-					{
-						cont_exec=false;
-					}
+                                        WHvRunVpExitReasonX64Halt=>
+                                        {
+                                                let rflags=exit_ctxt.VpContext.Rflags;
+                                                cont_exec=(rflags&(1<<9))!=0;
+                                                let rip_name=WHvX64RegisterRip;
+                                                let mut rip_val=WHV_REGISTER_VALUE{Reg64:exit_ctxt.VpContext.Rip+exit_ctxt.VpContext.InstructionLength as u64};
+                                                let _=unsafe{WHvSetVirtualProcessorRegisters(self.handle,0,&raw const rip_name,1,&raw const rip_val)};
+                                        }
+                                        WHvRunVpExitReasonUnrecoverableException=>
+                                        {
+                                                println!("The processor went into shutdown state due to unrecoverable exception!");
+                                                cont_exec=false;
+                                        }
+                                        WHvRunVpExitReasonInvalidVpRegisterValue=>
+                                        {
+                                                println!("The specified processor state is invalid!");
+                                                cont_exec=false;
+                                        }
 					_=>
 					{
 						println!("Unknown Exit Reason: 0x{:X}!",exit_ctxt.ExitReason.0);
@@ -295,6 +409,15 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 }
                                 S_OK
                         }
+                        else if (*io_access).Port==IO_PORT_PPI_B
+                        {
+                                (*io_access).Data=0;
+                                for i in 0..(*io_access).AccessSize
+                                {
+                                        (*io_access).Data|=((PPI_PORT_B as u64) << (i*8));
+                                }
+                                S_OK
+                        }
                         else
                         {
                                 println!("Input is not implemented!");
@@ -308,6 +431,16 @@ unsafe extern "system" fn emu_io_port_callback(_context:*const c_void,io_access:
                                 let ch=(((*io_access).Data>>(i*8)) as u8) as char;
                                 print!("{}",ch);
                         }
+                        S_OK
+                }
+                else if (*io_access).Port==IO_PORT_PPI_B
+                {
+                        let mut val=0u64;
+                        for i in 0..(*io_access).AccessSize
+                        {
+                                val|=((*io_access).Data>>(i*8)) & 0xFF;
+                        }
+                        PPI_PORT_B=val as u8;
                         S_OK
                 }
                 else
@@ -378,9 +511,9 @@ unsafe extern "system" fn emu_set_vcpu_reg_callback(context:*const c_void,reg_na
 
 unsafe extern "system" fn emu_translate_gva_callback(context:*const c_void,gva_page:u64,translate_flags:WHV_TRANSLATE_GVA_FLAGS,translation_result:*mut WHV_TRANSLATE_GVA_RESULT_CODE,gpa_page:*mut u64)->HRESULT
 {
-	unsafe
-	{
-		let ctxt:&SimpleVirtualMachine=&(*context.cast());
+        unsafe
+        {
+                let ctxt:&SimpleVirtualMachine=&(*context.cast());
 		let mut r:WHV_TRANSLATE_GVA_RESULT=WHV_TRANSLATE_GVA_RESULT::default();
 		match WHvTranslateGva(ctxt.handle,0,gva_page,translate_flags,&raw mut r,gpa_page)
 		{
@@ -390,8 +523,37 @@ unsafe extern "system" fn emu_translate_gva_callback(context:*const c_void,gva_p
 				S_OK
 			}
 			Err(e)=>e.code()
-		}
-	}
+                }
+        }
+}
+
+fn check_system_hypervisor()->HRESULT
+{
+        unsafe
+        {
+                let mut present:BOOL=BOOL(0);
+                match WHvGetCapability(WHvCapabilityCodeHypervisorPresent,(&mut present as *mut _).cast(),size_of::<BOOL>() as u32,None)
+                {
+                        Ok(_)=>
+                        {
+                                if present.as_bool()
+                                {
+                                        println!("Hypervisor is Present to run SimpleWhpDemo!");
+                                        S_OK
+                                }
+                                else
+                                {
+                                        println!("Failed to run SimpleWhpDemo! Hypervisor is Not Present!");
+                                        S_FALSE
+                                }
+                        }
+                        Err(e)=>
+                        {
+                                println!("Failed to query hypervisor presence! Reason: {e}");
+                                e.code()
+                        }
+                }
+        }
 }
 
 fn init_whpx()->HRESULT
@@ -430,11 +592,11 @@ fn init_whpx()->HRESULT
 
 fn main()
 {
-	if init_whpx()==S_OK
-	{
-		println!("WHPX is present and initalized!");
-		if let Ok(vm)=SimpleVirtualMachine::new(0x100000)
-		{
+        if check_system_hypervisor()==S_OK && init_whpx()==S_OK
+        {
+                println!("WHPX is present and initalized!");
+                if let Ok(vm)=SimpleVirtualMachine::new(GUEST_MEMORY_SIZE)
+                {
 			println!("Successfully created virtual machine!");
 			if let Err(e)=vm.load_program("ivt.fw\0",0)
 			{

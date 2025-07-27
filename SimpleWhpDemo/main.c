@@ -5,6 +5,8 @@
 #include <WinHvEmulation.h>
 #include "vmdef.h"
 
+UINT8 PpiPortB = 0xA1;
+
 HRESULT SwCheckSystemHypervisor()
 {
 	UINT32 ReturnLength;
@@ -203,6 +205,13 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                         }
                         return S_OK;
                 }
+                else if (IoAccess->Port == IO_PORT_PPI_B)
+                {
+                        IoAccess->Data = 0;
+                        for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                                IoAccess->Data |= ((ULONG64)PpiPortB) << (i * 8);
+                        return S_OK;
+                }
                 puts("Input is not implemented!");
                 return E_NOTIMPL;
         }
@@ -210,6 +219,14 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
         {
                 for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
                         putc(((PUCHAR)&IoAccess->Data)[i], stdout);
+                return S_OK;
+        }
+        else if (IoAccess->Port == IO_PORT_PPI_B)
+        {
+                ULONG64 val = 0;
+                for (UINT8 i = 0; i < IoAccess->AccessSize; i++)
+                        val |= (IoAccess->Data >> (i * 8)) & 0xFF;
+                PpiPortB = (UINT8)val;
                 return S_OK;
         }
         else
