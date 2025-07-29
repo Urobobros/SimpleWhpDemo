@@ -2,7 +2,7 @@ bits 16
 org 0x100
 
 %define str_prt_port    0
-%define kbd_in_port     1
+%define kbd_in_port     0x60
 
 segment .text
 start:

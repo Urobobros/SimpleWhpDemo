@@ -1,10 +1,53 @@
 #pragma once
 
-// Give the guest 2MiB of memory.
-#define GuestMemorySize		0x200000
+// Give the guest 1MiB of memory.
+#define GuestMemorySize         0x100000
 
 #define IO_PORT_STRING_PRINT	0x0000
-#define IO_PORT_KEYBOARD_INPUT	0x0001
+#define IO_PORT_KEYBOARD_INPUT  0x0001 /* legacy */
+#define IO_PORT_KBD_DATA        0x0060
+#define IO_PORT_KBD_STATUS      0x0064
+#define IO_PORT_DISK_DATA       0x00FF
+#define IO_PORT_POST            0x0080
+#define IO_PORT_PIC_MASTER_CMD  0x0020
+#define IO_PORT_PIC_MASTER_DATA 0x0021
+#define IO_PORT_SYS_CTRL        0x0061
+#define IO_PORT_SYS_PORTC       0x0062
+#define IO_PORT_PIC_SLAVE_CMD   0x00A0
+#define IO_PORT_PIC_SLAVE_DATA  0x00A1
+#define IO_PORT_MDA_MODE        0x03B8
+#define IO_PORT_CGA_MODE        0x03D8
+#define IO_PORT_DMA_PAGE3       0x0083
+#define IO_PORT_DMA_MASK        0x000A
+#define IO_PORT_VIDEO_MISC_B8   0x00B8
+#define IO_PORT_SPECIAL_213     0x0213
+#define IO_PORT_PIT_CMD         0x0008
+#define IO_PORT_DMA_MODE        0x000B
+#define IO_PORT_DMA_TEMP        0x000D
+#define IO_PORT_PIT_COUNTER0    0x0040
+#define IO_PORT_PIT_COUNTER1    0x0041
+#define IO_PORT_PIT_COUNTER2    0x0042
+#define IO_PORT_PIT_CONTROL     0x0043
+#define IO_PORT_TIMER_MISC      0x0063
+#define IO_PORT_DMA_CLEAR       0x000C
+#define IO_PORT_DMA_PAGE1       0x0081
+#define IO_PORT_PORT_0210       0x0210
+#define IO_PORT_PORT_0278       0x0278
+#define IO_PORT_PORT_02FA       0x02FA
+#define IO_PORT_PORT_0378       0x0378
+#define IO_PORT_PORT_03BC       0x03BC
+#define IO_PORT_PORT_03FA       0x03FA
+#define IO_PORT_PORT_0201       0x0201
+#define IO_PORT_CRTC_INDEX_MDA  0x03B4
+#define IO_PORT_CRTC_DATA_MDA   0x03B5
+#define IO_PORT_ATTR_MDA        0x03B9
+#define IO_PORT_CRTC_INDEX_CGA  0x03D4
+#define IO_PORT_CRTC_DATA_CGA   0x03D5
+#define IO_PORT_ATTR_CGA        0x03D9
+#define IO_PORT_CGA_STATUS      0x03DA
+#define IO_PORT_FDC_DOR         0x03F2
+#define IO_PORT_FDC_STATUS      0x03F4
+#define IO_PORT_FDC_DATA        0x03F5
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;
@@ -62,7 +105,7 @@ WHV_REGISTER_VALUE SwInitGprValueGroup[0x12] =
 {
 	{0},{0},{0},{0},{0xFFF0},{0},{0},{0},
 	{0},{0},{0},{0},{0},{0},{0},{0},
-	{0x100},{0x2}
+	{0xFFF0},{0x2}
 };
 
 WHV_REGISTER_NAME SwInitSrNameGroup[8] =
@@ -79,12 +122,12 @@ WHV_REGISTER_NAME SwInitSrNameGroup[8] =
 
 WHV_REGISTER_VALUE SwInitSrValueGroup[8] =
 {
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{11,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
-	{.Segment = {0x10000,0xFFFF,0x1000,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0xF0000,0xFFFF,0xF000,{11,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
+	{.Segment = {0,0xFFFF,0,{3,1,0,1,0,1,0,0,0}}},
 	{.Segment = {0,0xFFFF,0,{2,0,0,1,0,1,0,0,0}}},
 	{.Segment = {0,0xFFFF,0,{3,0,0,1,0,1,0,0,0}}}
 };

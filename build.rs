@@ -22,7 +22,15 @@ fn main() {
         .arg("keyboard.lst")
         .status()
         .unwrap();
+    Command::new("nasm")
+        .args(&["-f", "bin", "tests/beep.asm", "-o"])
+        .arg("beep.com")
+        .arg("-l")
+        .arg("beep.lst")
+        .status()
+        .unwrap();
     println!("cargo::rerun-if-changed=tests/ivt.asm");
     println!("cargo::rerun-if-changed=tests/hello_dos.asm");
     println!("cargo::rerun-if-changed=tests/keyboard.asm");
+    println!("cargo::rerun-if-changed=tests/beep.asm");
 }
