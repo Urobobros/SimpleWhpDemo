@@ -17,7 +17,13 @@ static double pit_partial_ticks;
 static uint64_t pit_now_us(void)
 {
 #ifdef _WIN32
-    return GetTickCount64() * 1000ULL;
+    static LARGE_INTEGER freq = {0};
+    LARGE_INTEGER count;
+    if (!freq.QuadPart) {
+        QueryPerformanceFrequency(&freq);
+    }
+    QueryPerformanceCounter(&count);
+    return (uint64_t)(count.QuadPart * 1000000ULL / freq.QuadPart);
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
