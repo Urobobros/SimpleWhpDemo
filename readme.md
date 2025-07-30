@@ -205,6 +205,3 @@ Why am I implementing this demo? I am familiarizing myself with the design logic
 Please follow the [Project NoirVisor](https://github.com/Zero-Tang/NoirVisor). In this project, I am aiming to implement a hypervisor as a competitor to WHP.
 
 The `windows` crate (version 0.59.0 and earlier) contains a bug that `WHV_REGISTER_VALUE` is not aligned on 16-byte boundary. This could cause alignment exception while moving register values between host and guest. Therefore, the `aligned` crate is required to adjust its position.
-
-## License
-This project is licensed under the MSPL License.
