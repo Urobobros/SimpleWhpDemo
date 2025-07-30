@@ -644,6 +644,7 @@ static const char* GetPortName(USHORT port)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
+        pit_update(&pit);
         if (IoAccess->Direction == 0)
         {
                if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0063)

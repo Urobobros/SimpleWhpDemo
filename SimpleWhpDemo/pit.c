@@ -1,8 +1,63 @@
 #include "pit.h"
 #include "io.h"
 #include <string.h>
+#include <stdint.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
 
 PIT pit, pit2;
+static uint64_t pit_last_update_us;
+static double pit_partial_ticks;
+
+#define PIT_FREQUENCY 1193182
+
+static uint64_t pit_now_us(void)
+{
+#ifdef _WIN32
+    return GetTickCount64() * 1000ULL;
+#else
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (uint64_t)tv.tv_sec * 1000000ULL + tv.tv_usec;
+#endif
+}
+
+void pit_update(PIT *p)
+{
+    uint64_t now = pit_now_us();
+    if (!pit_last_update_us) {
+        pit_last_update_us = now;
+        return;
+    }
+    double elapsed = (now - pit_last_update_us) / 1000000.0;
+    pit_partial_ticks += elapsed * (double)PIT_FREQUENCY;
+    uint64_t ticks = (uint64_t)pit_partial_ticks;
+    if (!ticks)
+        return;
+
+    pit_partial_ticks -= (double)ticks;
+    pit_last_update_us = now;
+
+    for (int i = 0; i < 3; i++) {
+        PIT_CHANNEL *ch = &p->ch[i];
+        uint32_t reload = ch->reload ? ch->reload : 0x10000u;
+        uint32_t count = ch->count ? ch->count : 0x10000u;
+        int64_t remaining = (int64_t)ticks;
+        while (remaining > 0) {
+            if ((uint32_t)remaining >= count) {
+                remaining -= count;
+                count = reload;
+            } else {
+                count -= (uint32_t)remaining;
+                remaining = 0;
+            }
+        }
+        ch->count = (count == 0x10000u) ? 0 : count;
+    }
+}
 
 static uint8_t pit_channel_read(PIT *p, int idx)
 {

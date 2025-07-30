@@ -28,6 +28,7 @@ uint8_t pit_read(uint16_t port, void *priv);
 void pit_write(uint16_t port, uint8_t val, void *priv);
 void pit_init(void);
 void pit_ps2_init(void);
+void pit_update(PIT *p);
 
 #ifdef __cplusplus
 }
