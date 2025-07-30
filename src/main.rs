@@ -320,12 +320,6 @@ static mut CRTC_MDA_INDEX: u8 = 0;
 static mut CRTC_MDA_DATA: u8 = 0;
 static mut CRTC_MDA_REGS: [u8; 32] = [0; 32];
 static mut ATTR_MDA: u8 = 0;
-static mut CRTC_CGA_INDEX: u8 = 0;
-static mut CRTC_CGA_DATA: u8 = 0;
-static mut CRTC_CGA_REGS: [u8; 32] = [0; 32];
-static mut CGA_STATUS: u8 = 0;
-static mut CGA_LAST_TOGGLE: Option<Instant> = None;
-const CGA_TOGGLE_PERIOD: Duration = Duration::from_millis(16);
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
@@ -1160,10 +1154,14 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = ATTR_MDA as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_INDEX_CGA {
-                (*io_access).Data = CRTC_CGA_INDEX as u32;
+                unsafe {
+                    (*io_access).Data = cga::CRTC_INDEX as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_CRTC_DATA_CGA {
-                (*io_access).Data = CRTC_CGA_REGS[CRTC_CGA_INDEX as usize] as u32;
+                unsafe {
+                    (*io_access).Data = cga::CRTC_REGS[cga::CRTC_INDEX as usize] as u32;
+                }
                 S_OK
             } else if (*io_access).Port == IO_PORT_ATTR_CGA {
                 unsafe {
@@ -1171,16 +1169,9 @@ unsafe extern "system" fn emu_io_port_callback(
                 }
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
-                let now = Instant::now();
-                if let Some(last) = CGA_LAST_TOGGLE {
-                    if now.duration_since(last) >= CGA_TOGGLE_PERIOD {
-                        CGA_STATUS ^= 0x08; // toggle vertical retrace bit
-                        CGA_LAST_TOGGLE = Some(now);
-                    }
-                } else {
-                    CGA_LAST_TOGGLE = Some(now);
+                unsafe {
+                    (*io_access).Data = cga::cga_in(IO_PORT_CGA_STATUS) as u32;
                 }
-                (*io_access).Data = CGA_STATUS as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
                 (*io_access).Data = FDC_DOR as u32;
@@ -1538,9 +1529,6 @@ fn main() {
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, BEEP_DURATION_MS);
-    unsafe {
-        CGA_LAST_TOGGLE = Some(Instant::now());
-    }
     unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {

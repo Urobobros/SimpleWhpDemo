@@ -7,11 +7,21 @@ UCHAR CgaMode = 0;
 UCHAR AttrCga = 0;
 UCHAR CgaStatus = 0;
 ULONGLONG CgaLastToggleMs = 0;
+UCHAR CrtcCgaIndex = 0;
+UCHAR CrtcCgaRegs[32] = {0};
 
 void CgaOut(USHORT port, UCHAR val)
 {
     switch (port)
     {
+    case 0x3D4:
+    case 0x3D6:
+        CrtcCgaIndex = val & 0x1F;
+        break;
+    case 0x3D5:
+    case 0x3D7:
+        CrtcCgaRegs[CrtcCgaIndex] = val;
+        break;
     case 0x3D8:
         CgaMode = val;
         break;
@@ -59,6 +69,14 @@ UCHAR CgaIn(USHORT port)
             CgaStatus &= ~0x08;
 
         return CgaStatus;
+    }
+    else if (port == 0x3D4)
+    {
+        return CrtcCgaIndex;
+    }
+    else if (port == 0x3D5)
+    {
+        return CrtcCgaRegs[CrtcCgaIndex];
     }
     return 0xFF;
 }
