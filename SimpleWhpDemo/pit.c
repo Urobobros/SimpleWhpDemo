@@ -25,6 +25,30 @@ static uint64_t pit_now_us(void)
 #endif
 }
 
+#ifdef IO_TEST_ACCESS
+void pit_tick_channel(PIT_CHANNEL *ch, int *out, PITOutFunc func, uint64_t ticks)
+#else
+static void pit_tick_channel(PIT_CHANNEL *ch, int *out, PITOutFunc func, uint64_t ticks)
+#endif
+{
+    uint32_t reload = ch->reload ? ch->reload : 0x10000u;
+    uint32_t count = ch->count ? ch->count : reload;
+    while (ticks > 0) {
+        if (ticks >= count) {
+            ticks -= count;
+            count = reload;
+            int old = *out;
+            *out ^= 1;
+            if (func && old != *out)
+                func(*out, old);
+        } else {
+            count -= (uint32_t)ticks;
+            ticks = 0;
+        }
+    }
+    ch->count = count;
+}
+
 void pit_update(PIT *p)
 {
     uint64_t now = pit_now_us();
@@ -42,20 +66,7 @@ void pit_update(PIT *p)
     pit_last_update_us = now;
 
     for (int i = 0; i < 3; i++) {
-        PIT_CHANNEL *ch = &p->ch[i];
-        uint32_t reload = ch->reload ? ch->reload : 0x10000u;
-        uint32_t count = ch->count ? ch->count : 0x10000u;
-        int64_t remaining = (int64_t)ticks;
-        while (remaining > 0) {
-            if ((uint32_t)remaining >= count) {
-                remaining -= count;
-                count = reload;
-            } else {
-                count -= (uint32_t)remaining;
-                remaining = 0;
-            }
-        }
-        ch->count = (count == 0x10000u) ? 0 : count;
+        pit_tick_channel(&p->ch[i], &p->out[i], p->out_func[i], ticks);
     }
 }
 
@@ -165,6 +176,8 @@ void pit_init(void)
         pit.ch[i].reload = 0xFFFF;
         pit.ch[i].access = 3;
         pit.ch[i].rw_low = 1;
+        pit.out[i] = 0;
+        pit.out_func[i] = NULL;
     }
     io_sethandler(0x0040, 0x0004, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit);
 }
@@ -177,7 +190,15 @@ void pit_ps2_init(void)
         pit2.ch[i].reload = 0xFFFF;
         pit2.ch[i].access = 3;
         pit2.ch[i].rw_low = 1;
+        pit2.out[i] = 0;
+        pit2.out_func[i] = NULL;
     }
     io_sethandler(0x0044, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
     io_sethandler(0x0047, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
+}
+
+void pit_set_out_func(PIT *p, int chan, PITOutFunc func)
+{
+    if (chan >=0 && chan < 3)
+        p->out_func[chan] = func;
 }
