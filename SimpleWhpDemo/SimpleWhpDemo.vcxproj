@@ -93,6 +93,8 @@
     <ClCompile Include="keyboard.c" />
     <ClCompile Include="pic.c" />
     <ClCompile Include="serial.c" />
+    <ClCompile Include="pit.c" />
+    <ClCompile Include="fdc.c" />
     <ClCompile Include="io.c" />
   </ItemGroup>
   <ItemGroup>
@@ -105,6 +107,8 @@
     <ClInclude Include="keyboard.h" />
     <ClInclude Include="pic.h" />
     <ClInclude Include="serial.h" />
+    <ClInclude Include="pit.h" />
+    <ClInclude Include="fdc.h" />
     <ClInclude Include="io.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
