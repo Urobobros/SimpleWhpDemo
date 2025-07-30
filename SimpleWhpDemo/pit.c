@@ -38,21 +38,50 @@ static void pit_tick_channel(PIT_CHANNEL *ch, int *out, PITOutFunc func, uint64_
 #endif
 {
     uint32_t reload = ch->reload ? ch->reload : 0x10000u;
-    uint32_t count = ch->count ? ch->count : reload;
-    while (ticks > 0) {
-        if (ticks >= count) {
-            ticks -= count;
-            count = reload;
-            int old = *out;
-            *out ^= 1;
-            if (func && old != *out)
-                func(*out, old);
-        } else {
-            count -= (uint32_t)ticks;
-            ticks = 0;
+    if (!ch->count)
+        ch->count = reload;
+
+    while (ticks--) {
+        switch (ch->mode) {
+        case 2: /* rate generator */
+            if (--ch->count == 0) {
+                int old = *out;
+                *out = 0;
+                if (func && old != *out)
+                    func(*out, old);
+                ch->count = reload;
+                old = *out;
+                *out = 1;
+                if (func && old != *out)
+                    func(*out, old);
+            }
+            break;
+        case 3: /* square wave */
+            if (--ch->count == 0) {
+                int old = *out;
+                *out ^= 1;
+                if (func && old != *out)
+                    func(*out, old);
+
+                if (*out)
+                    ch->count = (reload + 1) >> 1;
+                else
+                    ch->count = reload >> 1;
+                if (!ch->count)
+                    ch->count = 1;
+            }
+            break;
+        default:
+            if (--ch->count == 0) {
+                int old = *out;
+                *out = 1;
+                if (func && old != *out)
+                    func(*out, old);
+                ch->count = reload;
+            }
+            break;
         }
     }
-    ch->count = count;
 }
 
 void pit_update(PIT *p)
