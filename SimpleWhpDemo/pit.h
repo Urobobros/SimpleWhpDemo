@@ -1,7 +1,7 @@
 #ifndef PIT_H
 #define PIT_H
 
-#include <windows.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
