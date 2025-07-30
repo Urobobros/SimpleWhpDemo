@@ -174,7 +174,8 @@ on the host console so you can inspect the final screen contents.
 ### Port logging
 All port I/O performed by the guest is also written to `port.log` in the
 current directory. This mirrors PCem’s simple log format so you can compare the
-startup sequence or debug device accesses.
+startup sequence or debug device accesses. To prevent runaway log files, writes
+stop after 10,000 lines.
 
 ## Emulator API
 I noticed WHP also provides a set of [Emulator API](https://learn.microsoft.com/en-us/virtualization/api/hypervisor-instruction-emulator/hypervisor-instruction-emulator). Please note that the Emulator API aims to further decode the Port I/O and Memory-Mapped I/O so that we wont have to grab the data on our own. This significantly reduces our effort to transfer data between our emulated peripherals and the vCPU.
