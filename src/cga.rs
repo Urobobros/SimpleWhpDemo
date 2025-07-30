@@ -15,7 +15,7 @@ pub fn cga_init() {
         STATUS = 0;
         let now = std::time::Instant::now();
         LAST_DISP_TOGGLE = Some(now);
-        VSYNC_END = Some(now);
+        VSYNC_END = None;
     }
 }
 
@@ -38,16 +38,15 @@ pub fn cga_in(port: u16) -> u8 {
             0x3D5 => CRTC_REGS[CRTC_INDEX as usize],
             0x3DA => {
                 let now = std::time::Instant::now();
-                if let Some(last) = LAST_DISP_TOGGLE {
-                    if now.duration_since(last) >= DISPLAY_TOGGLE_PERIOD {
+                if let Some(mut last) = LAST_DISP_TOGGLE {
+                    while now.duration_since(last) >= DISPLAY_TOGGLE_PERIOD {
                         STATUS ^= 0x01;
-                        let next = last + DISPLAY_TOGGLE_PERIOD;
-                        LAST_DISP_TOGGLE = Some(next);
-                        VSYNC_END = Some(next + std::time::Duration::from_millis(2));
+                        last += DISPLAY_TOGGLE_PERIOD;
+                        LAST_DISP_TOGGLE = Some(last);
+                        VSYNC_END = Some(last + std::time::Duration::from_millis(2));
                     }
                 } else {
                     LAST_DISP_TOGGLE = Some(now);
-                    VSYNC_END = Some(now);
                 }
                 if let Some(vend) = VSYNC_END {
                     if now < vend {

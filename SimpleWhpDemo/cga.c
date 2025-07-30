@@ -51,7 +51,7 @@ void CgaInit(void)
     CgaStatus = 0;
     ULONGLONG now = cga_now_ms();
     CgaLastToggleMs = now;
-    CgaVsyncEndMs = now;
+    CgaVsyncEndMs = 0;
 }
 
 UCHAR CgaIn(USHORT port)
@@ -60,7 +60,7 @@ UCHAR CgaIn(USHORT port)
     {
         ULONGLONG now = cga_now_ms();
         /* Simulate horizontal sync toggling roughly every 16ms. */
-        if (now - CgaLastToggleMs >= 16)
+        while (now - CgaLastToggleMs >= 16)
         {
             CgaStatus ^= 0x01;
             CgaLastToggleMs += 16;
