@@ -4,6 +4,7 @@ pub static mut CRTC_INDEX: u8 = 0;
 pub static mut CRTC_REGS: [u8; 32] = [0; 32];
 pub static mut STATUS: u8 = 0;
 pub static mut LAST_DISP_TOGGLE: Option<std::time::Instant> = None;
+pub static mut VSYNC_END: Option<std::time::Instant> = None;
 const DISPLAY_TOGGLE_PERIOD: std::time::Duration =
     std::time::Duration::from_millis(16);
 
@@ -12,7 +13,9 @@ pub fn cga_init() {
         MODE = 0;
         COLOR = 0;
         STATUS = 0;
-        LAST_DISP_TOGGLE = Some(std::time::Instant::now());
+        let now = std::time::Instant::now();
+        LAST_DISP_TOGGLE = Some(now);
+        VSYNC_END = Some(now);
     }
 }
 
@@ -38,13 +41,23 @@ pub fn cga_in(port: u16) -> u8 {
                 if let Some(last) = LAST_DISP_TOGGLE {
                     if now.duration_since(last) >= DISPLAY_TOGGLE_PERIOD {
                         STATUS ^= 0x01;
-                        LAST_DISP_TOGGLE = Some(now);
+                        let next = last + DISPLAY_TOGGLE_PERIOD;
+                        LAST_DISP_TOGGLE = Some(next);
+                        VSYNC_END = Some(next + std::time::Duration::from_millis(2));
                     }
                 } else {
                     LAST_DISP_TOGGLE = Some(now);
+                    VSYNC_END = Some(now);
                 }
-                // Keep vertical retrace bit cleared for now to match PCem POST
-                STATUS &= !0x08;
+                if let Some(vend) = VSYNC_END {
+                    if now < vend {
+                        STATUS |= 0x08;
+                    } else {
+                        STATUS &= !0x08;
+                    }
+                } else {
+                    STATUS &= !0x08;
+                }
                 STATUS
             }
             _ => 0xFF,
