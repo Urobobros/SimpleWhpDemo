@@ -266,20 +266,9 @@ static void SyncCgaFromMemory(void)
 #endif
 }
 
-#define CGA_TOGGLE_PERIOD_MS 16
-
-
 static void UpdateCgaStatus(void)
 {
-        ULONGLONG now = GetTickCount64();
-        BOOL retrace = ((now / CGA_TOGGLE_PERIOD_MS) & 1) != 0;
-        if (retrace)
-                CgaStatus |= 0x08;
-        else
-                CgaStatus &= ~0x08;
-
-        /* Toggle display enable bit each poll so loops can progress */
-        CgaStatus ^= 0x01;
+        CgaStatus = CgaIn(IO_PORT_CGA_STATUS);
 }
 
 #if SW_HAVE_SDL2
@@ -556,7 +545,6 @@ static UCHAR CrtcCgaIndex = 0;
 static UCHAR CrtcCgaData = 0;
 static UCHAR CrtcCgaRegs[32] = {0};
 static ULONGLONG CgaLastToggleMs = 0;
-#define CGA_TOGGLE_PERIOD_MS 16
 static UCHAR FdcDor = 0;
 static UCHAR FdcStatus = 0;
 static UCHAR FdcData = 0;
@@ -1274,6 +1262,7 @@ int main(int argc, char* argv[], char* envp[])
        serial2_init(0x2f8, 3, 1);
        KeyboardXtInit();
        NmiInit();
+       CgaInit();
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio
