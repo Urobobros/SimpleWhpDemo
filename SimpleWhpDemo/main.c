@@ -172,152 +172,7 @@ static void OpenalBeep(DWORD freq, DWORD dur_ms)
 }
 #endif
 
-/* Programmable Interval Timer (PIT) definitions */
-#define PIT_FREQUENCY 1193182ULL
-typedef struct {
-        USHORT Count;
-        USHORT Reload;
-        UCHAR  Mode;
-        UCHAR  Access;
-        BOOLEAN Bcd;
-        BOOLEAN Latched;
-        USHORT Latch;
-        BOOLEAN RwLow;
-} PIT_CHANNEL;
-static PIT_CHANNEL PitChannels[3] = {0};
-static LARGE_INTEGER PitFreq = {0};
-static LARGE_INTEGER PitLastCounter = {0};
-static double PitPartialTicks = 0.0;
 
-static BOOL firstTimeReadingChannel1 = TRUE;
-
-static void PitInitOld(void)
-{
-    for (int i = 0; i < 3; ++i) {
-        PitChannels[i].Count = 0xFFFF;
-        PitChannels[i].Reload = 0xFFFF;
-        PitChannels[i].RwLow = TRUE;
-        PitChannels[i].Access = 3;
-    }
-
-    if (firstTimeReadingChannel1) {
-                PitChannels[1].Latched = TRUE;
-                PitChannels[1].Latch = 0x00F3;
-                firstTimeReadingChannel1 = FALSE;
-    }
-
-    QueryPerformanceFrequency(&PitFreq);
-    QueryPerformanceCounter(&PitLastCounter);
-    PitPartialTicks = 0.0;
-}
-
-static void UpdatePit(void)
-{
-        LARGE_INTEGER now;
-        QueryPerformanceCounter(&now);
-        if (PitLastCounter.QuadPart) {
-                LONGLONG diff = now.QuadPart - PitLastCounter.QuadPart;
-                PitPartialTicks += ((double)diff / (double)PitFreq.QuadPart) * (double)PIT_FREQUENCY;
-                ULONGLONG ticks = (ULONGLONG)PitPartialTicks;
-                if (ticks) {
-                        PitPartialTicks -= (double)ticks;
-                        PitLastCounter = now;
-                        for (int i = 0; i < 3; ++i) {
-                                PIT_CHANNEL* ch = &PitChannels[i];
-                                ULONG reload = ch->Reload ? ch->Reload : 0x10000;
-                                ULONG count = ch->Count ? ch->Count : 0x10000;
-                                ULONGLONG rem = ticks;
-                                while (rem > 0) {
-                                        if (rem >= count) {
-                                                rem -= count;
-                                                count = reload;
-                                        } else {
-                                                count -= (ULONG)rem;
-                                                rem = 0;
-                                        }
-                                }
-                                ch->Count = (USHORT)(count == 0x10000 ? 0 : count);
-                        }
-                }
-        } else {
-                PitLastCounter = now;
-        }
-}
-
-static BOOL firstPit41Read = TRUE;
-static int pit1ReadIndex = 0;
-
-static const UCHAR pit1Values[] = {
-    0xF3, 0xDB, 0xC2, 0xAA, 0x91, 0x79, 0x60, 0x48, 0x2F
-};
-
-static UCHAR PitRead(int idx)
-{
-    if (idx == 1) {
-        if (pit1ReadIndex < (sizeof(pit1Values) / sizeof(pit1Values[0])))
-            return pit1Values[pit1ReadIndex++];
-        else
-            return 0x00;
-    }
-
-    PIT_CHANNEL* ch = &PitChannels[idx];
-    ULONG val = ch->Latched ? ch->Latch : ch->Count;
-    if (val == 0)
-        val = 0x10000;
-
-    UCHAR byte;
-    if (ch->Access == 2) {
-        byte = (UCHAR)(val >> 8);
-    } else if (ch->Access == 3) {
-        byte = ch->RwLow ? (UCHAR)(val & 0xFF) : (UCHAR)(val >> 8);
-        ch->RwLow = !ch->RwLow;
-        if (ch->RwLow)
-            ch->Latched = FALSE;
-    } else {
-        byte = (UCHAR)(val & 0xFF);
-        ch->Latched = FALSE;
-    }
-
-    if (ch->Access != 3)
-        ch->Latched = FALSE;
-
-    return byte;
-}
-
-
-static void PitWrite(int idx, UCHAR val)
-{
-    PIT_CHANNEL* ch = &PitChannels[idx];
-
-    // ❌ Jakmile do kanálu 1 něco zapíšeme, rušíme výchozí hodnotu
-    if (idx == 1)
-        firstTimeReadingChannel1 = 0;
-
-    switch (ch->Access) {
-    case 1: /* low byte */
-        ch->Reload = val;
-        ch->Count = ch->Reload ? ch->Reload : 0x10000;
-        break;
-    case 2: /* high byte */
-        ch->Reload = ((USHORT)val << 8);
-        ch->Count = ch->Reload ? ch->Reload : 0x10000;
-        break;
-    case 3: /* low then high */
-        if (ch->RwLow) {
-            ch->Reload = (ch->Reload & 0xFF00) | val;
-            ch->RwLow = FALSE;
-        } else {
-            ch->Reload = (ch->Reload & 0x00FF) | ((USHORT)val << 8);
-            ch->Count = ch->Reload ? ch->Reload : 0x10000;
-            ch->RwLow = TRUE;
-        }
-        break;
-    default:
-        ch->Reload = (ch->Reload & 0xFF00) | val;
-        ch->Count = ch->Reload ? ch->Reload : 0x10000;
-        break;
-    }
-}
 
 
 static void CgaPutChar(char ch)
@@ -791,7 +646,6 @@ static const char* GetPortName(USHORT port)
 
 HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INFO* IoAccess)
 {
-        UpdatePit();
         if (IoAccess->Direction == 0)
         {
                if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0063)
@@ -871,21 +725,21 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
                {
-                       UCHAR val = PitRead(0);
+            UCHAR val = pit_read(0x40, &pit);
                        IoAccess->Data = val;
                        PortLogIoWithTag(IoAccess, "pit_read");
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
                {
-                       UCHAR val = PitRead(1);
+            UCHAR val = pit_read(0x41, &pit);
                        IoAccess->Data = val;
                        PortLogIoWithTag(IoAccess, "pit_read");
                        return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
                {
-                       UCHAR val = PitRead(2);
+            UCHAR val = pit_read(0x42, &pit);
                        IoAccess->Data = val;
                        PortLogIoWithTag(IoAccess, "pit_read");
                        return S_OK;
@@ -1074,7 +928,7 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
                {
-                       DWORD count = PitChannels[2].Reload ? PitChannels[2].Reload : 65536;
+            DWORD count = pit.ch[2].reload ? pit.ch[2].reload : 65536;
                        DWORD freq = 1193182 / count;
                       Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
@@ -1110,37 +964,22 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        }
        else if (IoAccess->Port == IO_PORT_PIT_CONTROL)
        {
-               PortLogIoWithTag(IoAccess, "pit_write");
-               PitControl = (UCHAR)IoAccess->Data;
-               UCHAR cmd = PitControl;
-               UCHAR chan = (cmd >> 6) & 3;
-               UCHAR access = (cmd >> 4) & 3;
-               if (access == 0) {
-                       if (chan < 3) {
-                               PIT_CHANNEL* ch = &PitChannels[chan];
-                               ch->Latch = ch->Count;
-                               ch->Latched = TRUE;
-                       }
-               } else if (chan < 3) {
-                       PIT_CHANNEL* ch = &PitChannels[chan];
-                       ch->Access = access;
-                       ch->Mode = (cmd >> 1) & 0x7;
-                       ch->Bcd = (cmd & 1) != 0;
-                       ch->RwLow = TRUE;
-               }
-               RETURN_OK;
+            PortLogIoWithTag(IoAccess, "pit_write");
+            PitControl = (UCHAR)IoAccess->Data;
+            pit_write(0x43, (UCHAR)IoAccess->Data, &pit);
+            RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER0)
        {
-               PortLogIoWithTag(IoAccess, "pit_write");
-               PitWrite(0, (UCHAR)IoAccess->Data);
-               return S_OK;
+            PortLogIoWithTag(IoAccess, "pit_write");
+            pit_write(0x40, (UCHAR)IoAccess->Data, &pit);
+            return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIT_COUNTER1)
        {
-               PortLogIoWithTag(IoAccess, "pit_write");
-               PitWrite(1, (UCHAR)IoAccess->Data);
-               return S_OK;
+            PortLogIoWithTag(IoAccess, "pit_write");
+            pit_write(0x41, (UCHAR)IoAccess->Data, &pit);
+            return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_DMA_TEMP)
        {
@@ -1206,12 +1045,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                Port0201Val = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
-       else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
-       {
-               PortLogIoWithTag(IoAccess, "pit_write");
-               PitWrite(2, (UCHAR)IoAccess->Data);
-               return S_OK;
-       }
+        else if (IoAccess->Port == IO_PORT_PIT_COUNTER2)
+        {
+            PortLogIoWithTag(IoAccess, "pit_write");
+            pit_write(0x42, (UCHAR)IoAccess->Data, &pit);
+            return S_OK;
+        }
        else if (IoAccess->Port == IO_PORT_CRTC_INDEX_MDA)
        {        
                PortLogIoWithTag(IoAccess, "MDA write Index");

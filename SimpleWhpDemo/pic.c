@@ -6,7 +6,7 @@ UCHAR PicSlaveImr = 0;
 #include "io.h"
 #include <stddef.h>
 
-static uint8_t PicRead(USHORT port, void *priv)
+uint8_t PicRead(USHORT port, void *priv)
 {
     (void)priv;
     switch(port)
@@ -17,7 +17,7 @@ static uint8_t PicRead(USHORT port, void *priv)
     }
 }
 
-static void PicWrite(USHORT port, UCHAR val, void *priv)
+void PicWrite(USHORT port, UCHAR val, void *priv)
 {
     (void)priv;
     switch(port)

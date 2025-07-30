@@ -10,6 +10,8 @@ extern "C" {
 extern UCHAR PicMasterImr;
 extern UCHAR PicSlaveImr;
 void PicInit(void);
+uint8_t PicRead(USHORT port, void *priv);
+void PicWrite(USHORT port, UCHAR val, void *priv);
 
 #ifdef __cplusplus
 }
