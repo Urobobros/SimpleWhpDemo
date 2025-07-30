@@ -546,7 +546,6 @@ static UCHAR Port0278Val = 0;
 static UCHAR Port02faVal = 0;
 static UCHAR Port0378Val = 0;
 static UCHAR Port03bcVal = 0;
-static UCHAR Port03faVal = 0;
 static UCHAR Port0201Val = 0;
 static BOOL  SpeakerOn = FALSE;
 static UCHAR CrtcMdaIndex = 0;
@@ -619,7 +618,6 @@ static const char* GetPortName(USHORT port)
        case IO_PORT_PORT_02FA:       return "PORT_02FA";
        case IO_PORT_PORT_0378:       return "PORT_0378";
        case IO_PORT_PORT_03BC:       return "PORT_03BC";
-       case IO_PORT_PORT_03FA:       return "PORT_03FA";
        case IO_PORT_PORT_0201:       return "PORT_0201";
        case IO_PORT_CRTC_INDEX_MDA:  return "MDA_INDEX";
        case IO_PORT_CRTC_DATA_MDA:   return "MDA_DATA";
@@ -793,11 +791,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                else if (IoAccess->Port == IO_PORT_PORT_03BC)
                {
                        IoAccess->Data = Port03bcVal;
-                       RETURN_OK;
-               }
-               else if (IoAccess->Port == IO_PORT_PORT_03FA)
-               {
-                       IoAccess->Data = Port03faVal;
                        RETURN_OK;
                }
                else if (IoAccess->Port == IO_PORT_PORT_0201)
@@ -1033,11 +1026,6 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_PORT_03BC)
        {
                Port03bcVal = (UCHAR)IoAccess->Data;
-               RETURN_OK;
-       }
-       else if (IoAccess->Port == IO_PORT_PORT_03FA)
-       {
-               Port03faVal = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
        else if (IoAccess->Port == IO_PORT_PORT_0201)

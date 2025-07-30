@@ -38,7 +38,6 @@
 #define IO_PORT_PORT_02FA       0x02FA
 #define IO_PORT_PORT_0378       0x0378
 #define IO_PORT_PORT_03BC       0x03BC
-#define IO_PORT_PORT_03FA       0x03FA
 #define IO_PORT_PORT_0201       0x0201
 #define IO_PORT_CRTC_INDEX_MDA  0x03B4
 #define IO_PORT_CRTC_DATA_MDA   0x03B5

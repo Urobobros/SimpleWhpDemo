@@ -145,7 +145,6 @@ const IO_PORT_PORT_0278: u16 = 0x0278;
 const IO_PORT_PORT_02FA: u16 = 0x02FA;
 const IO_PORT_PORT_0378: u16 = 0x0378;
 const IO_PORT_PORT_03BC: u16 = 0x03BC;
-const IO_PORT_PORT_03FA: u16 = 0x03FA;
 const IO_PORT_PORT_0201: u16 = 0x0201;
 const IO_PORT_CRTC_INDEX_MDA: u16 = 0x03B4;
 const IO_PORT_CRTC_DATA_MDA: u16 = 0x03B5;
@@ -201,7 +200,6 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_PORT_02FA => "PORT_02FA",
         IO_PORT_PORT_0378 => "PORT_0378",
         IO_PORT_PORT_03BC => "PORT_03BC",
-        IO_PORT_PORT_03FA => "PORT_03FA",
         IO_PORT_PORT_0201 => "PORT_0201",
         IO_PORT_CRTC_INDEX_MDA => "MDA_INDEX",
         IO_PORT_CRTC_DATA_MDA => "MDA_DATA",
@@ -275,7 +273,6 @@ static mut PORT_0278_VAL: u8 = 0;
 static mut PORT_02FA_VAL: u8 = 0;
 static mut PORT_0378_VAL: u8 = 0;
 static mut PORT_03BC_VAL: u8 = 0;
-static mut PORT_03FA_VAL: u8 = 0;
 static mut PORT_0201_VAL: u8 = 0;
 static mut SPEAKER_ON: bool = false;
 static mut CRTC_MDA_INDEX: u8 = 0;
@@ -1093,9 +1090,6 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PORT_03BC {
                 (*io_access).Data = PORT_03BC_VAL as u32;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PORT_03FA {
-                (*io_access).Data = PORT_03FA_VAL as u32;
-                S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0201 {
                 (*io_access).Data = PORT_0201_VAL as u32;
                 S_OK
@@ -1267,9 +1261,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_03BC {
                 PORT_03BC_VAL = (*io_access).Data as u8;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_PORT_03FA {
-                PORT_03FA_VAL = (*io_access).Data as u8;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0201 {
                 PORT_0201_VAL = (*io_access).Data as u8;
