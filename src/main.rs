@@ -39,6 +39,47 @@ unsafe extern "system" {
     fn Beep(freq: u32, dur: u32) -> BOOL;
 }
 
+#[repr(C)]
+pub struct PITChannel {
+    count: u32,
+    reload: u16,
+    mode: u8,
+    access: u8,
+    bcd: u8,
+    latched: u8,
+    latch: u16,
+    rw_low: u8,
+}
+
+#[repr(C)]
+pub struct PIT {
+    ch: [PITChannel; 3],
+    control: u8,
+    out: [i32; 3],
+    out_func: [Option<extern "C" fn(i32, i32)>; 3],
+}
+
+extern "C" {
+    static mut pit: PIT;
+    fn io_init();
+    fn DmaInit();
+    fn fdc_add();
+    fn PicInit();
+    fn pit_init();
+    fn pit_update(p: *mut PIT);
+    fn serial1_init(addr: u16, irq: i32, fifo: i32);
+    fn serial2_init(addr: u16, irq: i32, fifo: i32);
+    fn KeyboardXtInit();
+    fn NmiInit();
+    fn inb(port: u16) -> u8;
+    fn outb(port: u16, val: u8);
+    fn inw(port: u16) -> u16;
+    fn outw(port: u16, val: u16);
+    fn inl(port: u16) -> u32;
+    fn outl(port: u16, val: u32);
+    fn io_has_handler(port: u16, is_write: i32) -> i32;
+}
+
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
 const FALLBACK_BIOS: &str = "ivt.fw\0";
 /// Total address space mapped for the guest (1 MiB).
@@ -318,7 +359,7 @@ static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 
-fn pit_init() {
+fn pit_init_rs() {
     unsafe {
         for ch in &mut PIT_CHANNELS {
             ch.count = 0xFFFF;
@@ -331,7 +372,7 @@ fn pit_init() {
     }
 }
 
-fn update_pit() {
+fn update_pit_rs() {
     unsafe {
         let now = Instant::now();
         if let Some(last) = PIT_LAST_UPDATE {
@@ -367,7 +408,7 @@ fn update_pit() {
     }
 }
 
-fn pit_read(idx: usize) -> u8 {
+fn pit_read_rs(idx: usize) -> u8 {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
         let mut val: u32 = if ch.latched {
@@ -402,7 +443,7 @@ fn pit_read(idx: usize) -> u8 {
     }
 }
 
-fn pit_write(idx: usize, val: u8) {
+fn pit_write_rs(idx: usize, val: u8) {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
         match ch.access {
@@ -982,7 +1023,23 @@ unsafe extern "system" fn emu_io_port_callback(
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
 ) -> HRESULT {
     unsafe {
-        update_pit();
+        update_pit_rs();
+        if io_has_handler((*io_access).Port, (*io_access).Direction as i32) != 0 {
+            if (*io_access).Direction == 0 {
+                (*io_access).Data = match (*io_access).AccessSize {
+                    1 => inb((*io_access).Port) as u32,
+                    2 => inw((*io_access).Port) as u32,
+                    _ => inl((*io_access).Port),
+                };
+            } else {
+                match (*io_access).AccessSize {
+                    1 => outb((*io_access).Port, (*io_access).Data as u8),
+                    2 => outw((*io_access).Port, (*io_access).Data as u16),
+                    _ => outl((*io_access).Port, (*io_access).Data),
+                }
+            }
+            return S_OK;
+        }
         if (*io_access).Direction == 0 {
             if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
                 let val = keyboard::keyboard_xt_read((*io_access).Port);
@@ -1041,17 +1098,17 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                let byte = pit_read(0);
+                let byte = pit_read_rs(0);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                let byte = pit_read(1);
+                let byte = pit_read_rs(1);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                let byte = pit_read(2);
+                let byte = pit_read_rs(2);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
@@ -1219,15 +1276,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                pit_write(0, (*io_access).Data as u8);
+                pit_write_rs(0, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                pit_write(1, (*io_access).Data as u8);
+                pit_write_rs(1, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                pit_write(2, (*io_access).Data as u8);
+                pit_write_rs(2, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
@@ -1465,7 +1522,18 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
-    pit_init();
+    unsafe {
+        io_init();
+        DmaInit();
+        fdc_add();
+        PicInit();
+        pit_init();
+        serial1_init(0x3f8, 4, 1);
+        serial2_init(0x2f8, 3, 1);
+        KeyboardXtInit();
+        NmiInit();
+    }
+    pit_init_rs();
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.

@@ -252,3 +252,16 @@ void outl(uint16_t port, uint32_t val)
     }
 }
 
+int io_has_handler(uint16_t port, int is_write)
+{
+    if (is_write) {
+        return port_outb[port][0] || port_outb[port][1] ||
+               port_outw[port][0] || port_outw[port][1] ||
+               port_outl[port][0] || port_outl[port][1];
+    } else {
+        return port_inb[port][0] || port_inb[port][1] ||
+               port_inw[port][0] || port_inw[port][1] ||
+               port_inl[port][0] || port_inl[port][1];
+    }
+}
+
