@@ -1529,6 +1529,7 @@ fn main() {
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.
     openal_beep(1000, BEEP_DURATION_MS);
+    cga::cga_init();
     unsafe {
         if let Ok(sdl) = sdl2::init() {
             if let Ok(video) = sdl.video() {

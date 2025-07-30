@@ -62,11 +62,9 @@ UCHAR CgaIn(USHORT port)
             CgaStatus ^= 0x01;
             CgaLastToggleMs += 16;
         }
-        /* Keep vertical retrace bit simple: toggle every 1 ms */
-        if (((now / 1) & 1) != 0)
-            CgaStatus |= 0x08;
-        else
-            CgaStatus &= ~0x08;
+        /* PCem behaves with vertical retrace unset during POST.
+         * Keep it disabled for now to better match that behaviour. */
+        CgaStatus &= ~0x08;
 
         return CgaStatus;
     }
