@@ -2,6 +2,7 @@
 #define PIC_H
 
 #include <windows.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,7 +10,9 @@ extern "C" {
 
 extern UCHAR PicMasterImr;
 extern UCHAR PicSlaveImr;
-void PicWrite(USHORT port, UCHAR val);
+void PicInit(void);
+UCHAR PicRead(USHORT port, void *priv);
+void PicWrite(USHORT port, UCHAR val, void *priv);
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,10 @@ void PortLogStart(void);
 void PortLog(const char *fmt, ...);
 void PortLogEnd(void);
 
+#ifndef PORTLOG_MAX_LINES
+#define PORTLOG_MAX_LINES 10000
+#endif
+
 #if defined(_DEBUG) || defined(PORT_DEBUG)
 #define PORT_LOG(fmt, ...) PortLog(fmt, __VA_ARGS__)
 #else

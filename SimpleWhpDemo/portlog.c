@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 static FILE *g_portlog = NULL;
+static unsigned int g_portlog_lines = 0;
 
 void PortLogStart(void)
 {
@@ -13,6 +14,7 @@ void PortLogStart(void)
 #else
         g_portlog = fopen("port.log", "wt");
 #endif
+        g_portlog_lines = 0;
     }
 }
 
@@ -28,9 +30,12 @@ void PortLog(const char *fmt, ...)
 {
     if (!g_portlog) PortLogStart();
     if (!g_portlog) return;
+    if (g_portlog_lines >= PORTLOG_MAX_LINES)
+        return;
     va_list ap;
     va_start(ap, fmt);
     vfprintf(g_portlog, fmt, ap);
     va_end(ap);
     fflush(g_portlog);
+    g_portlog_lines++;
 }

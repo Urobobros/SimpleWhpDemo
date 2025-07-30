@@ -24,6 +24,7 @@ mod dma;
 mod keyboard;
 mod nmi;
 mod pic;
+mod serial;
 use windows::{
     Win32::{
         Foundation::*,
@@ -36,6 +37,47 @@ use windows::{
 #[link(name = "Kernel32")]
 unsafe extern "system" {
     fn Beep(freq: u32, dur: u32) -> BOOL;
+}
+
+#[repr(C)]
+pub struct PITChannel {
+    count: u32,
+    reload: u16,
+    mode: u8,
+    access: u8,
+    bcd: u8,
+    latched: u8,
+    latch: u16,
+    rw_low: u8,
+}
+
+#[repr(C)]
+pub struct PIT {
+    ch: [PITChannel; 3],
+    control: u8,
+    out: [i32; 3],
+    out_func: [Option<extern "C" fn(i32, i32)>; 3],
+}
+
+extern "C" {
+    static mut pit: PIT;
+    fn io_init();
+    fn DmaInit();
+    fn fdc_add();
+    fn PicInit();
+    fn pit_init();
+    fn pit_update(p: *mut PIT);
+    fn serial1_init(addr: u16, irq: i32, fifo: i32);
+    fn serial2_init(addr: u16, irq: i32, fifo: i32);
+    fn KeyboardXtInit();
+    fn NmiInit();
+    fn inb(port: u16) -> u8;
+    fn outb(port: u16, val: u8);
+    fn inw(port: u16) -> u16;
+    fn outw(port: u16, val: u16);
+    fn inl(port: u16) -> u32;
+    fn outl(port: u16, val: u32);
+    fn io_has_handler(port: u16, is_write: i32) -> i32;
 }
 
 const DEFAULT_BIOS: &str = "ami_8088_bios_31jan89.bin\0";
@@ -144,7 +186,6 @@ const IO_PORT_PORT_0278: u16 = 0x0278;
 const IO_PORT_PORT_02FA: u16 = 0x02FA;
 const IO_PORT_PORT_0378: u16 = 0x0378;
 const IO_PORT_PORT_03BC: u16 = 0x03BC;
-const IO_PORT_PORT_03FA: u16 = 0x03FA;
 const IO_PORT_PORT_0201: u16 = 0x0201;
 const IO_PORT_CRTC_INDEX_MDA: u16 = 0x03B4;
 const IO_PORT_CRTC_DATA_MDA: u16 = 0x03B5;
@@ -156,6 +197,14 @@ const IO_PORT_CGA_STATUS: u16 = 0x03DA;
 const IO_PORT_FDC_DOR: u16 = 0x03F2;
 const IO_PORT_FDC_STATUS: u16 = 0x03F4;
 const IO_PORT_FDC_DATA: u16 = 0x03F5;
+const IO_PORT_COM1_DATA: u16 = 0x03F8;
+const IO_PORT_COM1_IER: u16 = 0x03F9;
+const IO_PORT_COM1_IIR: u16 = 0x03FA;
+const IO_PORT_COM1_LCR: u16 = 0x03FB;
+const IO_PORT_COM1_MCR: u16 = 0x03FC;
+const IO_PORT_COM1_LSR: u16 = 0x03FD;
+const IO_PORT_COM1_MSR: u16 = 0x03FE;
+const IO_PORT_COM1_SCR: u16 = 0x03FF;
 
 fn port_name(port: u16) -> &'static str {
     match port {
@@ -192,7 +241,6 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_PORT_02FA => "PORT_02FA",
         IO_PORT_PORT_0378 => "PORT_0378",
         IO_PORT_PORT_03BC => "PORT_03BC",
-        IO_PORT_PORT_03FA => "PORT_03FA",
         IO_PORT_PORT_0201 => "PORT_0201",
         IO_PORT_CRTC_INDEX_MDA => "MDA_INDEX",
         IO_PORT_CRTC_DATA_MDA => "MDA_DATA",
@@ -204,6 +252,14 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_FDC_DOR => "FDC_DOR",
         IO_PORT_FDC_STATUS => "FDC_STATUS",
         IO_PORT_FDC_DATA => "FDC_DATA",
+        IO_PORT_COM1_DATA => "COM1_DATA",
+        IO_PORT_COM1_IER => "COM1_IER",
+        IO_PORT_COM1_IIR => "COM1_IIR",
+        IO_PORT_COM1_LCR => "COM1_LCR",
+        IO_PORT_COM1_MCR => "COM1_MCR",
+        IO_PORT_COM1_LSR => "COM1_LSR",
+        IO_PORT_COM1_MSR => "COM1_MSR",
+        IO_PORT_COM1_SCR => "COM1_SCR",
         _ => "UNKNOWN",
     }
 }
@@ -258,7 +314,6 @@ static mut PORT_0278_VAL: u8 = 0;
 static mut PORT_02FA_VAL: u8 = 0;
 static mut PORT_0378_VAL: u8 = 0;
 static mut PORT_03BC_VAL: u8 = 0;
-static mut PORT_03FA_VAL: u8 = 0;
 static mut PORT_0201_VAL: u8 = 0;
 static mut SPEAKER_ON: bool = false;
 static mut CRTC_MDA_INDEX: u8 = 0;
@@ -304,7 +359,7 @@ static mut CGA_BUFFER: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS
 static mut CGA_CURSOR: usize = 0;
 static mut CGA_SHADOW: [u16; CGA_COLS * CGA_ROWS] = [0x0720; CGA_COLS * CGA_ROWS];
 
-fn pit_init() {
+fn pit_init_rs() {
     unsafe {
         for ch in &mut PIT_CHANNELS {
             ch.count = 0xFFFF;
@@ -317,7 +372,7 @@ fn pit_init() {
     }
 }
 
-fn update_pit() {
+fn update_pit_rs() {
     unsafe {
         let now = Instant::now();
         if let Some(last) = PIT_LAST_UPDATE {
@@ -353,7 +408,7 @@ fn update_pit() {
     }
 }
 
-fn pit_read(idx: usize) -> u8 {
+fn pit_read_rs(idx: usize) -> u8 {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
         let mut val: u32 = if ch.latched {
@@ -388,7 +443,7 @@ fn pit_read(idx: usize) -> u8 {
     }
 }
 
-fn pit_write(idx: usize, val: u8) {
+fn pit_write_rs(idx: usize, val: u8) {
     unsafe {
         let ch = &mut PIT_CHANNELS[idx];
         match ch.access {
@@ -968,7 +1023,23 @@ unsafe extern "system" fn emu_io_port_callback(
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
 ) -> HRESULT {
     unsafe {
-        update_pit();
+        update_pit_rs();
+        if io_has_handler((*io_access).Port, (*io_access).Direction as i32) != 0 {
+            if (*io_access).Direction == 0 {
+                (*io_access).Data = match (*io_access).AccessSize {
+                    1 => inb((*io_access).Port) as u32,
+                    2 => inw((*io_access).Port) as u32,
+                    _ => inl((*io_access).Port),
+                };
+            } else {
+                match (*io_access).AccessSize {
+                    1 => outb((*io_access).Port, (*io_access).Data as u8),
+                    2 => outw((*io_access).Port, (*io_access).Data as u16),
+                    _ => outl((*io_access).Port, (*io_access).Data),
+                }
+            }
+            return S_OK;
+        }
         if (*io_access).Direction == 0 {
             if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
                 let val = keyboard::keyboard_xt_read((*io_access).Port);
@@ -1027,17 +1098,17 @@ unsafe extern "system" fn emu_io_port_callback(
                 (*io_access).Data = PIT_CONTROL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                let byte = pit_read(0);
+                let byte = pit_read_rs(0);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                let byte = pit_read(1);
+                let byte = pit_read_rs(1);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                let byte = pit_read(2);
+                let byte = pit_read_rs(2);
                 (*io_access).Data = byte as u32;
                 port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
                 S_OK
@@ -1075,9 +1146,6 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_03BC {
                 (*io_access).Data = PORT_03BC_VAL as u32;
-                S_OK
-            } else if (*io_access).Port == IO_PORT_PORT_03FA {
-                (*io_access).Data = PORT_03FA_VAL as u32;
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0201 {
                 (*io_access).Data = PORT_0201_VAL as u32;
@@ -1122,6 +1190,11 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 (*io_access).Data = FDC_DATA as u32;
+                S_OK
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+                let byte = serial::serial_read((*io_access).Port);
+                (*io_access).Data = byte as u32;
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "serial_read");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 (*io_access).Data = 0;
@@ -1203,15 +1276,15 @@ unsafe extern "system" fn emu_io_port_callback(
                 }
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
-                pit_write(0, (*io_access).Data as u8);
+                pit_write_rs(0, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
-                pit_write(1, (*io_access).Data as u8);
+                pit_write_rs(1, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
-                pit_write(2, (*io_access).Data as u8);
+                pit_write_rs(2, (*io_access).Data as u8);
                 port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
@@ -1246,9 +1319,6 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PORT_03BC {
                 PORT_03BC_VAL = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port == IO_PORT_PORT_03FA {
-                PORT_03FA_VAL = (*io_access).Data as u8;
-                S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0201 {
                 PORT_0201_VAL = (*io_access).Data as u8;
                 S_OK
@@ -1281,6 +1351,10 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 FDC_DATA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+                serial::serial_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "serial_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_NMI {
                 nmi::nmi_write((*io_access).Port, (*io_access).Data as u8);
@@ -1448,7 +1522,18 @@ fn init_whpx() -> HRESULT {
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
-    pit_init();
+    unsafe {
+        io_init();
+        DmaInit();
+        fdc_add();
+        PicInit();
+        pit_init();
+        serial1_init(0x3f8, 4, 1);
+        serial2_init(0x2f8, 3, 1);
+        KeyboardXtInit();
+        NmiInit();
+    }
+    pit_init_rs();
 
     // Emit a slightly longer beep so the audio device has time to start up.
     // This helps confirm OpenAL is working before emulation proceeds.

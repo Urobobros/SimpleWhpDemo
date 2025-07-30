@@ -9,6 +9,7 @@ extern "C" {
 
 extern UCHAR NmiMask;
 void NmiWrite(USHORT port, UCHAR val);
+void NmiInit(void);
 
 #ifdef __cplusplus
 }

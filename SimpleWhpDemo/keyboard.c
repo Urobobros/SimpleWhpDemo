@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "io.h"
 #include <stdio.h>
 
 static UCHAR pb = 0x40; // PC/XT PPI port B initial state
@@ -100,4 +101,22 @@ void KeyboardWrite(USHORT port, UCHAR val)
 void KeyboardXtWrite(USHORT port, UCHAR val)
 {
     KeyboardWrite(port, val);
+}
+
+static uint8_t keyboard_inb(uint16_t port, void *p)
+{
+    (void)p;
+    return KeyboardXtRead(port);
+}
+
+static void keyboard_outb(uint16_t port, uint8_t val, void *p)
+{
+    (void)p;
+    KeyboardXtWrite(port, val);
+}
+
+void KeyboardXtInit(void)
+{
+    KeyboardInit();
+    io_sethandler(0x0060, 0x0004, keyboard_inb, NULL, NULL, keyboard_outb, NULL, NULL, NULL);
 }

@@ -1,4 +1,5 @@
 use std::process::Command;
+use cc;
 
 fn main() {
     Command::new("nasm")
@@ -8,6 +9,19 @@ fn main() {
         .arg("ivt.lst")
         .status()
         .unwrap();
+    cc::Build::new()
+        .files([
+            "SimpleWhpDemo/io.c",
+            "SimpleWhpDemo/dma.c",
+            "SimpleWhpDemo/fdc.c",
+            "SimpleWhpDemo/pic.c",
+            "SimpleWhpDemo/pit.c",
+            "SimpleWhpDemo/serial.c",
+            "SimpleWhpDemo/keyboard.c",
+            "SimpleWhpDemo/nmi.c",
+        ])
+        .include("SimpleWhpDemo")
+        .compile("swemu");
     Command::new("nasm")
         .args(&["-f", "bin", "tests/hello_dos.asm", "-o"])
         .arg("hello.com")
@@ -33,4 +47,12 @@ fn main() {
     println!("cargo::rerun-if-changed=tests/hello_dos.asm");
     println!("cargo::rerun-if-changed=tests/keyboard.asm");
     println!("cargo::rerun-if-changed=tests/beep.asm");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/io.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/dma.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/fdc.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/pic.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/pit.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/serial.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/keyboard.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/nmi.c");
 }
