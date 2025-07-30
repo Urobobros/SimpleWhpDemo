@@ -1112,19 +1112,19 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD)
        {
                PortLogIoWithTag(IoAccess, "pic_write");
-               PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+               PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data, NULL);
                return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_MASTER_DATA)
        {
                 PortLogIoWithTag(IoAccess, "pic_write");
-                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data, NULL);
                 return S_OK;
        }
        else if (IoAccess->Port == IO_PORT_PIC_SLAVE_DATA)
        {
                 PortLogIoWithTag(IoAccess, "pic_write");
-                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+                PicWrite(IoAccess->Port, (UCHAR)IoAccess->Data, NULL);
                 return S_OK;
        }
         else if (IoAccess->Port >= 0x0060 && IoAccess->Port <= 0x0063)
