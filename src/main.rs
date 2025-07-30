@@ -24,6 +24,7 @@ mod dma;
 mod keyboard;
 mod nmi;
 mod pic;
+mod serial;
 use windows::{
     Win32::{
         Foundation::*,
@@ -156,6 +157,14 @@ const IO_PORT_CGA_STATUS: u16 = 0x03DA;
 const IO_PORT_FDC_DOR: u16 = 0x03F2;
 const IO_PORT_FDC_STATUS: u16 = 0x03F4;
 const IO_PORT_FDC_DATA: u16 = 0x03F5;
+const IO_PORT_COM1_DATA: u16 = 0x03F8;
+const IO_PORT_COM1_IER: u16 = 0x03F9;
+const IO_PORT_COM1_IIR: u16 = 0x03FA;
+const IO_PORT_COM1_LCR: u16 = 0x03FB;
+const IO_PORT_COM1_MCR: u16 = 0x03FC;
+const IO_PORT_COM1_LSR: u16 = 0x03FD;
+const IO_PORT_COM1_MSR: u16 = 0x03FE;
+const IO_PORT_COM1_SCR: u16 = 0x03FF;
 
 fn port_name(port: u16) -> &'static str {
     match port {
@@ -204,6 +213,14 @@ fn port_name(port: u16) -> &'static str {
         IO_PORT_FDC_DOR => "FDC_DOR",
         IO_PORT_FDC_STATUS => "FDC_STATUS",
         IO_PORT_FDC_DATA => "FDC_DATA",
+        IO_PORT_COM1_DATA => "COM1_DATA",
+        IO_PORT_COM1_IER => "COM1_IER",
+        IO_PORT_COM1_IIR => "COM1_IIR",
+        IO_PORT_COM1_LCR => "COM1_LCR",
+        IO_PORT_COM1_MCR => "COM1_MCR",
+        IO_PORT_COM1_LSR => "COM1_LSR",
+        IO_PORT_COM1_MSR => "COM1_MSR",
+        IO_PORT_COM1_SCR => "COM1_SCR",
         _ => "UNKNOWN",
     }
 }
@@ -1123,6 +1140,11 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 (*io_access).Data = FDC_DATA as u32;
                 S_OK
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+                let byte = serial::serial_read((*io_access).Port);
+                (*io_access).Data = byte as u32;
+                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "serial_read");
+                S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 (*io_access).Data = 0;
                 S_OK
@@ -1281,6 +1303,10 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 FDC_DATA = (*io_access).Data as u8;
+                S_OK
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+                serial::serial_write((*io_access).Port, (*io_access).Data as u8);
+                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "serial_write");
                 S_OK
             } else if (*io_access).Port == IO_PORT_NMI {
                 nmi::nmi_write((*io_access).Port, (*io_access).Data as u8);

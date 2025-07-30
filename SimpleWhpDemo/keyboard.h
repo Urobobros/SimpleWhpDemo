@@ -13,6 +13,7 @@ UCHAR KeyboardReadStatus(void);
 UCHAR KeyboardXtRead(USHORT port);
 void KeyboardXtWrite(USHORT port, UCHAR val);
 void KeyboardInit(void);
+void KeyboardXtInit(void);
 
 #ifdef __cplusplus
 }

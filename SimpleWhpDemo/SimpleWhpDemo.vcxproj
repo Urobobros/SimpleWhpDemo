@@ -92,6 +92,8 @@
     <ClCompile Include="dma.c" />
     <ClCompile Include="keyboard.c" />
     <ClCompile Include="pic.c" />
+    <ClCompile Include="serial.c" />
+    <ClCompile Include="io.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="vmdef.h" />
@@ -102,6 +104,8 @@
     <ClInclude Include="dma.h" />
     <ClInclude Include="keyboard.h" />
     <ClInclude Include="pic.h" />
+    <ClInclude Include="serial.h" />
+    <ClInclude Include="io.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

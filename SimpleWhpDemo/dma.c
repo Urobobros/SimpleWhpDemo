@@ -10,6 +10,20 @@ USHORT DmaAddr[4] = {0};
 USHORT DmaCount[4] = {0};
 BOOL DmaFlipFlop = FALSE;
 
+#include "io.h"
+#include <stddef.h>
+
+static uint8_t dma_inb(uint16_t port, void *priv) { (void)priv; return DmaRead(port); }
+static void dma_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaWrite(port,val); }
+static uint8_t dmapage_inb(uint16_t port, void *priv) { (void)priv; return DmaRead(port); }
+static void dmapage_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaPageWrite(port,val); }
+
+void DmaInit(void)
+{
+    io_sethandler(0x0000, 0x0010, dma_inb, NULL, NULL, dma_outb, NULL, NULL, NULL);
+    io_sethandler(0x0080, 0x0008, dmapage_inb, NULL, NULL, dmapage_outb, NULL, NULL, NULL);
+}
+
 void DmaWrite(USHORT port, UCHAR val)
 {
     if (port <= 0x0007)

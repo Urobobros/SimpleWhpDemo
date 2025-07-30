@@ -50,6 +50,14 @@
 #define IO_PORT_FDC_DOR         0x03F2
 #define IO_PORT_FDC_STATUS      0x03F4
 #define IO_PORT_FDC_DATA        0x03F5
+#define IO_PORT_COM1_DATA       0x03F8
+#define IO_PORT_COM1_IER        0x03F9
+#define IO_PORT_COM1_IIR        0x03FA
+#define IO_PORT_COM1_LCR        0x03FB
+#define IO_PORT_COM1_MCR        0x03FC
+#define IO_PORT_COM1_LSR        0x03FD
+#define IO_PORT_COM1_MSR        0x03FE
+#define IO_PORT_COM1_SCR        0x03FF
 
 // Hypervisor Capability.
 BOOL HypervisorPresence;

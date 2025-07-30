@@ -32,7 +32,11 @@
 #include "cga.h"
 #include "dma.h"
 #include "pic.h"
+#include "fdc.h"
+#include "pit.h"
 #include "keyboard.h"
+#include "serial.h"
+#include "io.h"
 
 static void PortLogRead(const WHV_EMULATOR_IO_ACCESS_INFO* io)
 {
@@ -187,7 +191,7 @@ static double PitPartialTicks = 0.0;
 
 static BOOL firstTimeReadingChannel1 = TRUE;
 
-static void PitInit(void)
+static void PitInitOld(void)
 {
     for (int i = 0; i < 3; ++i) {
         PitChannels[i].Count = 0xFFFF;
@@ -772,6 +776,14 @@ static const char* GetPortName(USHORT port)
        case IO_PORT_FDC_DOR:         return "FDC_DOR";
        case IO_PORT_FDC_STATUS:      return "FDC_STATUS";
        case IO_PORT_FDC_DATA:        return "FDC_DATA";
+       case IO_PORT_COM1_DATA:       return "COM1_DATA";
+       case IO_PORT_COM1_IER:        return "COM1_IER";
+       case IO_PORT_COM1_IIR:        return "COM1_IIR";
+       case IO_PORT_COM1_LCR:        return "COM1_LCR";
+       case IO_PORT_COM1_MCR:        return "COM1_MCR";
+       case IO_PORT_COM1_LSR:        return "COM1_LSR";
+       case IO_PORT_COM1_MSR:        return "COM1_MSR";
+       case IO_PORT_COM1_SCR:        return "COM1_SCR";
 
        default:                   return "UNKNOWN";
        }
@@ -993,6 +1005,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                {
                        IoAccess->Data = FdcData;
                        RETURN_OK;
+               }
+               else if (IoAccess->Port >= IO_PORT_COM1_DATA && IoAccess->Port <= IO_PORT_COM1_SCR)
+               {
+                       IoAccess->Data = SerialRead(IoAccess->Port);
+                       PortLogIoWithTag(IoAccess, "serial_read");
+                       return S_OK;
                }
                else if (IoAccess->Port == IO_PORT_PIC_MASTER_CMD || IoAccess->Port == IO_PORT_NMI)
                {
@@ -1240,6 +1258,12 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                FdcData = (UCHAR)IoAccess->Data;
                RETURN_OK;
        }
+       else if (IoAccess->Port >= IO_PORT_COM1_DATA && IoAccess->Port <= IO_PORT_COM1_SCR)
+       {
+               SerialWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
+               PortLogIoWithTag(IoAccess, "serial_write");
+               return S_OK;
+       }
        else if (IoAccess->Port == IO_PORT_NMI)
        {
                PortLogIoWithTag(IoAccess, "nmi_write");
@@ -1413,8 +1437,15 @@ int main(int argc, char* argv[], char* envp[])
        puts("IVT firmware version 0.1.0");
        PortLogStart();
        atexit(PortLogEnd);
-       PitInit();
-       KeyboardInit();
+       io_init();
+       DmaInit();
+       fdc_add();
+       PicInit();
+       pit_init();
+       serial1_init(0x3f8, 4, 1);
+       serial2_init(0x2f8, 3, 1);
+       KeyboardXtInit();
+       NmiInit();
 #if SW_HAVE_OPENAL
        /*
         * Emit a slightly longer tone so there's enough time for audio

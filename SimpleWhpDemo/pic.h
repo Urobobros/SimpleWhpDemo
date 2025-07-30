@@ -9,7 +9,7 @@ extern "C" {
 
 extern UCHAR PicMasterImr;
 extern UCHAR PicSlaveImr;
-void PicWrite(USHORT port, UCHAR val);
+void PicInit(void);
 
 #ifdef __cplusplus
 }
