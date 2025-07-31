@@ -11,8 +11,9 @@ extern UCHAR DmaTemp;
 extern UCHAR DmaMode;
 extern UCHAR DmaMask;
 extern UCHAR DmaClear;
-extern UCHAR DmaPage1;
-extern UCHAR DmaPage3;
+extern UCHAR DmaPage[16];
+#define DmaPage1 (DmaPage[1])
+#define DmaPage3 (DmaPage[3])
 extern USHORT DmaAddr[4];
 extern USHORT DmaCount[4];
 extern BOOL DmaFlipFlop;
