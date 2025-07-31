@@ -75,8 +75,7 @@ void PortLog(const char *fmt, ...)
     size_t len = strlen(buf);
     if (len && buf[len - 1] == '\n')
         buf[len - 1] = '\0';
-    fprintf(g_portlog, "%s [%10.3f ms] index: %llu\n", buf, ms,
-            (unsigned long long)g_portlog_index++);
+    fprintf(g_portlog, "index: %llu %s [%10.3f ms] \n", (unsigned long long)g_portlog_index++, buf, ms);
     fflush(g_portlog);
     g_portlog_lines++;
 }
