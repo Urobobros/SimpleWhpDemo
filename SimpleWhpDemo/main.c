@@ -864,7 +864,8 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                return E_NOTIMPL;
        }
         
-        if (IoAccess->Port <= 0x0008)
+        /* DMA channel registers occupy ports 0x0000-0x0007. */
+        if (IoAccess->Port <= 0x0007)
         {
                 PortLogIoWithTag(IoAccess, "dma_write");
                 DmaWrite(IoAccess->Port, (UCHAR)IoAccess->Data);
