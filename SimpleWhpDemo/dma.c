@@ -19,8 +19,24 @@ static void dma_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaWr
 static uint8_t dmapage_inb(uint16_t port, void *priv) { (void)priv; return DmaRead(port); }
 static void dmapage_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaPageWrite(port,val); }
 
+void DmaReset(void)
+{
+    DmaTemp = 0;
+    DmaMode = 0;
+    DmaMask = 0;
+    DmaClear = 0;
+    DmaFlipFlop = FALSE;
+    for (int i = 0; i < 4; i++) {
+        DmaAddr[i] = 0;
+        DmaCount[i] = 0;
+    }
+    for (int i = 0; i < 16; i++)
+        DmaPage[i] = 0;
+}
+
 void DmaInit(void)
 {
+    DmaReset();
     io_sethandler(0x0000, 0x0010, dma_inb, NULL, NULL, dma_outb, NULL, NULL, NULL);
     io_sethandler(0x0080, 0x0010, dmapage_inb, NULL, NULL, dmapage_outb, NULL, NULL, NULL);
 }
@@ -53,6 +69,9 @@ void DmaWrite(USHORT port, UCHAR val)
         case 0x000D:
             DmaTemp = val;
             break;
+        case 0x000F:
+            DmaMask = val;
+            break;
         default:
             break;
         }
@@ -73,6 +92,10 @@ UCHAR DmaRead(USHORT port)
         UCHAR b = DmaFlipFlop ? (val >> 8) : (val & 0xFF);
         DmaFlipFlop = !DmaFlipFlop;
         return b;
+    }
+    else if (port == 0x0008)
+    {
+        return 0;
     }
     else if (port >= 0x0080 && port <= 0x008F)
     {

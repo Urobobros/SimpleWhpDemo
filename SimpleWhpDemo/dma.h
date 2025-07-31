@@ -21,6 +21,7 @@ void DmaWrite(USHORT port, UCHAR val);
 void DmaPageWrite(USHORT port, UCHAR val);
 UCHAR DmaRead(USHORT port);
 void DmaInit(void);
+void DmaReset(void);
 
 #ifdef __cplusplus
 }
