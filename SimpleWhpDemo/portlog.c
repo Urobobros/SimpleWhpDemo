@@ -12,6 +12,7 @@
 static FILE *g_portlog = NULL;
 static unsigned int g_portlog_lines = 0;
 static uint64_t g_portlog_start_us = 0;
+static uint64_t g_portlog_index = 0;
 
 static uint64_t portlog_now_us(void)
 {
@@ -40,6 +41,7 @@ void PortLogStart(void)
         g_portlog = fopen("port.log", "wt");
 #endif
         g_portlog_lines = 0;
+        g_portlog_index = 0;
         g_portlog_start_us = portlog_now_us();
     }
 }
@@ -73,7 +75,8 @@ void PortLog(const char *fmt, ...)
     size_t len = strlen(buf);
     if (len && buf[len - 1] == '\n')
         buf[len - 1] = '\0';
-    fprintf(g_portlog, "%s [%10.3f ms]\n", buf, ms);
+    fprintf(g_portlog, "%s [%10.3f ms] index: %llu\n", buf, ms,
+            (unsigned long long)g_portlog_index++);
     fflush(g_portlog);
     g_portlog_lines++;
 }
