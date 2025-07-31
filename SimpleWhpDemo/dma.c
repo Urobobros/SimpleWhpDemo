@@ -38,7 +38,8 @@ void DmaInit(void)
 {
     DmaReset();
     io_sethandler(0x0000, 0x0010, dma_inb, NULL, NULL, dma_outb, NULL, NULL, NULL);
-    io_sethandler(0x0080, 0x0010, dmapage_inb, NULL, NULL, dmapage_outb, NULL, NULL, NULL);
+    /* Only the first eight page registers are used */
+    io_sethandler(0x0080, 0x0008, dmapage_inb, NULL, NULL, dmapage_outb, NULL, NULL, NULL);
 }
 
 void DmaWrite(USHORT port, UCHAR val)
