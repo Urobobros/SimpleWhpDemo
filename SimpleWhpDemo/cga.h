@@ -11,6 +11,8 @@ extern UCHAR CgaMode;
 extern UCHAR AttrCga;
 extern UCHAR CgaStatus;
 extern ULONGLONG CgaLastToggleMs;
+extern UCHAR CrtcCgaIndex;
+extern UCHAR CrtcCgaRegs[32];
 void CgaOut(USHORT port, UCHAR val);
 UCHAR CgaIn(USHORT port);
 void CgaInit(void);
