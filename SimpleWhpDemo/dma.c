@@ -4,6 +4,8 @@ UCHAR DmaTemp = 0;
 UCHAR DmaMode = 0;
 UCHAR DmaMask = 0;
 UCHAR DmaClear = 0;
+UCHAR DmaCommand = 0;
+UCHAR DmaStatus = 0;
 UCHAR DmaPage[16] = {0};
 #define DmaPage1 (DmaPage[1])
 #define DmaPage3 (DmaPage[3])
@@ -25,6 +27,8 @@ void DmaReset(void)
     DmaMode = 0;
     DmaMask = 0;
     DmaClear = 0;
+    DmaCommand = 0;
+    DmaStatus = 0;
     DmaFlipFlop = FALSE;
     for (int i = 0; i < 4; i++) {
         DmaAddr[i] = 0;
@@ -57,6 +61,9 @@ void DmaWrite(USHORT port, UCHAR val)
     {
         switch(port)
         {
+        case 0x0008:
+            DmaCommand = val;
+            break;
         case 0x000A:
             DmaMask = val;
             break;
@@ -96,7 +103,9 @@ UCHAR DmaRead(USHORT port)
     }
     else if (port == 0x0008)
     {
-        return 0;
+        UCHAR val = DmaStatus;
+        DmaStatus = 0;
+        return val;
     }
     else if (port >= 0x0080 && port <= 0x008F)
     {

@@ -5,6 +5,8 @@ pub static mut DMA_MODE: u8 = 0;
 pub static mut DMA_MASK: u8 = 0;
 pub static mut DMA_TEMP: u8 = 0;
 pub static mut DMA_CLEAR: u8 = 0;
+pub static mut DMA_COMMAND: u8 = 0;
+pub static mut DMA_STATUS: u8 = 0;
 static mut FLIP_FLOP: bool = false;
 
 pub fn dma_write(port: u16, val: u8) {
@@ -27,6 +29,7 @@ pub fn dma_write(port: u16, val: u8) {
             FLIP_FLOP = !FLIP_FLOP;
         } else {
             match port {
+                0x0008 => DMA_COMMAND = val,
                 0x000A => DMA_MASK = val,
                 0x000B => DMA_MODE = val,
                 0x000C => {
@@ -63,6 +66,10 @@ pub fn dma_read(port: u16) -> u8 {
             };
             FLIP_FLOP = !FLIP_FLOP;
             byte
+        } else if port == 0x0008 {
+            let v = DMA_STATUS;
+            DMA_STATUS = 0;
+            v
         } else if port >= 0x0080 && port <= 0x008F {
             DMA_PAGE[(port & 0xF) as usize]
         } else {
