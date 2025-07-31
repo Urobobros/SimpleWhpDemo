@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <string.h>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -69,7 +70,10 @@ void PortLog(const char *fmt, ...)
     double ms = 0.0;
     if (g_portlog_start_us)
         ms = (double)(portlog_now_us() - g_portlog_start_us) / 1000.0;
-    fprintf(g_portlog, "[%10.3f ms] %s", ms, buf);
+    size_t len = strlen(buf);
+    if (len && buf[len - 1] == '\n')
+        buf[len - 1] = '\0';
+    fprintf(g_portlog, "%s [%10.3f ms]\n", buf, ms);
     fflush(g_portlog);
     g_portlog_lines++;
 }
