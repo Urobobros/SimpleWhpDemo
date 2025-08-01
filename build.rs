@@ -15,6 +15,7 @@ fn main() {
             "SimpleWhpDemo/dma.c",
             "SimpleWhpDemo/fdc.c",
             "SimpleWhpDemo/pic.c",
+            "SimpleWhpDemo/sound_speaker.c",
             "SimpleWhpDemo/pit.c",
             "SimpleWhpDemo/serial.c",
             "SimpleWhpDemo/keyboard.c",

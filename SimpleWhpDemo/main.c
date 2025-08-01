@@ -907,9 +907,9 @@ HRESULT SwEmulatorIoCallback(IN PVOID Context, IN OUT WHV_EMULATOR_IO_ACCESS_INF
                BOOL new_state = (SysCtrl & 0x03) == 0x03;
                if (new_state && !SpeakerOn)
                {
-            DWORD count = pit.ch[2].reload ? pit.ch[2].reload : 65536;
-                       DWORD freq = 1193182 / count;
-                      Beep(freq, BEEP_DURATION_MS);
+                        //DWORD count = pit.ch[2].reload ? pit.ch[2].reload : 65536;
+                      DWORD freq = 1193182 / 100;
+                      //Beep(freq, BEEP_DURATION_MS);
                       OpenalBeep(freq, BEEP_DURATION_MS);
                }
                
