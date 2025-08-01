@@ -1,6 +1,7 @@
 #include "pit.h"
 #include "io.h"
 #include "stubs.h"
+#include "timer.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
