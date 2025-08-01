@@ -3,6 +3,7 @@
 #include "stubs.h"
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "sound_speaker.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -596,5 +597,6 @@ void pit_update(PIT *p) {
         for (int i = 0; i < 3; i++) {
                 if (!p->using_timer[i])
                         pit_clock(p, i);
+                printf("pit_update: ch %d count %u\n", i, p->count[i]);
         }
 }
