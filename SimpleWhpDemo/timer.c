@@ -1,5 +1,8 @@
 #include "timer.h"
 #include <stdlib.h>
+#include <windows.h>
+#include <stdint.h>
+#include <stdio.h>
 
 uint32_t timer_target = 0;
 /* Default 1us tick to avoid division by zero before PIT sets value */
@@ -32,20 +35,43 @@ void timer_disable(pc_timer_t *timer) {
     }
 }
 
+int64_t get_monotonic_ms() {
+    static LARGE_INTEGER freq = {0};
+    if (freq.QuadPart == 0)
+        QueryPerformanceFrequency(&freq);
+
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+
+    return (counter.QuadPart * 1000) / freq.QuadPart;
+}
+
 void timer_process() {
-    /* For unit tests we don't emulate timing; simply call all enabled timers and
-       disable them immediately. */
     pc_timer_t *t = timer_list;
+    int64_t start_ms = get_monotonic_ms();
+
     while (t) {
         pc_timer_t *next = t->next;
+        int64_t now_ms = get_monotonic_ms();
+        if (now_ms - start_ms > 100) {
+            printf("Timer processing exceeded 100ms, aborting...\n");
+            t->enabled = 0;
+            timer_disable(t);
+            t->callback(t->p);
+            break;
+        }
+
         if (t->callback) {
             t->enabled = 0;
             timer_disable(t);
             t->callback(t->p);
         }
+
         t = next;
     }
 }
+
+
 
 void timer_reset() {
     while (timer_list) {

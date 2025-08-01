@@ -31,7 +31,7 @@ static int cpu_busspeed = 1;
 static uint64_t xt_cpu_multi;
 int firsttime = 1;
 void setpitclock(float clock) {
-        //        printf("PIT clock %f\n",clock);
+        printf("PIT clock %f\n",clock);
         cpuclock = clock;
         PITCONST = (uint64_t)(clock / 1193182.0 * (float)(1ull << 32));
         CGACONST = (uint64_t)((clock / (19687503.0 / 11.0)) * (float)(1ull << 32));
@@ -52,7 +52,8 @@ void setpitclock(float clock) {
         device_speed_changed();
 }
 
-//#define PITCONST (8000000.0/1193000.0)
+//#define PITCONST (4770000.0 / 1193182.0)
+
 //#define PITCONST (cpuclock/1193000.0)
 void pit_reset(PIT *pit) {
         memset(pit, 0, sizeof(PIT));
@@ -428,53 +429,53 @@ uint8_t pit_read(uint16_t addr, void *p) {
         PIT *pit = (PIT *)p;
         int t;
         uint8_t temp = 0xff;
-        //        printf("Read PIT %04X\n",addr);
+        printf("Read PIT %04X\n",addr);
         switch (addr & 3) {
-        case 0:
-        case 1:
-        case 2: /*Timers*/
-                t = addr & 3;
-                if (pit->do_read_status[t]) {
-                        pit->do_read_status[t] = 0;
-                        temp = pit->read_status[t];
-                        break;
-                }
-                if (pit->rereadlatch[addr & 3] && !pit->latched[addr & 3]) {
-                        pit->rereadlatch[addr & 3] = 0;
-                        pit->rl[t] = pit_read_timer(pit, t);
-                }
-                switch (pit->rm[addr & 3]) {
-                case 0:
-                        temp = pit->rl[addr & 3] >> 8;
-                        pit->rm[addr & 3] = 3;
-                        pit->latched[addr & 3] = 0;
-                        pit->rereadlatch[addr & 3] = 1;
-                        break;
-                case 1:
-                        temp = (pit->rl[addr & 3]) & 0xFF;
-                        pit->latched[addr & 3] = 0;
-                        pit->rereadlatch[addr & 3] = 1;
-                        break;
-                case 2:
-                        temp = (pit->rl[addr & 3]) >> 8;
-                        pit->latched[addr & 3] = 0;
-                        pit->rereadlatch[addr & 3] = 1;
-                        break;
-                case 3:
-                        temp = (pit->rl[addr & 3]) & 0xFF;
-                        if (pit->m[addr & 3] & 0x80)
-                                pit->m[addr & 3] &= 7;
-                        else
-                                pit->rm[addr & 3] = 0;
-                        break;
-                }
-                break;
-        case 3: /*Control*/
-                temp = pit->ctrl;
-                break;
+            case 0:
+            case 1:
+            case 2: /*Timers*/
+                    t = addr & 3;
+                    if (pit->do_read_status[t]) {
+                            pit->do_read_status[t] = 0;
+                            temp = pit->read_status[t];
+                            break;
+                    }
+                    if (pit->rereadlatch[addr & 3] && !pit->latched[addr & 3]) {
+                            pit->rereadlatch[addr & 3] = 0;
+                            pit->rl[t] = pit_read_timer(pit, t);
+                    }
+                    switch (pit->rm[addr & 3]) {
+                        case 0:
+                                temp = pit->rl[addr & 3] >> 8;
+                                pit->rm[addr & 3] = 3;
+                                pit->latched[addr & 3] = 0;
+                                pit->rereadlatch[addr & 3] = 1;
+                                break;
+                        case 1:
+                                temp = (pit->rl[addr & 3]) & 0xFF;
+                                pit->latched[addr & 3] = 0;
+                                pit->rereadlatch[addr & 3] = 1;
+                                break;
+                        case 2:
+                                temp = (pit->rl[addr & 3]) >> 8;
+                                pit->latched[addr & 3] = 0;
+                                pit->rereadlatch[addr & 3] = 1;
+                                break;
+                        case 3:
+                                temp = (pit->rl[addr & 3]) & 0xFF;
+                                if (pit->m[addr & 3] & 0x80)
+                                        pit->m[addr & 3] &= 7;
+                                else
+                                        pit->rm[addr & 3] = 0;
+                                break;
+                        }
+                    break;
+            case 3: /*Control*/
+                    temp = pit->ctrl;
+                    break;
         }
         //        pclog("%02X\n", temp);
-        //        printf("%02X %i %i %04X:%04X %i\n",temp,pit.rm[addr&3],pit.wp,cs>>4,pc, ins);
+        printf("%02X %i %i \n",temp, pit->rm[addr&3],pit->wp);
         return temp;
 }
 
@@ -593,7 +594,9 @@ void pit_ps2_init() {
    not using the timer helper we manually tick them so reads reflect the
    updated count value. */
 void pit_update(PIT *p) {
+        printf("before timer_process\n");
         timer_process();
+        printf("after timer_process\n");
 
         for (int i = 0; i < 3; i++) {
                 if (!p->using_timer[i])
