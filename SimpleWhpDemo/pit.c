@@ -585,9 +585,16 @@ void pit_ps2_init() {
         pit_set_out_func(&pit2, 2, pit_speaker_timer);
 }
 
-/* Update timers associated with the given PIT. This implementation simply
-   processes all timers, ensuring pending callbacks are executed. */
+/* Update timers associated with the given PIT.  The timer framework used
+   in the unit tests does not advance automatically so we call
+   timer_process() to invoke any pending callbacks.  For channels that are
+   not using the timer helper we manually tick them so reads reflect the
+   updated count value. */
 void pit_update(PIT *p) {
-        (void)p;
         timer_process();
+
+        for (int i = 0; i < 3; i++) {
+                if (!p->using_timer[i])
+                        pit_clock(p, i);
+        }
 }
