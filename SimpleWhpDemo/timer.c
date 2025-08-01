@@ -1,6 +1,11 @@
 #include "timer.h"
 #include <stdlib.h>
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <time.h>
+#include <sys/time.h>
+#endif
 #include <stdint.h>
 #include <stdio.h>
 
@@ -35,6 +40,7 @@ void timer_disable(pc_timer_t *timer) {
     }
 }
 
+#ifdef _WIN32
 int64_t get_monotonic_ms() {
     static LARGE_INTEGER freq = {0};
     if (freq.QuadPart == 0)
@@ -45,6 +51,14 @@ int64_t get_monotonic_ms() {
 
     return (counter.QuadPart * 1000) / freq.QuadPart;
 }
+#else
+int64_t get_monotonic_ms() {
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
+        return 0;
+    return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+#endif
 
 void timer_process() {
     pc_timer_t *t = timer_list;
