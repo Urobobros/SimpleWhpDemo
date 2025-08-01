@@ -83,6 +83,9 @@
     <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stubs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="fdc.h">
       <Filter>Header Files</Filter>
     </ClInclude>

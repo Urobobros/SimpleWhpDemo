@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "stubs.h"
 
 /* Stub implementations required for unit tests */
 

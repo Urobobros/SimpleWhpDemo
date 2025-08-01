@@ -62,4 +62,5 @@ fn main() {
     println!("cargo::rerun-if-changed=SimpleWhpDemo/nmi.c");
     println!("cargo::rerun-if-changed=SimpleWhpDemo/timer.c");
     println!("cargo::rerun-if-changed=SimpleWhpDemo/stubs.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/stubs.h");
 }

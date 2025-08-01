@@ -1,5 +1,6 @@
 #include "pit.h"
 #include "io.h"
+#include "stubs.h"
 #include <string.h>
 #include <stdint.h>
 #include "sound_speaker.h"

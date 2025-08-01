@@ -111,6 +111,7 @@
     <ClInclude Include="serial.h" />
     <ClInclude Include="pit.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="stubs.h" />
     <ClInclude Include="fdc.h" />
     <ClInclude Include="io.h" />
   </ItemGroup>
