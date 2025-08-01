@@ -24,6 +24,8 @@ fn main() {
             "SimpleWhpDemo/stubs.c",
         ])
         .include("SimpleWhpDemo")
+        // Use stub Windows headers when building on non-Windows hosts
+        .include("tests")
         .compile("swemu");
     Command::new("nasm")
         .args(&["-f", "bin", "tests/hello_dos.asm", "-o"])
