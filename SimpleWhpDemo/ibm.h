@@ -39,3 +39,4 @@ typedef struct PIT {
 } PIT;
 
 extern PIT pit;
+extern PIT pit2;

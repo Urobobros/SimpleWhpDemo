@@ -20,6 +20,8 @@ fn main() {
             "SimpleWhpDemo/serial.c",
             "SimpleWhpDemo/keyboard.c",
             "SimpleWhpDemo/nmi.c",
+            "SimpleWhpDemo/timer.c",
+            "SimpleWhpDemo/stubs.c",
         ])
         .include("SimpleWhpDemo")
         .compile("swemu");
@@ -56,4 +58,6 @@ fn main() {
     println!("cargo::rerun-if-changed=SimpleWhpDemo/serial.c");
     println!("cargo::rerun-if-changed=SimpleWhpDemo/keyboard.c");
     println!("cargo::rerun-if-changed=SimpleWhpDemo/nmi.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/timer.c");
+    println!("cargo::rerun-if-changed=SimpleWhpDemo/stubs.c");
 }

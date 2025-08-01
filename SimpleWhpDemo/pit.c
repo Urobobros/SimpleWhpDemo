@@ -10,13 +10,14 @@
 #endif
 
 PIT pit;
+PIT pit2;
 
 /*B0 to 40, two writes to 43, then two reads - value does not change!*/
 /*B4 to 40, two writes to 43, then two reads - value _does_ change!*/
 // Tyrian writes 4300 or 17512
 int displine;
 
-uint64_t PITCONST;
+uint64_t PITCONST = 1;
 uint64_t CGACONST;
 uint64_t MDACONST;
 uint64_t RTCCONST;
@@ -556,5 +557,29 @@ void pit_init() {
 
         pit_set_out_func(&pit, 0, pit_irq0_timer);
         pit_set_out_func(&pit, 1, pit_null_timer);
-        pit_set_out_func(&pit, 2, pit_speaker_timer);
+pit_set_out_func(&pit, 2, pit_speaker_timer);
+}
+
+void pit_ps2_init() {
+        pit_reset(&pit2);
+
+        io_sethandler(0x0044, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
+        io_sethandler(0x0047, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
+
+        pit2.gate[0] = pit2.gate[1] = 1;
+        pit2.gate[2] = 0;
+        pit2.using_timer[0] = pit2.using_timer[1] = pit2.using_timer[2] = 1;
+
+        pit2.pit_nr[0].nr = 0;
+        pit2.pit_nr[1].nr = 1;
+        pit2.pit_nr[2].nr = 2;
+        pit2.pit_nr[0].pit = pit2.pit_nr[1].pit = pit2.pit_nr[2].pit = &pit2;
+
+        timer_add(&pit2.timer[0], pit_timer_over, (void *)&pit2.pit_nr[0], 0);
+        timer_add(&pit2.timer[1], pit_timer_over, (void *)&pit2.pit_nr[1], 0);
+        timer_add(&pit2.timer[2], pit_timer_over, (void *)&pit2.pit_nr[2], 0);
+
+        pit_set_out_func(&pit2, 0, pit_irq0_timer);
+        pit_set_out_func(&pit2, 1, pit_null_timer);
+        pit_set_out_func(&pit2, 2, pit_speaker_timer);
 }

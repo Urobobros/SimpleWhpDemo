@@ -1,3 +1,6 @@
+#ifndef TIMER_H
+#define TIMER_H
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -120,3 +123,5 @@ static inline uint64_t timer_get_remaining_u64(pc_timer_t *timer) {
 static inline void timer_set_callback(pc_timer_t *timer, void (*callback)(void *p)) { timer->callback = callback; }
 /*Set timer private data*/
 static inline void timer_set_p(pc_timer_t *timer, void *p) { timer->p = p; }
+
+#endif /* TIMER_H */
