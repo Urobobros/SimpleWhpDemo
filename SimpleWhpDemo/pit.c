@@ -583,3 +583,10 @@ void pit_ps2_init() {
         pit_set_out_func(&pit2, 1, pit_null_timer);
         pit_set_out_func(&pit2, 2, pit_speaker_timer);
 }
+
+/* Update timers associated with the given PIT. This implementation simply
+   processes all timers, ensuring pending callbacks are executed. */
+void pit_update(PIT *p) {
+        (void)p;
+        timer_process();
+}

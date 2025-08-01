@@ -15,4 +15,5 @@ void pit_irq0_timer_pcjr(int new_out, int old_out);
 void pit_refresh_timer_xt(int new_out, int old_out);
 void pit_refresh_timer_at(int new_out, int old_out);
 void pit_speaker_timer(int new_out, int old_out);
+void pit_update(PIT *p);
 
