@@ -560,7 +560,7 @@ void pit_init() {
 
         pit_set_out_func(&pit, 0, pit_irq0_timer);
         pit_set_out_func(&pit, 1, pit_null_timer);
-pit_set_out_func(&pit, 2, pit_speaker_timer);
+        pit_set_out_func(&pit, 2, pit_speaker_timer);
 }
 
 void pit_ps2_init() {
