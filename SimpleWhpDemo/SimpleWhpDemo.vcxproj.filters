@@ -39,6 +39,12 @@
     <ClCompile Include="pit.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="timer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stubs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="fdc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="fdc.h">
