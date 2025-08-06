@@ -1273,7 +1273,13 @@ HRESULT SwExecuteProgram()
                                 ContinueExecution = TRUE;
                                 break;
                         case WHvRunVpExitReasonCanceled:
-                                puts("Run canceled via WHvCancelRunVirtualProcessor.");
+#if defined(_DEBUG)
+                                static int cancel_logged = 0;
+                                if (!cancel_logged) {
+                                        puts("Run canceled via WHvCancelRunVirtualProcessor.");
+                                        cancel_logged = 1;
+                                }
+#endif
                                 /* The run was interrupted, resume execution. */
                                 ContinueExecution = TRUE;
                                 break;
