@@ -605,7 +605,9 @@ fn render_cga_window() {
     }
 }
 
+#[cfg(windows)]
 const INITIAL_VCPU_COUNT: usize = 40;
+
 #[cfg(windows)]
 const INITIAL_VCPU_REGISTER_NAMES: [WHV_REGISTER_NAME; INITIAL_VCPU_COUNT] = [
     WHvX64RegisterRax,
