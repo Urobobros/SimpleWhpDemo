@@ -894,7 +894,17 @@ impl SimpleVirtualMachine {
             let cancel = std::thread::spawn(move || {
                 sleep(Duration::from_millis(1));
                 unsafe {
-                    WHvCancelRunVirtualProcessor(part, 0);
+                    // Newer Windows headers add a Flags parameter.  Use the
+                    // three-argument form when available while falling back to
+                    // the legacy prototype for older toolchains.
+                    #[cfg(any(target_env = "msvc", target_env = "gnu"))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0, 0);
+                    }
+                    #[cfg(not(any(target_env = "msvc", target_env = "gnu")))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0);
+                    }
                 }
             });
             let hr = unsafe {

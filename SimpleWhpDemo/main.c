@@ -75,7 +75,22 @@ static DWORD WINAPI CancelRunThread(LPVOID param)
 {
         (void)param;
         Sleep(1);
+
+        /*
+         * The WHvCancelRunVirtualProcessor API gained a third Flags
+         * parameter in newer Windows SDKs. Older headers declared only the
+         * two-argument form.  Pass a zero Flags value when the three-argument
+         * variant is available while retaining compatibility with older
+         * toolchains.
+         */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+        /* Prefer the modern signature with an explicit Flags parameter. */
+        WHvCancelRunVirtualProcessor(hPart, 0, 0);
+#else
+        /* Fallback for environments that still expose the legacy prototype. */
         WHvCancelRunVirtualProcessor(hPart, 0);
+#endif
+
         return 0;
 }
 
