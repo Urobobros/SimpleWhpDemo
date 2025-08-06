@@ -601,6 +601,6 @@ void pit_update(PIT *p) {
         for (int i = 0; i < 3; i++) {
                 if (!p->using_timer[i])
                         pit_clock(p, i);
-                printf("pit_update: ch %d count %u\n", i, p->count[i]);
+                printf("pit_update: ch %d count %u\n", i, pit_read_timer(p, i));
         }
 }
