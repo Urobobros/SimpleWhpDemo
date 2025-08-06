@@ -75,6 +75,7 @@ static DWORD WINAPI CancelRunThread(LPVOID param)
 {
         (void)param;
         Sleep(1);
+
         /*
          * The WHvCancelRunVirtualProcessor API gained a third Flags
          * parameter in newer Windows SDKs. Older headers declared only the
@@ -89,6 +90,7 @@ static DWORD WINAPI CancelRunThread(LPVOID param)
         /* Fallback for environments that still expose the legacy prototype. */
         WHvCancelRunVirtualProcessor(hPart, 0);
 #endif
+
         return 0;
 }
 
