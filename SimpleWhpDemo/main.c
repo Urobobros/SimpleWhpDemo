@@ -71,6 +71,27 @@ static void PortLogIoWithTag(const WHV_EMULATOR_IO_ACCESS_INFO* io, const char* 
 
 #define RETURN_OK do { PortLogRead(IoAccess); return S_OK; } while(0)
 
+static DWORD WINAPI CancelRunThread(LPVOID param)
+{
+        (void)param;
+        Sleep(1);
+        /*
+         * The WHvCancelRunVirtualProcessor API gained a third Flags
+         * parameter in newer Windows SDKs. Older headers declared only the
+         * two-argument form.  Pass a zero Flags value when the three-argument
+         * variant is available while retaining compatibility with older
+         * toolchains.
+         */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+        /* Prefer the modern signature with an explicit Flags parameter. */
+        WHvCancelRunVirtualProcessor(hPart, 0, 0);
+#else
+        /* Fallback for environments that still expose the legacy prototype. */
+        WHvCancelRunVirtualProcessor(hPart, 0);
+#endif
+        return 0;
+}
+
 #define CGA_COLS 80
 #define CGA_ROWS 25
 #define DEFAULT_BIOS "ami_8088_bios_31jan89.bin"
@@ -1193,17 +1214,21 @@ HRESULT SwEmulatorTranslateGvaPageCallback(IN PVOID Context, IN WHV_GUEST_VIRTUA
 
 HRESULT SwExecuteProgram()
 {
-	WHV_RUN_VP_EXIT_CONTEXT ExitContext = { 0 };
-	BOOL ContinueExecution = TRUE;
-	HRESULT hr = S_FALSE;
-	while (ContinueExecution)
-	{
-		hr = WHvRunVirtualProcessor(hPart, 0, &ExitContext, sizeof(ExitContext));
-		if (hr == S_OK)
-		{
-			WHV_REGISTER_NAME RipName = WHvX64RegisterRip;
-			WHV_REGISTER_VALUE Rip = { ExitContext.VpContext.Rip };
-			switch (ExitContext.ExitReason)
+        WHV_RUN_VP_EXIT_CONTEXT ExitContext = { 0 };
+        BOOL ContinueExecution = TRUE;
+        HRESULT hr = S_FALSE;
+        while (ContinueExecution)
+        {
+                HANDLE cancel = CreateThread(NULL, 0, CancelRunThread, NULL, 0, NULL);
+                hr = WHvRunVirtualProcessor(hPart, 0, &ExitContext, sizeof(ExitContext));
+                WaitForSingleObject(cancel, INFINITE);
+                CloseHandle(cancel);
+                pit_update(&pit);
+                if (hr == S_OK)
+                {
+                        WHV_REGISTER_NAME RipName = WHvX64RegisterRip;
+                        WHV_REGISTER_VALUE Rip = { ExitContext.VpContext.Rip };
+                        switch (ExitContext.ExitReason)
 			{
 			case WHvRunVpExitReasonMemoryAccess:
 			{

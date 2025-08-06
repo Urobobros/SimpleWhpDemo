@@ -890,17 +890,37 @@ impl SimpleVirtualMachine {
         let mut exit_ctxt: WHV_RUN_VP_EXIT_CONTEXT = WHV_RUN_VP_EXIT_CONTEXT::default();
         let mut cont_exec = true;
         while cont_exec {
-            if let Err(e) = unsafe {
+            let part = self.handle;
+            let cancel = std::thread::spawn(move || {
+                sleep(Duration::from_millis(1));
+                unsafe {
+                    // Newer Windows headers add a Flags parameter.  Use the
+                    // three-argument form when available while falling back to
+                    // the legacy prototype for older toolchains.
+                    #[cfg(any(target_env = "msvc", target_env = "gnu"))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0, 0);
+                    }
+                    #[cfg(not(any(target_env = "msvc", target_env = "gnu")))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0);
+                    }
+                }
+            });
+            let hr = unsafe {
                 WHvRunVirtualProcessor(
-                    self.handle,
+                    part,
                     0,
                     (&raw mut exit_ctxt).cast(),
                     size_of::<WHV_RUN_VP_EXIT_CONTEXT>() as u32,
                 )
-            } {
+            };
+            let _ = cancel.join();
+            if let Err(e) = hr {
                 println!("Failed to run vCPU! Reason: {e}");
                 cont_exec = false;
             } else {
+                update_pit_rs();
                 #[allow(non_upper_case_globals)]
                 match exit_ctxt.ExitReason {
                     WHvRunVpExitReasonX64IoPortAccess => {
