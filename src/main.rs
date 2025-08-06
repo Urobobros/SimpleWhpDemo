@@ -942,6 +942,10 @@ impl SimpleVirtualMachine {
                             }
                         }
                     }
+                    WHvRunVpExitReasonCanceled => {
+                        // WHvRunVirtualProcessor was interrupted by WHvCancelRunVirtualProcessor.
+                        cont_exec = true;
+                    }
                     WHvRunVpExitReasonX64Halt => {
                         // Treat HLT as a NOP so BIOS busy
                         // loops keep running even with

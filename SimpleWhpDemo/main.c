@@ -1272,11 +1272,16 @@ HRESULT SwExecuteProgram()
                                 hr = WHvSetVirtualProcessorRegisters(hPart, 0, &RipName, 1, &Rip);
                                 ContinueExecution = TRUE;
                                 break;
-			default:
-				printf("Unknown VM-Exit Code=0x%X!\n", ExitContext.ExitReason);
-				ContinueExecution = FALSE;
-				break;
-			}
+                        case WHvRunVpExitReasonCanceled:
+                                puts("Run canceled via WHvCancelRunVirtualProcessor.");
+                                /* The run was interrupted, resume execution. */
+                                ContinueExecution = TRUE;
+                                break;
+                        default:
+                                printf("Unknown VM-Exit Code=0x%X!\n", ExitContext.ExitReason);
+                                ContinueExecution = FALSE;
+                                break;
+                        }
                 }
                 else
                 {
