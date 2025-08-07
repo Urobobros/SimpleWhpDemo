@@ -1,3 +1,6 @@
+#ifndef PIT_H
+#define PIT_H
+
 #include "ibm.h"
 
 extern uint64_t PITCONST;
@@ -17,4 +20,9 @@ void pit_refresh_timer_at(int new_out, int old_out);
 void pit_speaker_timer(int new_out, int old_out);
 void pit_update(PIT *p);
 
+void pit_write(uint16_t addr, uint8_t val, void *p);
+uint8_t pit_read(uint16_t addr, void *p);
+
 void setpitclock(float clock);
+
+#endif /* PIT_H */

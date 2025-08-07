@@ -1,3 +1,6 @@
+#ifndef IBM_H
+#define IBM_H
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -40,3 +43,5 @@ typedef struct PIT {
 
 extern PIT pit;
 extern PIT pit2;
+
+#endif /* IBM_H */
