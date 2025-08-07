@@ -94,6 +94,8 @@
     <ClCompile Include="pic.c" />
     <ClCompile Include="serial.c" />
     <ClCompile Include="pit.c" />
+    <ClCompile Include="timer.c" />
+    <ClCompile Include="stubs.c" />
     <ClCompile Include="fdc.c" />
     <ClCompile Include="io.c" />
   </ItemGroup>
@@ -108,6 +110,8 @@
     <ClInclude Include="pic.h" />
     <ClInclude Include="serial.h" />
     <ClInclude Include="pit.h" />
+    <ClInclude Include="timer.h" />
+    <ClInclude Include="stubs.h" />
     <ClInclude Include="fdc.h" />
     <ClInclude Include="io.h" />
   </ItemGroup>

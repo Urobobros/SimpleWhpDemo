@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "pit.h": "c",
+        "timer.h": "c"
+    }
+}
