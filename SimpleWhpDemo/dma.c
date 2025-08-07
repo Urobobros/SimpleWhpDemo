@@ -44,9 +44,15 @@ static uint8_t dma_command;
 
 #include "io.h"
 #include <stddef.h>
+#include <stdio.h>
+
+uint8_t dma_page_read(USHORT addr);
+void DmaPageWrite(USHORT addr, UCHAR val);
 
 static uint8_t dma_inb(uint16_t port, void *priv) { (void)priv; return DmaRead(port); }
 static void dma_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaWrite(port,val); }
+static uint8_t dma_page_inb(uint16_t port, void *priv) { (void)priv; return dma_page_read(port); }
+static void dma_page_outb(uint16_t port, uint8_t val, void *priv) { (void)priv; DmaPageWrite(port,val); }
 
 uint8_t dma_page_read(USHORT addr) { 
     uint8_t returnData = dmapages[addr & 0xf];
@@ -139,7 +145,7 @@ void DmaInit(void)
     DmaReset();
     io_sethandler(0x0000, 0x0010, dma_inb, NULL, NULL, dma_outb, NULL, NULL, NULL);
     /* Only the first eight page registers are used */
-    io_sethandler(0x0080, 0x0008, dma_page_read, NULL, NULL, DmaPageWrite, NULL, NULL, NULL);
+    io_sethandler(0x0080, 0x0008, dma_page_inb, NULL, NULL, dma_page_outb, NULL, NULL, NULL);
 }
 
 void DmaWrite(USHORT port, uint8_t val) {
