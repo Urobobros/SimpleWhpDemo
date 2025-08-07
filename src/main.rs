@@ -25,6 +25,8 @@ mod keyboard;
 mod nmi;
 mod pic;
 mod serial;
+
+#[cfg(windows)]
 use windows::{
     Win32::{
         Foundation::*,
@@ -34,6 +36,7 @@ use windows::{
     core::{Error, HRESULT, PCWSTR, Result},
 };
 
+#[cfg(windows)]
 #[link(name = "Kernel32")]
 unsafe extern "system" {
     fn Beep(freq: u32, dur: u32) -> BOOL;
@@ -59,7 +62,7 @@ pub struct PIT {
     out_func: [Option<extern "C" fn(i32, i32)>; 3],
 }
 
-extern "C" {
+unsafe extern "C" {
     static mut pit: PIT;
     fn io_init();
     fn DmaInit();
@@ -138,7 +141,10 @@ fn openal_beep(freq: u32, dur_ms: u32) {
     }
 }
 
+#[cfg(windows)]
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
+
+#[cfg(windows)]
 static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACKS {
     Size: size_of::<WHV_EMULATOR_CALLBACKS>() as u32,
     Reserved: 0,
@@ -323,7 +329,6 @@ static mut ATTR_MDA: u8 = 0;
 static mut FDC_DOR: u8 = 0;
 static mut FDC_STATUS: u8 = 0;
 static mut FDC_DATA: u8 = 0;
-static mut DMA_CHAN: [u8; 8] = [0; 8];
 /// Memory size reported by the BIOS (in KB).
 const MEM_SIZE_KB: usize = GUEST_RAM_KB;
 /// Value returned by reading port 0x62.
@@ -600,7 +605,10 @@ fn render_cga_window() {
     }
 }
 
+#[cfg(windows)]
 const INITIAL_VCPU_COUNT: usize = 40;
+
+#[cfg(windows)]
 const INITIAL_VCPU_REGISTER_NAMES: [WHV_REGISTER_NAME; INITIAL_VCPU_COUNT] = [
     WHvX64RegisterRax,
     WHvX64RegisterRcx,
@@ -644,6 +652,7 @@ const INITIAL_VCPU_REGISTER_NAMES: [WHV_REGISTER_NAME; INITIAL_VCPU_COUNT] = [
     WHvX64RegisterFpControlStatus,
 ];
 // Note: WHV_REGISTER_VALUE should be aligned on 16-byte boundary. However, the definition of it isn't aligned to 16-byte boundary.
+#[cfg(windows)]
 const INITIAL_VCPU_REGISTER_VALUES: Aligned<A16, [WHV_REGISTER_VALUE; INITIAL_VCPU_COUNT]> =
     Aligned([
         WHV_REGISTER_VALUE { Reg64: 0 },
@@ -768,12 +777,14 @@ const INITIAL_VCPU_REGISTER_VALUES: Aligned<A16, [WHV_REGISTER_VALUE; INITIAL_VC
     ]);
 
 #[repr(C)]
+#[cfg(windows)]
 struct SimpleVirtualMachine {
     handle: WHV_PARTITION_HANDLE,
     vmem: *mut c_void,
     size: usize,
 }
 
+#[cfg(windows)]
 impl SimpleVirtualMachine {
     fn new(memory_size: usize) -> Result<Self> {
         match unsafe { WHvCreatePartition() } {
@@ -891,17 +902,37 @@ impl SimpleVirtualMachine {
         let mut exit_ctxt: WHV_RUN_VP_EXIT_CONTEXT = WHV_RUN_VP_EXIT_CONTEXT::default();
         let mut cont_exec = true;
         while cont_exec {
-            if let Err(e) = unsafe {
+            let part = self.handle;
+            let cancel = std::thread::spawn(move || {
+                sleep(Duration::from_millis(1));
+                unsafe {
+                    // Newer Windows headers add a Flags parameter.  Use the
+                    // three-argument form when available while falling back to
+                    // the legacy prototype for older toolchains.
+                    #[cfg(any(target_env = "msvc", target_env = "gnu"))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0, 0);
+                    }
+                    #[cfg(not(any(target_env = "msvc", target_env = "gnu")))]
+                    {
+                        WHvCancelRunVirtualProcessor(part, 0);
+                    }
+                }
+            });
+            let hr = unsafe {
                 WHvRunVirtualProcessor(
-                    self.handle,
+                    part,
                     0,
                     (&raw mut exit_ctxt).cast(),
                     size_of::<WHV_RUN_VP_EXIT_CONTEXT>() as u32,
                 )
-            } {
+            };
+            let _ = cancel.join();
+            if let Err(e) = hr {
                 println!("Failed to run vCPU! Reason: {e}");
                 cont_exec = false;
             } else {
+                update_pit_rs();
                 #[allow(non_upper_case_globals)]
                 match exit_ctxt.ExitReason {
                     WHvRunVpExitReasonX64IoPortAccess => {
@@ -922,6 +953,10 @@ impl SimpleVirtualMachine {
                                 cont_exec = false;
                             }
                         }
+                    }
+                    WHvRunVpExitReasonCanceled => {
+                        // WHvRunVirtualProcessor was interrupted by WHvCancelRunVirtualProcessor.
+                        cont_exec = true;
                     }
                     WHvRunVpExitReasonX64Halt => {
                         // Treat HLT as a NOP so BIOS busy
@@ -1000,6 +1035,7 @@ fn load_disk_image(path: &str) -> bool {
     false
 }
 
+#[cfg(windows)]
 impl Drop for SimpleVirtualMachine {
     fn drop(&mut self) {
         if let Err(e) = unsafe { WHvDeletePartition(self.handle) } {
@@ -1012,6 +1048,7 @@ impl Drop for SimpleVirtualMachine {
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_io_port_callback(
     _context: *const c_void,
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
@@ -1038,7 +1075,13 @@ unsafe extern "system" fn emu_io_port_callback(
             if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
                 let val = keyboard::keyboard_xt_read((*io_access).Port);
                 (*io_access).Data = val as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, val as u32, "keyboard_xt_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    val as u32,
+                    "keyboard_xt_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DISK_DATA {
                 for i in 0..(*io_access).AccessSize as usize {
@@ -1066,7 +1109,13 @@ unsafe extern "system" fn emu_io_port_callback(
                     val |= 0x20;
                 }
                 (*io_access).Data = val as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, val as u32, "keyboard_xt_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    val as u32,
+                    "keyboard_xt_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 unsafe {
@@ -1094,17 +1143,35 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
                 let byte = pit_read_rs(0);
                 (*io_access).Data = byte as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    byte as u32,
+                    "pit_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 let byte = pit_read_rs(1);
                 (*io_access).Data = byte as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    byte as u32,
+                    "pit_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
                 let byte = pit_read_rs(2);
                 (*io_access).Data = byte as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "pit_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    byte as u32,
+                    "pit_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_DATA {
                 unsafe {
@@ -1119,7 +1186,13 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port <= 0x0007 {
                 let byte = dma::dma_read((*io_access).Port);
                 (*io_access).Data = byte as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "dma_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    byte as u32,
+                    "dma_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
                 unsafe {
@@ -1182,10 +1255,18 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 (*io_access).Data = FDC_DATA as u32;
                 S_OK
-            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA
+                && (*io_access).Port <= IO_PORT_COM1_SCR
+            {
                 let byte = serial::serial_read((*io_access).Port);
                 (*io_access).Data = byte as u32;
-                port_log_tag!(false, (*io_access).Port, (*io_access).AccessSize as u8, byte as u32, "serial_read");
+                port_log_tag!(
+                    false,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    byte as u32,
+                    "serial_read"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD {
                 (*io_access).Data = 0;
@@ -1229,6 +1310,7 @@ unsafe extern "system" fn emu_io_port_callback(
                         65536
                     };
                     let freq = 1_193_182 / count;
+                    #[cfg(windows)]
                     let _ = Beep(freq, BEEP_DURATION_MS);
                     openal_beep(freq, BEEP_DURATION_MS);
                 }
@@ -1238,7 +1320,13 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_MODE {
                 cga::cga_out((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "cga_out"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_MDA_MODE {
                 MDA_MODE = (*io_access).Data as u8;
@@ -1248,7 +1336,13 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_CONTROL {
                 PIT_CONTROL = (*io_access).Data as u8;
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "pit_write"
+                );
                 let cmd = PIT_CONTROL;
                 let chan = (cmd >> 6) & 3;
                 let access = (cmd >> 4) & 3;
@@ -1268,15 +1362,33 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER0 {
                 pit_write_rs(0, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "pit_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER1 {
                 pit_write_rs(1, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "pit_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIT_COUNTER2 {
                 pit_write_rs(2, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pit_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "pit_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_MODE {
                 DMA_MODE = (*io_access).Data as u8;
@@ -1289,11 +1401,23 @@ unsafe extern "system" fn emu_io_port_callback(
                 S_OK
             } else if (*io_access).Port <= 0x0007 {
                 dma::dma_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "dma_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "dma_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE1 {
                 dma::dma_page_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "dma_page_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "dma_page_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PORT_0210 {
                 PORT_0210_VAL = (*io_access).Data as u8;
@@ -1328,11 +1452,23 @@ unsafe extern "system" fn emu_io_port_callback(
                 || (*io_access).Port == IO_PORT_ATTR_CGA
             {
                 cga::cga_out((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "cga_out"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_CGA_STATUS {
                 cga::cga_out((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "cga_out");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "cga_out"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_FDC_DOR {
                 FDC_DOR = (*io_access).Data as u8;
@@ -1343,24 +1479,50 @@ unsafe extern "system" fn emu_io_port_callback(
             } else if (*io_access).Port == IO_PORT_FDC_DATA {
                 FDC_DATA = (*io_access).Data as u8;
                 S_OK
-            } else if (*io_access).Port >= IO_PORT_COM1_DATA && (*io_access).Port <= IO_PORT_COM1_SCR {
+            } else if (*io_access).Port >= IO_PORT_COM1_DATA
+                && (*io_access).Port <= IO_PORT_COM1_SCR
+            {
                 serial::serial_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "serial_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "serial_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_NMI {
                 nmi::nmi_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "nmi_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "nmi_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_PIC_MASTER_CMD
                 || (*io_access).Port == IO_PORT_PIC_MASTER_DATA
                 || (*io_access).Port == IO_PORT_PIC_SLAVE_DATA
             {
                 pic::pic_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "pic_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "pic_write"
+                );
                 S_OK
             } else if (*io_access).Port >= 0x0060 && (*io_access).Port <= 0x0063 {
                 keyboard::keyboard_xt_write((*io_access).Port, (*io_access).Data as u8);
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "keyboard_xt_write");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "keyboard_xt_write"
+                );
                 S_OK
             } else if (*io_access).Port == IO_PORT_DMA_PAGE3
                 || (*io_access).Port == IO_PORT_VIDEO_MISC_B8
@@ -1381,7 +1543,13 @@ unsafe extern "system" fn emu_io_port_callback(
                     LAST_UNKNOWN_PORT = (*io_access).Port;
                     UNKNOWN_PORT_COUNT = 1;
                 }
-                port_log_tag!(true, (*io_access).Port, (*io_access).AccessSize as u8, (*io_access).Data, "unhandled");
+                port_log_tag!(
+                    true,
+                    (*io_access).Port,
+                    (*io_access).AccessSize as u8,
+                    (*io_access).Data,
+                    "unhandled"
+                );
                 println!(
                     "Unknown I/O Port (0x{:04X}) is accessed!",
                     (*io_access).Port
@@ -1399,6 +1567,7 @@ unsafe extern "system" fn emu_io_port_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_memory_callback(
     context: *const c_void,
     memory_access: *mut WHV_EMULATOR_MEMORY_ACCESS_INFO,
@@ -1419,6 +1588,7 @@ unsafe extern "system" fn emu_memory_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_get_vcpu_reg_callback(
     context: *const c_void,
     reg_names: *const WHV_REGISTER_NAME,
@@ -1434,6 +1604,7 @@ unsafe extern "system" fn emu_get_vcpu_reg_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_set_vcpu_reg_callback(
     context: *const c_void,
     reg_names: *const WHV_REGISTER_NAME,
@@ -1449,6 +1620,7 @@ unsafe extern "system" fn emu_set_vcpu_reg_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_translate_gva_callback(
     context: *const c_void,
     gva_page: u64,
@@ -1476,6 +1648,7 @@ unsafe extern "system" fn emu_translate_gva_callback(
     }
 }
 
+#[cfg(windows)]
 fn init_whpx() -> HRESULT {
     let mut hv_present: WHV_CAPABILITY = WHV_CAPABILITY::default();
     let r = unsafe {
@@ -1510,6 +1683,7 @@ fn init_whpx() -> HRESULT {
     }
 }
 
+#[cfg(windows)]
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
@@ -1612,4 +1786,9 @@ fn main() {
         let _ =
             unsafe { WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed)) };
     }
+}
+
+#[cfg(not(windows))]
+fn main() {
+    println!("SimpleWhpDemo requires Windows to run.");
 }
