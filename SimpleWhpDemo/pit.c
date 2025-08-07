@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #endif
 
-PIT pit, pit2;
+PIT pit;
 static uint64_t pit_last_update_us;
 static double pit_partial_ticks;
 
@@ -215,21 +215,6 @@ void pit_init(void)
         pit.out_func[i] = NULL;
     }
     io_sethandler(0x0040, 0x0004, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit);
-}
-
-void pit_ps2_init(void)
-{
-    memset(&pit2, 0, sizeof(pit2));
-    for (int i = 0; i < 3; i++) {
-        pit2.ch[i].count = 0xFFFF;
-        pit2.ch[i].reload = 0xFFFF;
-        pit2.ch[i].access = 3;
-        pit2.ch[i].rw_low = 1;
-        pit2.out[i] = 0;
-        pit2.out_func[i] = NULL;
-    }
-    io_sethandler(0x0044, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
-    io_sethandler(0x0047, 0x0001, pit_read, NULL, NULL, pit_write, NULL, NULL, &pit2);
 }
 
 void pit_set_out_func(PIT *p, int chan, PITOutFunc func)

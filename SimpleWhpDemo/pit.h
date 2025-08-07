@@ -31,7 +31,6 @@ extern PIT pit, pit2;
 uint8_t pit_read(uint16_t port, void *priv);
 void pit_write(uint16_t port, uint8_t val, void *priv);
 void pit_init(void);
-void pit_ps2_init(void);
 void pit_update(PIT *p);
 void pit_set_out_func(PIT *p, int chan, PITOutFunc func);
 #ifdef IO_TEST_ACCESS
