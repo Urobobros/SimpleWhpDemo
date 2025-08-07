@@ -25,6 +25,8 @@ mod keyboard;
 mod nmi;
 mod pic;
 mod serial;
+
+#[cfg(windows)]
 use windows::{
     Win32::{
         Foundation::*,
@@ -34,6 +36,7 @@ use windows::{
     core::{Error, HRESULT, PCWSTR, Result},
 };
 
+#[cfg(windows)]
 #[link(name = "Kernel32")]
 unsafe extern "system" {
     fn Beep(freq: u32, dur: u32) -> BOOL;
@@ -59,7 +62,7 @@ pub struct PIT {
     out_func: [Option<extern "C" fn(i32, i32)>; 3],
 }
 
-extern "C" {
+unsafe extern "C" {
     static mut pit: PIT;
     fn io_init();
     fn DmaInit();
@@ -138,7 +141,10 @@ fn openal_beep(freq: u32, dur_ms: u32) {
     }
 }
 
+#[cfg(windows)]
 static GLOBAL_EMULATOR_HANDLE: AtomicPtr<c_void> = AtomicPtr::new(null_mut());
+
+#[cfg(windows)]
 static GLOBAL_EMULATOR_CALLBACKS: WHV_EMULATOR_CALLBACKS = WHV_EMULATOR_CALLBACKS {
     Size: size_of::<WHV_EMULATOR_CALLBACKS>() as u32,
     Reserved: 0,
@@ -599,7 +605,10 @@ fn render_cga_window() {
     }
 }
 
+#[cfg(windows)]
 const INITIAL_VCPU_COUNT: usize = 40;
+
+#[cfg(windows)]
 const INITIAL_VCPU_REGISTER_NAMES: [WHV_REGISTER_NAME; INITIAL_VCPU_COUNT] = [
     WHvX64RegisterRax,
     WHvX64RegisterRcx,
@@ -643,6 +652,7 @@ const INITIAL_VCPU_REGISTER_NAMES: [WHV_REGISTER_NAME; INITIAL_VCPU_COUNT] = [
     WHvX64RegisterFpControlStatus,
 ];
 // Note: WHV_REGISTER_VALUE should be aligned on 16-byte boundary. However, the definition of it isn't aligned to 16-byte boundary.
+#[cfg(windows)]
 const INITIAL_VCPU_REGISTER_VALUES: Aligned<A16, [WHV_REGISTER_VALUE; INITIAL_VCPU_COUNT]> =
     Aligned([
         WHV_REGISTER_VALUE { Reg64: 0 },
@@ -767,12 +777,14 @@ const INITIAL_VCPU_REGISTER_VALUES: Aligned<A16, [WHV_REGISTER_VALUE; INITIAL_VC
     ]);
 
 #[repr(C)]
+#[cfg(windows)]
 struct SimpleVirtualMachine {
     handle: WHV_PARTITION_HANDLE,
     vmem: *mut c_void,
     size: usize,
 }
 
+#[cfg(windows)]
 impl SimpleVirtualMachine {
     fn new(memory_size: usize) -> Result<Self> {
         match unsafe { WHvCreatePartition() } {
@@ -942,6 +954,10 @@ impl SimpleVirtualMachine {
                             }
                         }
                     }
+                    WHvRunVpExitReasonCanceled => {
+                        // WHvRunVirtualProcessor was interrupted by WHvCancelRunVirtualProcessor.
+                        cont_exec = true;
+                    }
                     WHvRunVpExitReasonX64Halt => {
                         // Treat HLT as a NOP so BIOS busy
                         // loops keep running even with
@@ -1019,6 +1035,7 @@ fn load_disk_image(path: &str) -> bool {
     false
 }
 
+#[cfg(windows)]
 impl Drop for SimpleVirtualMachine {
     fn drop(&mut self) {
         if let Err(e) = unsafe { WHvDeletePartition(self.handle) } {
@@ -1031,6 +1048,7 @@ impl Drop for SimpleVirtualMachine {
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_io_port_callback(
     _context: *const c_void,
     io_access: *mut WHV_EMULATOR_IO_ACCESS_INFO,
@@ -1292,6 +1310,7 @@ unsafe extern "system" fn emu_io_port_callback(
                         65536
                     };
                     let freq = 1_193_182 / count;
+                    #[cfg(windows)]
                     let _ = Beep(freq, BEEP_DURATION_MS);
                     openal_beep(freq, BEEP_DURATION_MS);
                 }
@@ -1548,6 +1567,7 @@ unsafe extern "system" fn emu_io_port_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_memory_callback(
     context: *const c_void,
     memory_access: *mut WHV_EMULATOR_MEMORY_ACCESS_INFO,
@@ -1568,6 +1588,7 @@ unsafe extern "system" fn emu_memory_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_get_vcpu_reg_callback(
     context: *const c_void,
     reg_names: *const WHV_REGISTER_NAME,
@@ -1583,6 +1604,7 @@ unsafe extern "system" fn emu_get_vcpu_reg_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_set_vcpu_reg_callback(
     context: *const c_void,
     reg_names: *const WHV_REGISTER_NAME,
@@ -1598,6 +1620,7 @@ unsafe extern "system" fn emu_set_vcpu_reg_callback(
     }
 }
 
+#[cfg(windows)]
 unsafe extern "system" fn emu_translate_gva_callback(
     context: *const c_void,
     gva_page: u64,
@@ -1625,6 +1648,7 @@ unsafe extern "system" fn emu_translate_gva_callback(
     }
 }
 
+#[cfg(windows)]
 fn init_whpx() -> HRESULT {
     let mut hv_present: WHV_CAPABILITY = WHV_CAPABILITY::default();
     let r = unsafe {
@@ -1659,6 +1683,7 @@ fn init_whpx() -> HRESULT {
     }
 }
 
+#[cfg(windows)]
 fn main() {
     println!("SimpleWhpDemo version {}", env!("CARGO_PKG_VERSION"));
     println!("IVT firmware version 0.1.0");
@@ -1761,4 +1786,9 @@ fn main() {
         let _ =
             unsafe { WHvEmulatorDestroyEmulator(GLOBAL_EMULATOR_HANDLE.load(Ordering::Relaxed)) };
     }
+}
+
+#[cfg(not(windows))]
+fn main() {
+    println!("SimpleWhpDemo requires Windows to run.");
 }

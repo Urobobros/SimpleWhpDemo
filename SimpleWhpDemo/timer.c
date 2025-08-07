@@ -14,6 +14,7 @@ uint32_t timer_target = 0;
 uint64_t TIMER_USEC = 1;
 
 static pc_timer_t *timer_list = NULL;
+static int64_t last_us = 0;
 
 void timer_enable(pc_timer_t *timer) {
     if (!timer->enabled) {
@@ -60,22 +61,29 @@ int64_t get_monotonic_ms() {
 }
 #endif
 
-void timer_process() {
-    pc_timer_t *t = timer_list;
-    int64_t start_ms = get_monotonic_ms();
+extern float cpuclock;
 
+void timer_process() {
+    int64_t now_us = get_monotonic_ms() * 1000;
+
+    if (last_us == 0)
+        last_us = now_us;
+
+    int64_t delta_us = now_us - last_us;
+    if (delta_us < 0)
+        delta_us = 0;
+
+    last_us = now_us;
+
+    tsc += (uint64_t)((double)delta_us * (cpuclock / 1000000.0));
+
+    pc_timer_t *t = timer_list;
     while (t) {
         pc_timer_t *next = t->next;
-        int64_t now_ms = get_monotonic_ms();
-        if (now_ms - start_ms > 100) {
-            printf("Timer processing exceeded 100ms, aborting...\n");
-            t->enabled = 0;
-            timer_disable(t);
-            t->callback(t->p);
-            break;
-        }
+        uint64_t timer_ts = ((uint64_t)t->ts_integer << 32) | t->ts_frac;
+        uint64_t curr_ts = tsc << 32;
 
-        if (t->callback) {
+        if ((int64_t)(timer_ts - curr_ts) <= 0 && t->callback) {
             t->enabled = 0;
             timer_disable(t);
             t->callback(t->p);
@@ -92,6 +100,7 @@ void timer_reset() {
         timer_disable(timer_list);
     }
     tsc = 0;
+    last_us = 0;
 }
 
 void timer_add(pc_timer_t *timer, void (*callback)(void *p), void *p, int start_timer) {
